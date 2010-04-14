@@ -24,3 +24,4 @@ clean:
 	rm EvilLexer.java
 	rm EvilParser.java
 	rm Evil.tokens
+	rm EvilAST.java
