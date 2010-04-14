@@ -20,3 +20,7 @@ safe:
 
 clean:
 	rm *.class
+	rm antlr.*
+	rm EvilLexer.java
+	rm EvilParser.java
+	rm Evil.tokens
