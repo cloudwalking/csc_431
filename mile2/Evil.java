@@ -41,6 +41,7 @@ public class Evil
       try
       {
          //symbolTypes and structTypes contain variables and their types, no values
+         StructTable structTable = new StructTable();
          SymTable symtable = new SymTable();
          FunTable funtable = new FunTable();
 
@@ -50,7 +51,7 @@ public class Evil
 
          //tree parser populates the type structures
       
-         tparser.program(symtable, funtable);
+         tparser.program(structTable, symtable, funtable);
 
          symtable.print();
       }
