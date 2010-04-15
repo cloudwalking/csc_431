@@ -36,11 +36,9 @@ public class FunTable {
    }
    
    public void print(String tabs) {
-      System.out.println("\n** FunTable **");
       for(String key : functions.keySet()) {
          System.out.println(tabs + key + "\t:\t" + functions.get(key));
          functions.get(key).print("\t\t");
       }
-      System.out.println(" ");
    }
 }

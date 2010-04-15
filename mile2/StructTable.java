@@ -14,7 +14,9 @@ public class StructTable {
    public boolean addStruct(String id) {
       if (structs.containsKey(id))
          return false;
-      structs.put(id, (SymTable)null);
+      
+      // SymTable doesn't matter, we're gonna overwrite it in update
+      structs.put(id, new SymTable());
       return true;
    }
 /*
@@ -36,8 +38,8 @@ public class StructTable {
       return structs != null && structs.containsKey(id);
    }
    
-   public boolean isField(String id) {
-      return structs != null && 
+   public boolean isField(String struct, String field) {
+      return structs != null && ((SymTable)structs.get(struct)).isDefined(field);
    }
    
    public void print() {
@@ -45,11 +47,9 @@ public class StructTable {
    }
    
    public void print(String tabs) {
-      System.out.println("\n** StructTable **");
       for(String key : structs.keySet()) {
          System.out.println(tabs + key + "\t:\t" + structs.get(key));
          structs.get(key).print("\t\t");
       }
-      System.out.println(" ");
    }
 }

@@ -59,11 +59,9 @@ public class SymTable {
    }
    
    public void print(String tabs) {
-      System.out.println("\n** SymTable **");
       for(String key : table.keySet()) {
          System.out.println(tabs + key + "\t:\t" + table.get(key));
       }
-      System.out.println(" ");
    }
    
    private class SymEntry {

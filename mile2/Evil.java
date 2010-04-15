@@ -52,8 +52,13 @@ public class Evil
          //tree parser populates the type structures
       
          tparser.program(structTable, symtable, funtable);
-
+         
+         System.out.println("\n** SymTable **");
          symtable.print();
+         System.out.println("\n** StructTable **");
+         structTable.print();
+         System.out.println("\n** FunTable **");
+         funtable.print();
       }
       catch (org.antlr.runtime.RecognitionException e)
       {

@@ -37,6 +37,7 @@ decl [SymTable symtable, SymTable subtable]
      { subtable.insertSymbol($id.text, t); }
    ;
 
+// Does this really want the symtable, or the structtable?
 type [SymTable symtable] returns [String t = null]
   :  INT { $t = SymTable.intType(); }
   |  BOOL { $t = SymTable.boolType(); }
@@ -83,22 +84,18 @@ functions [StructTable structTable, SymTable symtable, FunTable funtable]
 
 function [StructTable structTable, SymTable symtable, FunTable funtable]
    : ^(FUN id=ID
-     {
-        if (isDefined($id.text))
+     	{
+        if (symtable.isDefined($id.text) || funtable.isDefined($id.text))
         {
            System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
         }
-        else
-        {
-           SymTable locals = new SymTable();
-        }
-     }
-      parameters[symtable, locals] ^(RETTYPE retType=return_type[symtable])
-      locals=declarations[locals]
-      {
-         symtable.insertSymbol($id.text, retType);
-      }
-      statement[structTable])
+        SymTable locals = new SymTable();
+     	}
+      parameters[symtable, locals] // Adds them to the function's symtable
+      ^(RETTYPE retType=return_type[symtable])
+      declarations[locals] // Adds them to the function's symtable
+      { symtable.insertSymbol($id.text, retType); }
+      statement[symtable, structTable])
    ;
 
 parameters [SymTable symtable, SymTable subtable]
@@ -110,28 +107,28 @@ return_type [SymTable symtable] returns [String t = null]
    | VOID
    ;
 
-statement[StructTable structTable]
-   : ^(BLOCK ^(STMTS statement[structTable]*))
-   | assignment[structTable]
+statement[SymTable symtable, StructTable structTable]
+   : ^(BLOCK ^(STMTS statement[symtable, structTable]*))
+   | assignment[symtable, structTable]
    | print
-   | read
-   | ^(IF expression statement[structTable] (statement[structTable])?)
-   | ^(WHILE expr=expression b=statement[structTable] expr2=expression)
+   | read[symtable, structTable]
+   | ^(IF expression statement[symtable, structTable] (statement[symtable, structTable])?)
+   | ^(WHILE expr=expression b=statement[symtable, structTable] expr2=expression)
    | delete
    | ret
    | invocation
    ;
 
-assignment[StructTable structTable]
-   : ^(ASSIGN expr=expression lval=lvalue)
+assignment[SymTable symtable, StructTable stable]
+   : ^(ASSIGN expr=expression lval=lvalue[symtable, stable])
    ;
 
 print
    : ^(PRINT expression (ENDL)?)
    ;
 
-read
-   : ^(READ lvalue)
+read [SymTable symtable, StructTable stable]
+   : ^(READ lvalue[symtable, stable])
    ;
 
 delete
@@ -146,20 +143,38 @@ invocation
    : ^(INVOKE id=ID args=arguments)
    ;
 
-lvalue[SymTable symtable]
+lvalue[SymTable symtable, StructTable stable]
+	: ^(DOT structId=ID
+		{
+			if(!symtable.isDefined($structId.text))
+			{
+				System.err.println("line " + $structId.line + ": undeclared symbol '" + $structId.text + "'");
+			}
+			if(!stable.isDefined(symtable.getType($structId.text)))
+			{
+				System.err.println("line " + $structId.line + ": undefined struct type '" + $structId.text + "'");
+			}
+			// Ok, this ID looks pretty valid.
+		}
+		subvalue[stable, $structId.text])
+	;
+
+subvalue[StructTable stable, String parent]
    : ^(DOT structId=ID
      {
-        if(symtable.isDefined($structId.text)
+        if(!stable.isField($parent, $structId.text))
         {
-            //want to pass symbolTable
-        }
-        else if(!structTable.isDefined($structId.text)
-        {
-            //error
+	        System.err.println("line " + $structId.line + ": invalid field '" + $structId.text + "' in struct '" + parent + "'");
         }
      }
-      lvalue[structTable.getField($structId)])
+      subvalue[stable, $structId.text])
    | valId=ID
+     {
+        if(!stable.isField($parent, $valId.text))
+        {
+	        System.err.println("line " + $valId.line + ": invalid field '" + $valId.text + "' in struct '" + parent + "'");
+        }
+     }
    ;
 
 expression
