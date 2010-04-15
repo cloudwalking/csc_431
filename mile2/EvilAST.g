@@ -1,226 +1,192 @@
 tree grammar EvilAST;
 
 options {
-  backtrack = true;
-  output = AST;
   language = Java;
   tokenVocab = Evil;
   ASTLabelType = CommonTree;
 }
 
-@members {
-  protected StructTable stable = new StructTable();
-}
-
-program [SymTable symtable, FunTable funtable]
-   : ^(PROGRAM types[symtable] declarations[symtable] functions[symtable, funtable])
+program [StructTable structTable, SymTable symtable, FunTable funtable]
+   : ^(PROGRAM types[structTable, symtable] declarations[symtable]
+      functions[structTable, symtable, funtable])
    ;
   
-types [SymTable symtable]
-  : ^(TYPES type_sub[symtable])
-  |	TYPES
+types [StructTable structTable, SymTable symtable]
+  : ^(TYPES type_sub[structTable, symtable])
+  |   TYPES
   ;
 
-type_sub [SymTable symtable]
-	: type_declaration[symtable] type_sub[symtable]
-	| 
-	;
+type_sub [StructTable structTable, SymTable symtable]
+   : type_declaration[structTable, symtable] type_sub[structTable, symtable]
+   | 
+   ;
   
-type_declaration [SymTable symtable]
-	: ^(STRUCT id=ID
-			{ symtable.insertSymbol($id.text, SymTable.structType($id.text)); }
-			structSymTable=nested_decl)
-		{ stable.addStruct($id.text, structSymTable); }
+type_declaration [StructTable structTable, SymTable symtable]
+   : ^(STRUCT id=ID
+        { structTable.addStruct($id.text); }
+     structSymTable=nested_decl[symtable])
+        { structTable.updateStruct($id.text, $structSymTable.subtable); }
   ;
   
-nested_decl returns [SymTable subtable = new SymTable()]
-  : decl[subtable]+
+nested_decl [SymTable symtable] returns [SymTable subtable = new SymTable()]
+  : decl[symtable, subtable]+
   ;
 
-decl [SymTable subtable]
-	:	^(DECL ^(TYPE t=type) id=ID)
-		{ subtable.insertSymbol($id.text, t); }
-	;
+decl [SymTable symtable, SymTable subtable]
+   : ^(DECL ^(TYPE t=type[symtable]) id=ID)
+     { subtable.insertSymbol($id.text, t); }
+   ;
 
-type returns [String t = null]
+type [SymTable symtable] returns [String t = null]
   :  INT { $t = SymTable.intType(); }
   |  BOOL { $t = SymTable.boolType(); }
   |  ^(STRUCT id=ID)
      {
-        if (!stable.isDefined($id.text))
+        if (!symtable.isDefined($id.text))
         {
           System.err.println("line " + $id.line + ": undefined struct type '" + $id + "'");
         }
         $t = SymTable.structType($id.text);
      }
   ;
-  
+
 declarations [SymTable symtable]
-	: ^(DECLS declaration[symtable]*)
-	;
+   : ^(DECLS declaration[symtable]*)
+   ;
 
 declaration [SymTable symtable]
-	:	^(DECLLIST ^(TYPE t=type) id_list[symtable, t])
-	;
+   :   ^(DECLLIST ^(TYPE t=type[symtable]) id_list[symtable, t])
+   ;
 
 id_list [SymTable symtable, String t]
-	:	list_id[symtable, t]+
-	;
-	
+   :   list_id[symtable, t]+
+   ;
+   
 list_id [SymTable symtable, String t]
-	: id=ID
-		{ if (!$symtable.isDefined($id.text))
-			{
-				symtable.insertSymbol($id.text, $t);
-			}
-		  else
-			{
-				System.err.println("line " + $id.line + ": already declared '" + $id + "'");
-			}
-		}
-	;
+   : id=ID
+      {  if (!$symtable.isDefined($id.text))
+         {
+            symtable.insertSymbol($id.text, $t);
+         }
+         else
+         {
+            System.err.println("line " + $id.line + ": already declared '" + $id + "'");
+         }
+      }
+   ;
 
-functions [SymTable symtable, FunTable funtable]
-	: ^(FUNCS function*)
-	;
-function
-	:// ^(FUN<FunctionTree> id=ID param=parameters ^(RETTYPE retType=return_type) funDecls=declarations funBody=statement_list)
-	;
-/*
-parameters
-	: ^(PARAMS decl*)
-	;
+//figure out stuff with funtable, to know where they are instantiated
+//and what they will map to
+functions [StructTable structTable, SymTable symtable, FunTable funtable]
+   : ^(FUNCS function[structTable, symtable, funtable]*)
+   ;
 
-return_type
-	: type
-	| VOID
-	;
+function [StructTable structTable, SymTable symtable, FunTable funtable]
+   : ^(FUN id=ID
+     {
+        if (isDefined($id.text))
+        {
+           System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
+        }
+        else
+        {
+           SymTable locals = new SymTable();
+        }
+     }
+      parameters[symtable, locals] ^(RETTYPE retType=return_type[symtable])
+      locals=declarations[locals]
+      {
+         symtable.insertSymbol($id.text, retType);
+      }
+      statement[structTable])
+   ;
 
-statement
-	: block
-	| assignment
-	| print
-	| read
-	| conditional
-	| loop
-	| delete
-	| ret
-	| invocation
-	;
+parameters [SymTable symtable, SymTable subtable]
+   : ^(PARAMS decl[symtable, subtable]*)
+   ;
 
-block
-	: ^(BLOCK statement_list)
-	;
+return_type [SymTable symtable] returns [String t = null]
+   : type[symtable]
+   | VOID
+   ;
 
-statement_list
-	: ^(STMTS statement*)
-	;
+statement[StructTable structTable]
+   : ^(BLOCK ^(STMTS statement[structTable]*))
+   | assignment[structTable]
+   | print
+   | read
+   | ^(IF expression statement[structTable] (statement[structTable])?)
+   | ^(WHILE expr=expression b=statement[structTable] expr2=expression)
+   | delete
+   | ret
+   | invocation
+   ;
 
-assignment[SymTable stable]
-	: ^(ASSIGN expr=expression lval=lvalue)
-		{
-			if (stable.isDefined($lval)) {
-				System.err.println("lvalue of assignment undefined");
-			}
-			//check that expression is of same type as lvalue
-		}
-	;
+assignment[StructTable structTable]
+   : ^(ASSIGN expr=expression lval=lvalue)
+   ;
 
 print
-	: PRINT^ expression (ENDL)?
-	;
+   : ^(PRINT expression (ENDL)?)
+   ;
 
 read
-	: READ^ lvalue
-	;
-
-conditional
-	: IF^ expression block (block)?
-	;
-
-loop
-	: ^(WHILE expr=expression b=block expr2=expression)
-	;
+   : ^(READ lvalue)
+   ;
 
 delete
-	: DELETE^ expression
-	;
+   : ^(DELETE expression)
+   ;
 
 ret
-	: RETURN^ (expression)?
-	;
+   : ^(RETURN (expression)?)
+   ;
 
 invocation
-	: ^(INVOKE id=ID args=arguments)
-	;
+   : ^(INVOKE id=ID args=arguments)
+   ;
 
-lvalue
-	: ID (DOT<DottedTree>^ ID)*
-	;
+lvalue[SymTable symtable]
+   : ^(DOT structId=ID
+     {
+        if(symtable.isDefined($structId.text)
+        {
+            //want to pass symbolTable
+        }
+        else if(!structTable.isDefined($structId.text)
+        {
+            //error
+        }
+     }
+      lvalue[structTable.getField($structId)])
+   | valId=ID
+   ;
 
 expression
-	: boolterm ((AND^ | OR^) boolterm)*
-	;
+   : ^(AND lexpr=expression rexpr=expression)
+   | ^(OR lexpr=expression rexpr=expression)
 
-boolterm
-	: simple ((EQ^ | LT^ | GT^ | NE^ | LE^ | GE^) simple)?
-	;
+   | ^((EQ | LT | GT | NE | LE | GE) rexpr=expression lexpr=expression)
+   | ^((PLUS | MINUS) rexpr=expression lexpr=expression)
+   | ^((TIMES | DIVIDE) rexpr=expression lexpr=expression)
 
-simple
-	: term ((PLUS^ | MINUS^) term)*
-	;
+   | ^(NEG expression)
+   | ^(NOT expression)
+   | ^(DOT expression ID)
 
-term
-	: unary ((TIMES^ | DIVIDE^) unary)*
-	;
-
-unary
-	: odd_not
-	| odd_neg
-	| selector
-	;
-
-odd_not
-	: even_not
-	| ^(NOT sel=selector)
-	;
-
-even_not
-	: odd_not
-	| selector
-	;
-
-odd_neg
-	: even_neg
-	| ^(NEG sel=selector)
-	;
-
-even_neg
-	: odd_neg
-	| selector
-	;
-
-selector
-	: factor (DOT<DottedTree>^ ID)*
-	;
-
-factor
-	: expression
-	| ^(INVOKE id=ID args=arguments)
-	| ID
-	| INTEGER
-	| TRUE
-	| FALSE
-	| NEW^ ID
-	| NULL
-	;
-
+   | ^(INVOKE id=ID args=arguments)
+   | ID
+   | INTEGER
+   | TRUE
+   | FALSE
+   | ^(NEW ID)
+   | NULL
+   ;
 arguments
-	: arg_list
-	;
+   : arg_list
+   ;
 
 arg_list
-	: ^(ARGS expression+)
-	| ARGS
-	;
-*/
+   : ^(ARGS expression+)
+   | ARGS
+   ;
