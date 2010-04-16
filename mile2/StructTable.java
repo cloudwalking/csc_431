@@ -3,6 +3,8 @@ import java.util.Hashtable;
 public class StructTable {
    private Hashtable<String, SymTable> structs = null;
    
+   private boolean DEBUG = true;
+   
    public StructTable() {
       structs = new Hashtable<String, SymTable>();
    }
@@ -14,7 +16,7 @@ public class StructTable {
    public boolean addStruct(String id) {
       if (structs.containsKey(id))
          return false;
-      
+      if(DEBUG) System.out.println("j> adding struct '" + id + "'");
       // SymTable doesn't matter, we're gonna overwrite it in update
       structs.put(id, new SymTable());
       return true;
@@ -49,7 +51,7 @@ public class StructTable {
    public void print(String tabs) {
       for(String key : structs.keySet()) {
          System.out.println(tabs + key + "\t:\t" + structs.get(key));
-         structs.get(key).print("\t\t");
+         //structs.get(key).print("\t\t");
       }
    }
 }

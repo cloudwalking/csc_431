@@ -6,44 +6,52 @@ options {
   ASTLabelType = CommonTree;
 }
 
+@members {
+  private boolean DEBUG = true;
+}
+
 program [StructTable structTable, SymTable symtable, FunTable funtable]
-   : ^(PROGRAM types[structTable, symtable] declarations[symtable]
+   : ^(PROGRAM types[symtable, structTable]
+   	declarations[symtable, structTable]
       functions[structTable, symtable, funtable])
    ;
   
-types [StructTable structTable, SymTable symtable]
-  : ^(TYPES type_sub[structTable, symtable])
+types [SymTable symtable, StructTable stable]
+  : ^(TYPES type_sub[symtable, stable])
   |   TYPES
   ;
 
-type_sub [StructTable structTable, SymTable symtable]
-   : type_declaration[structTable, symtable] type_sub[structTable, symtable]
+type_sub [SymTable symtable, StructTable stable]
+   : type_declaration[symtable, stable] type_sub[symtable, stable]
    | 
    ;
   
-type_declaration [StructTable structTable, SymTable symtable]
+type_declaration [SymTable symtable, StructTable stable]
    : ^(STRUCT id=ID
-        { structTable.addStruct($id.text); }
-     structSymTable=nested_decl[symtable])
-        { structTable.updateStruct($id.text, $structSymTable.subtable); }
+		{
+			if(DEBUG) System.out.println("g> adding struct '" + $id.text + "'");
+			if(DEBUG) stable.print();
+			stable.addStruct($id.text); 
+		}
+     structSymTable=nested_decl[stable])
+        { stable.updateStruct($id.text, $structSymTable.subtable); }
   ;
   
-nested_decl [SymTable symtable] returns [SymTable subtable = new SymTable()]
-  : decl[symtable, subtable]+
+nested_decl [StructTable stable] returns [SymTable subtable = new SymTable()]
+  : decl[subtable, stable]+
   ;
 
-decl [SymTable symtable, SymTable subtable]
-   : ^(DECL ^(TYPE t=type[symtable]) id=ID)
+decl [SymTable subtable, StructTable stable]
+   : ^(DECL ^(TYPE t=type[stable]) id=ID)
      { subtable.insertSymbol($id.text, t); }
    ;
 
-// Does this really want the symtable, or the structtable?
-type [SymTable symtable] returns [String t = null]
+type [StructTable stable] returns [String t = null]
   :  INT { $t = SymTable.intType(); }
   |  BOOL { $t = SymTable.boolType(); }
   |  ^(STRUCT id=ID)
      {
-        if (!symtable.isDefined($id.text))
+        if (!stable.isDefined($id.text))
         {
           System.err.println("line " + $id.line + ": undefined struct type '" + $id + "'");
         }
@@ -51,12 +59,12 @@ type [SymTable symtable] returns [String t = null]
      }
   ;
 
-declarations [SymTable symtable]
-   : ^(DECLS declaration[symtable]*)
+declarations [SymTable symtable, StructTable stable]
+   : ^(DECLS declaration[symtable, stable]*)
    ;
 
-declaration [SymTable symtable]
-   :   ^(DECLLIST ^(TYPE t=type[symtable]) id_list[symtable, t])
+declaration [SymTable symtable, StructTable stable]
+   :   ^(DECLLIST ^(TYPE t=type[stable]) id_list[symtable, t])
    ;
 
 id_list [SymTable symtable, String t]
@@ -91,19 +99,19 @@ function [StructTable structTable, SymTable symtable, FunTable funtable]
         }
         SymTable locals = new SymTable();
      	}
-      parameters[symtable, locals] // Adds them to the function's symtable
-      ^(RETTYPE retType=return_type[symtable])
-      declarations[locals] // Adds them to the function's symtable
+      parameters[locals, structTable] // Adds them to the function's symtable
+      ^(RETTYPE retType=return_type[structTable])
+      declarations[locals, structTable] // Adds them to the function's symtable
       { symtable.insertSymbol($id.text, retType); }
       statement[symtable, structTable])
    ;
 
-parameters [SymTable symtable, SymTable subtable]
-   : ^(PARAMS decl[symtable, subtable]*)
+parameters [SymTable subtable, StructTable stable]
+   : ^(PARAMS decl[subtable, stable]*)
    ;
 
-return_type [SymTable symtable] returns [String t = null]
-   : type[symtable]
+return_type [StructTable stable] returns [String t = null]
+   : type[stable]
    | VOID
    ;
 

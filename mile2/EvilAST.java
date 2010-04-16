@@ -1,4 +1,4 @@
-// $ANTLR 3.1.3 Mar 18, 2009 10:09:25 EvilAST.g 2010-04-15 00:07:23
+// $ANTLR 3.1.3 Mar 18, 2009 10:09:25 EvilAST.g 2010-04-16 02:03:45
 
 import org.antlr.runtime.*;
 import org.antlr.runtime.tree.*;import java.util.Stack;
@@ -84,28 +84,31 @@ public class EvilAST extends TreeParser {
     public String getGrammarFileName() { return "EvilAST.g"; }
 
 
+      private boolean DEBUG = true;
+
+
 
     // $ANTLR start "program"
-    // EvilAST.g:9:1: program[StructTable structTable, SymTable symtable, FunTable funtable] : ^( PROGRAM types[structTable, symtable] declarations[symtable] functions[structTable, symtable, funtable] ) ;
+    // EvilAST.g:13:1: program[StructTable structTable, SymTable symtable, FunTable funtable] : ^( PROGRAM types[symtable, structTable] declarations[symtable, structTable] functions[structTable, symtable, funtable] ) ;
     public final void program(StructTable structTable, SymTable symtable, FunTable funtable) throws RecognitionException {
         try {
-            // EvilAST.g:10:4: ( ^( PROGRAM types[structTable, symtable] declarations[symtable] functions[structTable, symtable, funtable] ) )
-            // EvilAST.g:10:6: ^( PROGRAM types[structTable, symtable] declarations[symtable] functions[structTable, symtable, funtable] )
+            // EvilAST.g:14:4: ( ^( PROGRAM types[symtable, structTable] declarations[symtable, structTable] functions[structTable, symtable, funtable] ) )
+            // EvilAST.g:14:6: ^( PROGRAM types[symtable, structTable] declarations[symtable, structTable] functions[structTable, symtable, funtable] )
             {
-            match(input,PROGRAM,FOLLOW_PROGRAM_in_program50); 
+            match(input,PROGRAM,FOLLOW_PROGRAM_in_program56); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_types_in_program52);
-            types(structTable, symtable);
+            pushFollow(FOLLOW_types_in_program58);
+            types(symtable, structTable);
 
             state._fsp--;
 
-            pushFollow(FOLLOW_declarations_in_program55);
-            declarations(symtable);
+            pushFollow(FOLLOW_declarations_in_program65);
+            declarations(symtable, structTable);
 
             state._fsp--;
 
-            pushFollow(FOLLOW_functions_in_program64);
+            pushFollow(FOLLOW_functions_in_program74);
             functions(structTable, symtable, funtable);
 
             state._fsp--;
@@ -128,10 +131,10 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "types"
-    // EvilAST.g:14:1: types[StructTable structTable, SymTable symtable] : ( ^( TYPES type_sub[structTable, symtable] ) | TYPES );
-    public final void types(StructTable structTable, SymTable symtable) throws RecognitionException {
+    // EvilAST.g:19:1: types[SymTable symtable, StructTable stable] : ( ^( TYPES type_sub[symtable, stable] ) | TYPES );
+    public final void types(SymTable symtable, StructTable stable) throws RecognitionException {
         try {
-            // EvilAST.g:15:3: ( ^( TYPES type_sub[structTable, symtable] ) | TYPES )
+            // EvilAST.g:20:3: ( ^( TYPES type_sub[symtable, stable] ) | TYPES )
             int alt1=2;
             int LA1_0 = input.LA(1);
 
@@ -159,14 +162,14 @@ public class EvilAST extends TreeParser {
             }
             switch (alt1) {
                 case 1 :
-                    // EvilAST.g:15:5: ^( TYPES type_sub[structTable, symtable] )
+                    // EvilAST.g:20:5: ^( TYPES type_sub[symtable, stable] )
                     {
-                    match(input,TYPES,FOLLOW_TYPES_in_types85); 
+                    match(input,TYPES,FOLLOW_TYPES_in_types95); 
 
                     if ( input.LA(1)==Token.DOWN ) {
                         match(input, Token.DOWN, null); 
-                        pushFollow(FOLLOW_type_sub_in_types87);
-                        type_sub(structTable, symtable);
+                        pushFollow(FOLLOW_type_sub_in_types97);
+                        type_sub(symtable, stable);
 
                         state._fsp--;
 
@@ -177,9 +180,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:16:7: TYPES
+                    // EvilAST.g:21:7: TYPES
                     {
-                    match(input,TYPES,FOLLOW_TYPES_in_types97); 
+                    match(input,TYPES,FOLLOW_TYPES_in_types107); 
 
                     }
                     break;
@@ -198,10 +201,10 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "type_sub"
-    // EvilAST.g:19:1: type_sub[StructTable structTable, SymTable symtable] : ( type_declaration[structTable, symtable] type_sub[structTable, symtable] | );
-    public final void type_sub(StructTable structTable, SymTable symtable) throws RecognitionException {
+    // EvilAST.g:24:1: type_sub[SymTable symtable, StructTable stable] : ( type_declaration[symtable, stable] type_sub[symtable, stable] | );
+    public final void type_sub(SymTable symtable, StructTable stable) throws RecognitionException {
         try {
-            // EvilAST.g:20:4: ( type_declaration[structTable, symtable] type_sub[structTable, symtable] | )
+            // EvilAST.g:25:4: ( type_declaration[symtable, stable] type_sub[symtable, stable] | )
             int alt2=2;
             int LA2_0 = input.LA(1);
 
@@ -219,15 +222,15 @@ public class EvilAST extends TreeParser {
             }
             switch (alt2) {
                 case 1 :
-                    // EvilAST.g:20:6: type_declaration[structTable, symtable] type_sub[structTable, symtable]
+                    // EvilAST.g:25:6: type_declaration[symtable, stable] type_sub[symtable, stable]
                     {
-                    pushFollow(FOLLOW_type_declaration_in_type_sub113);
-                    type_declaration(structTable, symtable);
+                    pushFollow(FOLLOW_type_declaration_in_type_sub123);
+                    type_declaration(symtable, stable);
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_type_sub_in_type_sub116);
-                    type_sub(structTable, symtable);
+                    pushFollow(FOLLOW_type_sub_in_type_sub126);
+                    type_sub(symtable, stable);
 
                     state._fsp--;
 
@@ -235,7 +238,7 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:22:4: 
+                    // EvilAST.g:27:4: 
                     {
                     }
                     break;
@@ -254,29 +257,33 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "type_declaration"
-    // EvilAST.g:24:1: type_declaration[StructTable structTable, SymTable symtable] : ^( STRUCT id= ID structSymTable= nested_decl[symtable] ) ;
-    public final void type_declaration(StructTable structTable, SymTable symtable) throws RecognitionException {
+    // EvilAST.g:29:1: type_declaration[SymTable symtable, StructTable stable] : ^( STRUCT id= ID structSymTable= nested_decl[stable] ) ;
+    public final void type_declaration(SymTable symtable, StructTable stable) throws RecognitionException {
         CommonTree id=null;
         SymTable structSymTable = null;
 
 
         try {
-            // EvilAST.g:25:4: ( ^( STRUCT id= ID structSymTable= nested_decl[symtable] ) )
-            // EvilAST.g:25:6: ^( STRUCT id= ID structSymTable= nested_decl[symtable] )
+            // EvilAST.g:30:4: ( ^( STRUCT id= ID structSymTable= nested_decl[stable] ) )
+            // EvilAST.g:30:6: ^( STRUCT id= ID structSymTable= nested_decl[stable] )
             {
-            match(input,STRUCT,FOLLOW_STRUCT_in_type_declaration143); 
+            match(input,STRUCT,FOLLOW_STRUCT_in_type_declaration153); 
 
             match(input, Token.DOWN, null); 
-            id=(CommonTree)match(input,ID,FOLLOW_ID_in_type_declaration147); 
-             structTable.addStruct((id!=null?id.getText():null)); 
-            pushFollow(FOLLOW_nested_decl_in_type_declaration166);
-            structSymTable=nested_decl(symtable);
+            id=(CommonTree)match(input,ID,FOLLOW_ID_in_type_declaration157); 
+
+            			if(DEBUG) System.out.println("g> adding struct '" + (id!=null?id.getText():null) + "'");
+            			if(DEBUG) stable.print();
+            			stable.addStruct((id!=null?id.getText():null)); 
+            		
+            pushFollow(FOLLOW_nested_decl_in_type_declaration170);
+            structSymTable=nested_decl(stable);
 
             state._fsp--;
 
 
             match(input, Token.UP, null); 
-             structTable.updateStruct((id!=null?id.getText():null), structSymTable); 
+             stable.updateStruct((id!=null?id.getText():null), structSymTable); 
 
             }
 
@@ -293,15 +300,15 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "nested_decl"
-    // EvilAST.g:31:1: nested_decl[SymTable symtable] returns [SymTable subtable = new SymTable()] : ( decl[symtable, subtable] )+ ;
-    public final SymTable nested_decl(SymTable symtable) throws RecognitionException {
+    // EvilAST.g:40:1: nested_decl[StructTable stable] returns [SymTable subtable = new SymTable()] : ( decl[subtable, stable] )+ ;
+    public final SymTable nested_decl(StructTable stable) throws RecognitionException {
         SymTable subtable =  new SymTable();
 
         try {
-            // EvilAST.g:32:3: ( ( decl[symtable, subtable] )+ )
-            // EvilAST.g:32:5: ( decl[symtable, subtable] )+
+            // EvilAST.g:41:3: ( ( decl[subtable, stable] )+ )
+            // EvilAST.g:41:5: ( decl[subtable, stable] )+
             {
-            // EvilAST.g:32:5: ( decl[symtable, subtable] )+
+            // EvilAST.g:41:5: ( decl[subtable, stable] )+
             int cnt3=0;
             loop3:
             do {
@@ -315,10 +322,10 @@ public class EvilAST extends TreeParser {
 
                 switch (alt3) {
             	case 1 :
-            	    // EvilAST.g:32:5: decl[symtable, subtable]
+            	    // EvilAST.g:41:5: decl[subtable, stable]
             	    {
-            	    pushFollow(FOLLOW_decl_in_nested_decl199);
-            	    decl(symtable, subtable);
+            	    pushFollow(FOLLOW_decl_in_nested_decl203);
+            	    decl(subtable, stable);
 
             	    state._fsp--;
 
@@ -351,30 +358,30 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "decl"
-    // EvilAST.g:35:1: decl[SymTable symtable, SymTable subtable] : ^( DECL ^( TYPE t= type[symtable] ) id= ID ) ;
-    public final void decl(SymTable symtable, SymTable subtable) throws RecognitionException {
+    // EvilAST.g:44:1: decl[SymTable subtable, StructTable stable] : ^( DECL ^( TYPE t= type[stable] ) id= ID ) ;
+    public final void decl(SymTable subtable, StructTable stable) throws RecognitionException {
         CommonTree id=null;
         String t = null;
 
 
         try {
-            // EvilAST.g:36:4: ( ^( DECL ^( TYPE t= type[symtable] ) id= ID ) )
-            // EvilAST.g:36:6: ^( DECL ^( TYPE t= type[symtable] ) id= ID )
+            // EvilAST.g:45:4: ( ^( DECL ^( TYPE t= type[stable] ) id= ID ) )
+            // EvilAST.g:45:6: ^( DECL ^( TYPE t= type[stable] ) id= ID )
             {
-            match(input,DECL,FOLLOW_DECL_in_decl218); 
+            match(input,DECL,FOLLOW_DECL_in_decl222); 
 
             match(input, Token.DOWN, null); 
-            match(input,TYPE,FOLLOW_TYPE_in_decl221); 
+            match(input,TYPE,FOLLOW_TYPE_in_decl225); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_type_in_decl225);
-            t=type(symtable);
+            pushFollow(FOLLOW_type_in_decl229);
+            t=type(stable);
 
             state._fsp--;
 
 
             match(input, Token.UP, null); 
-            id=(CommonTree)match(input,ID,FOLLOW_ID_in_decl231); 
+            id=(CommonTree)match(input,ID,FOLLOW_ID_in_decl235); 
 
             match(input, Token.UP, null); 
              subtable.insertSymbol((id!=null?id.getText():null), t); 
@@ -394,14 +401,14 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "type"
-    // EvilAST.g:41:1: type[SymTable symtable] returns [String t = null] : ( INT | BOOL | ^( STRUCT id= ID ) );
-    public final String type(SymTable symtable) throws RecognitionException {
+    // EvilAST.g:49:1: type[StructTable stable] returns [String t = null] : ( INT | BOOL | ^( STRUCT id= ID ) );
+    public final String type(StructTable stable) throws RecognitionException {
         String t =  null;
 
         CommonTree id=null;
 
         try {
-            // EvilAST.g:42:3: ( INT | BOOL | ^( STRUCT id= ID ) )
+            // EvilAST.g:50:3: ( INT | BOOL | ^( STRUCT id= ID ) )
             int alt4=3;
             switch ( input.LA(1) ) {
             case INT:
@@ -428,32 +435,32 @@ public class EvilAST extends TreeParser {
 
             switch (alt4) {
                 case 1 :
-                    // EvilAST.g:42:6: INT
+                    // EvilAST.g:50:6: INT
                     {
-                    match(input,INT,FOLLOW_INT_in_type261); 
+                    match(input,INT,FOLLOW_INT_in_type264); 
                      t = SymTable.intType(); 
 
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:43:6: BOOL
+                    // EvilAST.g:51:6: BOOL
                     {
-                    match(input,BOOL,FOLLOW_BOOL_in_type270); 
+                    match(input,BOOL,FOLLOW_BOOL_in_type273); 
                      t = SymTable.boolType(); 
 
                     }
                     break;
                 case 3 :
-                    // EvilAST.g:44:6: ^( STRUCT id= ID )
+                    // EvilAST.g:52:6: ^( STRUCT id= ID )
                     {
-                    match(input,STRUCT,FOLLOW_STRUCT_in_type280); 
+                    match(input,STRUCT,FOLLOW_STRUCT_in_type283); 
 
                     match(input, Token.DOWN, null); 
-                    id=(CommonTree)match(input,ID,FOLLOW_ID_in_type284); 
+                    id=(CommonTree)match(input,ID,FOLLOW_ID_in_type287); 
 
                     match(input, Token.UP, null); 
 
-                            if (!symtable.isDefined((id!=null?id.getText():null)))
+                            if (!stable.isDefined((id!=null?id.getText():null)))
                             {
                               System.err.println("line " + (id!=null?id.getLine():0) + ": undefined struct type '" + id + "'");
                             }
@@ -477,17 +484,17 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "declarations"
-    // EvilAST.g:54:1: declarations[SymTable symtable] : ^( DECLS ( declaration[symtable] )* ) ;
-    public final void declarations(SymTable symtable) throws RecognitionException {
+    // EvilAST.g:62:1: declarations[SymTable symtable, StructTable stable] : ^( DECLS ( declaration[symtable, stable] )* ) ;
+    public final void declarations(SymTable symtable, StructTable stable) throws RecognitionException {
         try {
-            // EvilAST.g:55:4: ( ^( DECLS ( declaration[symtable] )* ) )
-            // EvilAST.g:55:6: ^( DECLS ( declaration[symtable] )* )
+            // EvilAST.g:63:4: ( ^( DECLS ( declaration[symtable, stable] )* ) )
+            // EvilAST.g:63:6: ^( DECLS ( declaration[symtable, stable] )* )
             {
-            match(input,DECLS,FOLLOW_DECLS_in_declarations309); 
+            match(input,DECLS,FOLLOW_DECLS_in_declarations312); 
 
             if ( input.LA(1)==Token.DOWN ) {
                 match(input, Token.DOWN, null); 
-                // EvilAST.g:55:14: ( declaration[symtable] )*
+                // EvilAST.g:63:14: ( declaration[symtable, stable] )*
                 loop5:
                 do {
                     int alt5=2;
@@ -500,10 +507,10 @@ public class EvilAST extends TreeParser {
 
                     switch (alt5) {
                 	case 1 :
-                	    // EvilAST.g:55:14: declaration[symtable]
+                	    // EvilAST.g:63:14: declaration[symtable, stable]
                 	    {
-                	    pushFollow(FOLLOW_declaration_in_declarations311);
-                	    declaration(symtable);
+                	    pushFollow(FOLLOW_declaration_in_declarations314);
+                	    declaration(symtable, stable);
 
                 	    state._fsp--;
 
@@ -535,29 +542,29 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "declaration"
-    // EvilAST.g:58:1: declaration[SymTable symtable] : ^( DECLLIST ^( TYPE t= type[symtable] ) id_list[symtable, t] ) ;
-    public final void declaration(SymTable symtable) throws RecognitionException {
+    // EvilAST.g:66:1: declaration[SymTable symtable, StructTable stable] : ^( DECLLIST ^( TYPE t= type[stable] ) id_list[symtable, t] ) ;
+    public final void declaration(SymTable symtable, StructTable stable) throws RecognitionException {
         String t = null;
 
 
         try {
-            // EvilAST.g:59:4: ( ^( DECLLIST ^( TYPE t= type[symtable] ) id_list[symtable, t] ) )
-            // EvilAST.g:59:8: ^( DECLLIST ^( TYPE t= type[symtable] ) id_list[symtable, t] )
+            // EvilAST.g:67:4: ( ^( DECLLIST ^( TYPE t= type[stable] ) id_list[symtable, t] ) )
+            // EvilAST.g:67:8: ^( DECLLIST ^( TYPE t= type[stable] ) id_list[symtable, t] )
             {
-            match(input,DECLLIST,FOLLOW_DECLLIST_in_declaration334); 
+            match(input,DECLLIST,FOLLOW_DECLLIST_in_declaration337); 
 
             match(input, Token.DOWN, null); 
-            match(input,TYPE,FOLLOW_TYPE_in_declaration337); 
+            match(input,TYPE,FOLLOW_TYPE_in_declaration340); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_type_in_declaration341);
-            t=type(symtable);
+            pushFollow(FOLLOW_type_in_declaration344);
+            t=type(stable);
 
             state._fsp--;
 
 
             match(input, Token.UP, null); 
-            pushFollow(FOLLOW_id_list_in_declaration345);
+            pushFollow(FOLLOW_id_list_in_declaration348);
             id_list(symtable, t);
 
             state._fsp--;
@@ -580,13 +587,13 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "id_list"
-    // EvilAST.g:62:1: id_list[SymTable symtable, String t] : ( list_id[symtable, t] )+ ;
+    // EvilAST.g:70:1: id_list[SymTable symtable, String t] : ( list_id[symtable, t] )+ ;
     public final void id_list(SymTable symtable, String t) throws RecognitionException {
         try {
-            // EvilAST.g:63:4: ( ( list_id[symtable, t] )+ )
-            // EvilAST.g:63:8: ( list_id[symtable, t] )+
+            // EvilAST.g:71:4: ( ( list_id[symtable, t] )+ )
+            // EvilAST.g:71:8: ( list_id[symtable, t] )+
             {
-            // EvilAST.g:63:8: ( list_id[symtable, t] )+
+            // EvilAST.g:71:8: ( list_id[symtable, t] )+
             int cnt6=0;
             loop6:
             do {
@@ -600,9 +607,9 @@ public class EvilAST extends TreeParser {
 
                 switch (alt6) {
             	case 1 :
-            	    // EvilAST.g:63:8: list_id[symtable, t]
+            	    // EvilAST.g:71:8: list_id[symtable, t]
             	    {
-            	    pushFollow(FOLLOW_list_id_in_id_list366);
+            	    pushFollow(FOLLOW_list_id_in_id_list369);
             	    list_id(symtable, t);
 
             	    state._fsp--;
@@ -636,15 +643,15 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "list_id"
-    // EvilAST.g:66:1: list_id[SymTable symtable, String t] : id= ID ;
+    // EvilAST.g:74:1: list_id[SymTable symtable, String t] : id= ID ;
     public final void list_id(SymTable symtable, String t) throws RecognitionException {
         CommonTree id=null;
 
         try {
-            // EvilAST.g:67:4: (id= ID )
-            // EvilAST.g:67:6: id= ID
+            // EvilAST.g:75:4: (id= ID )
+            // EvilAST.g:75:6: id= ID
             {
-            id=(CommonTree)match(input,ID,FOLLOW_ID_in_list_id390); 
+            id=(CommonTree)match(input,ID,FOLLOW_ID_in_list_id393); 
               if (!symtable.isDefined((id!=null?id.getText():null)))
                      {
                         symtable.insertSymbol((id!=null?id.getText():null), t);
@@ -670,17 +677,17 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "functions"
-    // EvilAST.g:81:1: functions[StructTable structTable, SymTable symtable, FunTable funtable] : ^( FUNCS ( function[structTable, symtable, funtable] )* ) ;
+    // EvilAST.g:89:1: functions[StructTable structTable, SymTable symtable, FunTable funtable] : ^( FUNCS ( function[structTable, symtable, funtable] )* ) ;
     public final void functions(StructTable structTable, SymTable symtable, FunTable funtable) throws RecognitionException {
         try {
-            // EvilAST.g:82:4: ( ^( FUNCS ( function[structTable, symtable, funtable] )* ) )
-            // EvilAST.g:82:6: ^( FUNCS ( function[structTable, symtable, funtable] )* )
+            // EvilAST.g:90:4: ( ^( FUNCS ( function[structTable, symtable, funtable] )* ) )
+            // EvilAST.g:90:6: ^( FUNCS ( function[structTable, symtable, funtable] )* )
             {
-            match(input,FUNCS,FOLLOW_FUNCS_in_functions418); 
+            match(input,FUNCS,FOLLOW_FUNCS_in_functions421); 
 
             if ( input.LA(1)==Token.DOWN ) {
                 match(input, Token.DOWN, null); 
-                // EvilAST.g:82:14: ( function[structTable, symtable, funtable] )*
+                // EvilAST.g:90:14: ( function[structTable, symtable, funtable] )*
                 loop7:
                 do {
                     int alt7=2;
@@ -693,9 +700,9 @@ public class EvilAST extends TreeParser {
 
                     switch (alt7) {
                 	case 1 :
-                	    // EvilAST.g:82:14: function[structTable, symtable, funtable]
+                	    // EvilAST.g:90:14: function[structTable, symtable, funtable]
                 	    {
-                	    pushFollow(FOLLOW_function_in_functions420);
+                	    pushFollow(FOLLOW_function_in_functions423);
                 	    function(structTable, symtable, funtable);
 
                 	    state._fsp--;
@@ -728,20 +735,20 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "function"
-    // EvilAST.g:85:1: function[StructTable structTable, SymTable symtable, FunTable funtable] : ^( FUN id= ID parameters[symtable, locals] ^( RETTYPE retType= return_type[symtable] ) declarations[locals] statement[symtable, structTable] ) ;
+    // EvilAST.g:93:1: function[StructTable structTable, SymTable symtable, FunTable funtable] : ^( FUN id= ID parameters[locals, structTable] ^( RETTYPE retType= return_type[structTable] ) declarations[locals, structTable] statement[symtable, structTable] ) ;
     public final void function(StructTable structTable, SymTable symtable, FunTable funtable) throws RecognitionException {
         CommonTree id=null;
         String retType = null;
 
 
         try {
-            // EvilAST.g:86:4: ( ^( FUN id= ID parameters[symtable, locals] ^( RETTYPE retType= return_type[symtable] ) declarations[locals] statement[symtable, structTable] ) )
-            // EvilAST.g:86:6: ^( FUN id= ID parameters[symtable, locals] ^( RETTYPE retType= return_type[symtable] ) declarations[locals] statement[symtable, structTable] )
+            // EvilAST.g:94:4: ( ^( FUN id= ID parameters[locals, structTable] ^( RETTYPE retType= return_type[structTable] ) declarations[locals, structTable] statement[symtable, structTable] ) )
+            // EvilAST.g:94:6: ^( FUN id= ID parameters[locals, structTable] ^( RETTYPE retType= return_type[structTable] ) declarations[locals, structTable] statement[symtable, structTable] )
             {
-            match(input,FUN,FOLLOW_FUN_in_function441); 
+            match(input,FUN,FOLLOW_FUN_in_function444); 
 
             match(input, Token.DOWN, null); 
-            id=(CommonTree)match(input,ID,FOLLOW_ID_in_function445); 
+            id=(CommonTree)match(input,ID,FOLLOW_ID_in_function448); 
 
                     if (symtable.isDefined((id!=null?id.getText():null)) || funtable.isDefined((id!=null?id.getText():null)))
                     {
@@ -749,28 +756,28 @@ public class EvilAST extends TreeParser {
                     }
                     SymTable locals = new SymTable();
                  	
-            pushFollow(FOLLOW_parameters_in_function461);
-            parameters(symtable, locals);
+            pushFollow(FOLLOW_parameters_in_function464);
+            parameters(locals, structTable);
 
             state._fsp--;
 
-            match(input,RETTYPE,FOLLOW_RETTYPE_in_function472); 
+            match(input,RETTYPE,FOLLOW_RETTYPE_in_function475); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_return_type_in_function476);
-            retType=return_type(symtable);
+            pushFollow(FOLLOW_return_type_in_function479);
+            retType=return_type(structTable);
 
             state._fsp--;
 
 
             match(input, Token.UP, null); 
-            pushFollow(FOLLOW_declarations_in_function486);
-            declarations(locals);
+            pushFollow(FOLLOW_declarations_in_function489);
+            declarations(locals, structTable);
 
             state._fsp--;
 
              symtable.insertSymbol((id!=null?id.getText():null), retType); 
-            pushFollow(FOLLOW_statement_in_function504);
+            pushFollow(FOLLOW_statement_in_function507);
             statement(symtable, structTable);
 
             state._fsp--;
@@ -793,17 +800,17 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "parameters"
-    // EvilAST.g:101:1: parameters[SymTable symtable, SymTable subtable] : ^( PARAMS ( decl[symtable, subtable] )* ) ;
-    public final void parameters(SymTable symtable, SymTable subtable) throws RecognitionException {
+    // EvilAST.g:109:1: parameters[SymTable subtable, StructTable stable] : ^( PARAMS ( decl[subtable, stable] )* ) ;
+    public final void parameters(SymTable subtable, StructTable stable) throws RecognitionException {
         try {
-            // EvilAST.g:102:4: ( ^( PARAMS ( decl[symtable, subtable] )* ) )
-            // EvilAST.g:102:6: ^( PARAMS ( decl[symtable, subtable] )* )
+            // EvilAST.g:110:4: ( ^( PARAMS ( decl[subtable, stable] )* ) )
+            // EvilAST.g:110:6: ^( PARAMS ( decl[subtable, stable] )* )
             {
-            match(input,PARAMS,FOLLOW_PARAMS_in_parameters524); 
+            match(input,PARAMS,FOLLOW_PARAMS_in_parameters527); 
 
             if ( input.LA(1)==Token.DOWN ) {
                 match(input, Token.DOWN, null); 
-                // EvilAST.g:102:15: ( decl[symtable, subtable] )*
+                // EvilAST.g:110:15: ( decl[subtable, stable] )*
                 loop8:
                 do {
                     int alt8=2;
@@ -816,10 +823,10 @@ public class EvilAST extends TreeParser {
 
                     switch (alt8) {
                 	case 1 :
-                	    // EvilAST.g:102:15: decl[symtable, subtable]
+                	    // EvilAST.g:110:15: decl[subtable, stable]
                 	    {
-                	    pushFollow(FOLLOW_decl_in_parameters526);
-                	    decl(symtable, subtable);
+                	    pushFollow(FOLLOW_decl_in_parameters529);
+                	    decl(subtable, stable);
 
                 	    state._fsp--;
 
@@ -851,12 +858,12 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "return_type"
-    // EvilAST.g:105:1: return_type[SymTable symtable] returns [String t = null] : ( type[symtable] | VOID );
-    public final String return_type(SymTable symtable) throws RecognitionException {
+    // EvilAST.g:113:1: return_type[StructTable stable] returns [String t = null] : ( type[stable] | VOID );
+    public final String return_type(StructTable stable) throws RecognitionException {
         String t =  null;
 
         try {
-            // EvilAST.g:106:4: ( type[symtable] | VOID )
+            // EvilAST.g:114:4: ( type[stable] | VOID )
             int alt9=2;
             int LA9_0 = input.LA(1);
 
@@ -874,10 +881,10 @@ public class EvilAST extends TreeParser {
             }
             switch (alt9) {
                 case 1 :
-                    // EvilAST.g:106:6: type[symtable]
+                    // EvilAST.g:114:6: type[stable]
                     {
-                    pushFollow(FOLLOW_type_in_return_type550);
-                    type(symtable);
+                    pushFollow(FOLLOW_type_in_return_type553);
+                    type(stable);
 
                     state._fsp--;
 
@@ -885,9 +892,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:107:6: VOID
+                    // EvilAST.g:115:6: VOID
                     {
-                    match(input,VOID,FOLLOW_VOID_in_return_type558); 
+                    match(input,VOID,FOLLOW_VOID_in_return_type561); 
 
                     }
                     break;
@@ -906,10 +913,10 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "statement"
-    // EvilAST.g:110:1: statement[SymTable symtable, StructTable structTable] : ( ^( BLOCK ^( STMTS ( statement[symtable, structTable] )* ) ) | assignment[symtable, structTable] | print | read[symtable, structTable] | ^( IF expression statement[symtable, structTable] ( statement[symtable, structTable] )? ) | ^( WHILE expr= expression b= statement[symtable, structTable] expr2= expression ) | delete | ret | invocation );
+    // EvilAST.g:118:1: statement[SymTable symtable, StructTable structTable] : ( ^( BLOCK ^( STMTS ( statement[symtable, structTable] )* ) ) | assignment[symtable, structTable] | print | read[symtable, structTable] | ^( IF expression statement[symtable, structTable] ( statement[symtable, structTable] )? ) | ^( WHILE expr= expression b= statement[symtable, structTable] expr2= expression ) | delete | ret | invocation );
     public final void statement(SymTable symtable, StructTable structTable) throws RecognitionException {
         try {
-            // EvilAST.g:111:4: ( ^( BLOCK ^( STMTS ( statement[symtable, structTable] )* ) ) | assignment[symtable, structTable] | print | read[symtable, structTable] | ^( IF expression statement[symtable, structTable] ( statement[symtable, structTable] )? ) | ^( WHILE expr= expression b= statement[symtable, structTable] expr2= expression ) | delete | ret | invocation )
+            // EvilAST.g:119:4: ( ^( BLOCK ^( STMTS ( statement[symtable, structTable] )* ) ) | assignment[symtable, structTable] | print | read[symtable, structTable] | ^( IF expression statement[symtable, structTable] ( statement[symtable, structTable] )? ) | ^( WHILE expr= expression b= statement[symtable, structTable] expr2= expression ) | delete | ret | invocation )
             int alt12=9;
             switch ( input.LA(1) ) {
             case BLOCK:
@@ -966,16 +973,16 @@ public class EvilAST extends TreeParser {
 
             switch (alt12) {
                 case 1 :
-                    // EvilAST.g:111:6: ^( BLOCK ^( STMTS ( statement[symtable, structTable] )* ) )
+                    // EvilAST.g:119:6: ^( BLOCK ^( STMTS ( statement[symtable, structTable] )* ) )
                     {
-                    match(input,BLOCK,FOLLOW_BLOCK_in_statement575); 
+                    match(input,BLOCK,FOLLOW_BLOCK_in_statement578); 
 
                     match(input, Token.DOWN, null); 
-                    match(input,STMTS,FOLLOW_STMTS_in_statement578); 
+                    match(input,STMTS,FOLLOW_STMTS_in_statement581); 
 
                     if ( input.LA(1)==Token.DOWN ) {
                         match(input, Token.DOWN, null); 
-                        // EvilAST.g:111:22: ( statement[symtable, structTable] )*
+                        // EvilAST.g:119:22: ( statement[symtable, structTable] )*
                         loop10:
                         do {
                             int alt10=2;
@@ -988,9 +995,9 @@ public class EvilAST extends TreeParser {
 
                             switch (alt10) {
                         	case 1 :
-                        	    // EvilAST.g:111:22: statement[symtable, structTable]
+                        	    // EvilAST.g:119:22: statement[symtable, structTable]
                         	    {
-                        	    pushFollow(FOLLOW_statement_in_statement580);
+                        	    pushFollow(FOLLOW_statement_in_statement583);
                         	    statement(symtable, structTable);
 
                         	    state._fsp--;
@@ -1013,9 +1020,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:112:6: assignment[symtable, structTable]
+                    // EvilAST.g:120:6: assignment[symtable, structTable]
                     {
-                    pushFollow(FOLLOW_assignment_in_statement591);
+                    pushFollow(FOLLOW_assignment_in_statement594);
                     assignment(symtable, structTable);
 
                     state._fsp--;
@@ -1024,9 +1031,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 3 :
-                    // EvilAST.g:113:6: print
+                    // EvilAST.g:121:6: print
                     {
-                    pushFollow(FOLLOW_print_in_statement599);
+                    pushFollow(FOLLOW_print_in_statement602);
                     print();
 
                     state._fsp--;
@@ -1035,9 +1042,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 4 :
-                    // EvilAST.g:114:6: read[symtable, structTable]
+                    // EvilAST.g:122:6: read[symtable, structTable]
                     {
-                    pushFollow(FOLLOW_read_in_statement606);
+                    pushFollow(FOLLOW_read_in_statement609);
                     read(symtable, structTable);
 
                     state._fsp--;
@@ -1046,22 +1053,22 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 5 :
-                    // EvilAST.g:115:6: ^( IF expression statement[symtable, structTable] ( statement[symtable, structTable] )? )
+                    // EvilAST.g:123:6: ^( IF expression statement[symtable, structTable] ( statement[symtable, structTable] )? )
                     {
-                    match(input,IF,FOLLOW_IF_in_statement615); 
+                    match(input,IF,FOLLOW_IF_in_statement618); 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_statement617);
+                    pushFollow(FOLLOW_expression_in_statement620);
                     expression();
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_statement_in_statement619);
+                    pushFollow(FOLLOW_statement_in_statement622);
                     statement(symtable, structTable);
 
                     state._fsp--;
 
-                    // EvilAST.g:115:55: ( statement[symtable, structTable] )?
+                    // EvilAST.g:123:55: ( statement[symtable, structTable] )?
                     int alt11=2;
                     int LA11_0 = input.LA(1);
 
@@ -1070,9 +1077,9 @@ public class EvilAST extends TreeParser {
                     }
                     switch (alt11) {
                         case 1 :
-                            // EvilAST.g:115:56: statement[symtable, structTable]
+                            // EvilAST.g:123:56: statement[symtable, structTable]
                             {
-                            pushFollow(FOLLOW_statement_in_statement623);
+                            pushFollow(FOLLOW_statement_in_statement626);
                             statement(symtable, structTable);
 
                             state._fsp--;
@@ -1089,22 +1096,22 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 6 :
-                    // EvilAST.g:116:6: ^( WHILE expr= expression b= statement[symtable, structTable] expr2= expression )
+                    // EvilAST.g:124:6: ^( WHILE expr= expression b= statement[symtable, structTable] expr2= expression )
                     {
-                    match(input,WHILE,FOLLOW_WHILE_in_statement635); 
+                    match(input,WHILE,FOLLOW_WHILE_in_statement638); 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_statement639);
+                    pushFollow(FOLLOW_expression_in_statement642);
                     expression();
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_statement_in_statement643);
+                    pushFollow(FOLLOW_statement_in_statement646);
                     statement(symtable, structTable);
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_expression_in_statement648);
+                    pushFollow(FOLLOW_expression_in_statement651);
                     expression();
 
                     state._fsp--;
@@ -1115,9 +1122,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 7 :
-                    // EvilAST.g:117:6: delete
+                    // EvilAST.g:125:6: delete
                     {
-                    pushFollow(FOLLOW_delete_in_statement656);
+                    pushFollow(FOLLOW_delete_in_statement659);
                     delete();
 
                     state._fsp--;
@@ -1126,9 +1133,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 8 :
-                    // EvilAST.g:118:6: ret
+                    // EvilAST.g:126:6: ret
                     {
-                    pushFollow(FOLLOW_ret_in_statement663);
+                    pushFollow(FOLLOW_ret_in_statement666);
                     ret();
 
                     state._fsp--;
@@ -1137,9 +1144,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 9 :
-                    // EvilAST.g:119:6: invocation
+                    // EvilAST.g:127:6: invocation
                     {
-                    pushFollow(FOLLOW_invocation_in_statement670);
+                    pushFollow(FOLLOW_invocation_in_statement673);
                     invocation();
 
                     state._fsp--;
@@ -1162,21 +1169,21 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "assignment"
-    // EvilAST.g:122:1: assignment[SymTable symtable, StructTable stable] : ^( ASSIGN expr= expression lval= lvalue[symtable, stable] ) ;
+    // EvilAST.g:130:1: assignment[SymTable symtable, StructTable stable] : ^( ASSIGN expr= expression lval= lvalue[symtable, stable] ) ;
     public final void assignment(SymTable symtable, StructTable stable) throws RecognitionException {
         try {
-            // EvilAST.g:123:4: ( ^( ASSIGN expr= expression lval= lvalue[symtable, stable] ) )
-            // EvilAST.g:123:6: ^( ASSIGN expr= expression lval= lvalue[symtable, stable] )
+            // EvilAST.g:131:4: ( ^( ASSIGN expr= expression lval= lvalue[symtable, stable] ) )
+            // EvilAST.g:131:6: ^( ASSIGN expr= expression lval= lvalue[symtable, stable] )
             {
-            match(input,ASSIGN,FOLLOW_ASSIGN_in_assignment687); 
+            match(input,ASSIGN,FOLLOW_ASSIGN_in_assignment690); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_expression_in_assignment691);
+            pushFollow(FOLLOW_expression_in_assignment694);
             expression();
 
             state._fsp--;
 
-            pushFollow(FOLLOW_lvalue_in_assignment695);
+            pushFollow(FOLLOW_lvalue_in_assignment698);
             lvalue(symtable, stable);
 
             state._fsp--;
@@ -1199,21 +1206,21 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "print"
-    // EvilAST.g:126:1: print : ^( PRINT expression ( ENDL )? ) ;
+    // EvilAST.g:134:1: print : ^( PRINT expression ( ENDL )? ) ;
     public final void print() throws RecognitionException {
         try {
-            // EvilAST.g:127:4: ( ^( PRINT expression ( ENDL )? ) )
-            // EvilAST.g:127:6: ^( PRINT expression ( ENDL )? )
+            // EvilAST.g:135:4: ( ^( PRINT expression ( ENDL )? ) )
+            // EvilAST.g:135:6: ^( PRINT expression ( ENDL )? )
             {
-            match(input,PRINT,FOLLOW_PRINT_in_print713); 
+            match(input,PRINT,FOLLOW_PRINT_in_print716); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_expression_in_print715);
+            pushFollow(FOLLOW_expression_in_print718);
             expression();
 
             state._fsp--;
 
-            // EvilAST.g:127:25: ( ENDL )?
+            // EvilAST.g:135:25: ( ENDL )?
             int alt13=2;
             int LA13_0 = input.LA(1);
 
@@ -1222,9 +1229,9 @@ public class EvilAST extends TreeParser {
             }
             switch (alt13) {
                 case 1 :
-                    // EvilAST.g:127:26: ENDL
+                    // EvilAST.g:135:26: ENDL
                     {
-                    match(input,ENDL,FOLLOW_ENDL_in_print718); 
+                    match(input,ENDL,FOLLOW_ENDL_in_print721); 
 
                     }
                     break;
@@ -1249,16 +1256,16 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "read"
-    // EvilAST.g:130:1: read[SymTable symtable, StructTable stable] : ^( READ lvalue[symtable, stable] ) ;
+    // EvilAST.g:138:1: read[SymTable symtable, StructTable stable] : ^( READ lvalue[symtable, stable] ) ;
     public final void read(SymTable symtable, StructTable stable) throws RecognitionException {
         try {
-            // EvilAST.g:131:4: ( ^( READ lvalue[symtable, stable] ) )
-            // EvilAST.g:131:6: ^( READ lvalue[symtable, stable] )
+            // EvilAST.g:139:4: ( ^( READ lvalue[symtable, stable] ) )
+            // EvilAST.g:139:6: ^( READ lvalue[symtable, stable] )
             {
-            match(input,READ,FOLLOW_READ_in_read739); 
+            match(input,READ,FOLLOW_READ_in_read742); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_lvalue_in_read741);
+            pushFollow(FOLLOW_lvalue_in_read744);
             lvalue(symtable, stable);
 
             state._fsp--;
@@ -1281,16 +1288,16 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "delete"
-    // EvilAST.g:134:1: delete : ^( DELETE expression ) ;
+    // EvilAST.g:142:1: delete : ^( DELETE expression ) ;
     public final void delete() throws RecognitionException {
         try {
-            // EvilAST.g:135:4: ( ^( DELETE expression ) )
-            // EvilAST.g:135:6: ^( DELETE expression )
+            // EvilAST.g:143:4: ( ^( DELETE expression ) )
+            // EvilAST.g:143:6: ^( DELETE expression )
             {
-            match(input,DELETE,FOLLOW_DELETE_in_delete759); 
+            match(input,DELETE,FOLLOW_DELETE_in_delete762); 
 
             match(input, Token.DOWN, null); 
-            pushFollow(FOLLOW_expression_in_delete761);
+            pushFollow(FOLLOW_expression_in_delete764);
             expression();
 
             state._fsp--;
@@ -1313,17 +1320,17 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "ret"
-    // EvilAST.g:138:1: ret : ^( RETURN ( expression )? ) ;
+    // EvilAST.g:146:1: ret : ^( RETURN ( expression )? ) ;
     public final void ret() throws RecognitionException {
         try {
-            // EvilAST.g:139:4: ( ^( RETURN ( expression )? ) )
-            // EvilAST.g:139:6: ^( RETURN ( expression )? )
+            // EvilAST.g:147:4: ( ^( RETURN ( expression )? ) )
+            // EvilAST.g:147:6: ^( RETURN ( expression )? )
             {
-            match(input,RETURN,FOLLOW_RETURN_in_ret778); 
+            match(input,RETURN,FOLLOW_RETURN_in_ret781); 
 
             if ( input.LA(1)==Token.DOWN ) {
                 match(input, Token.DOWN, null); 
-                // EvilAST.g:139:15: ( expression )?
+                // EvilAST.g:147:15: ( expression )?
                 int alt14=2;
                 int LA14_0 = input.LA(1);
 
@@ -1332,9 +1339,9 @@ public class EvilAST extends TreeParser {
                 }
                 switch (alt14) {
                     case 1 :
-                        // EvilAST.g:139:16: expression
+                        // EvilAST.g:147:16: expression
                         {
-                        pushFollow(FOLLOW_expression_in_ret781);
+                        pushFollow(FOLLOW_expression_in_ret784);
                         expression();
 
                         state._fsp--;
@@ -1364,19 +1371,19 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "invocation"
-    // EvilAST.g:142:1: invocation : ^( INVOKE id= ID args= arguments ) ;
+    // EvilAST.g:150:1: invocation : ^( INVOKE id= ID args= arguments ) ;
     public final void invocation() throws RecognitionException {
         CommonTree id=null;
 
         try {
-            // EvilAST.g:143:4: ( ^( INVOKE id= ID args= arguments ) )
-            // EvilAST.g:143:6: ^( INVOKE id= ID args= arguments )
+            // EvilAST.g:151:4: ( ^( INVOKE id= ID args= arguments ) )
+            // EvilAST.g:151:6: ^( INVOKE id= ID args= arguments )
             {
-            match(input,INVOKE,FOLLOW_INVOKE_in_invocation800); 
+            match(input,INVOKE,FOLLOW_INVOKE_in_invocation803); 
 
             match(input, Token.DOWN, null); 
-            id=(CommonTree)match(input,ID,FOLLOW_ID_in_invocation804); 
-            pushFollow(FOLLOW_arguments_in_invocation808);
+            id=(CommonTree)match(input,ID,FOLLOW_ID_in_invocation807); 
+            pushFollow(FOLLOW_arguments_in_invocation811);
             arguments();
 
             state._fsp--;
@@ -1399,18 +1406,18 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "lvalue"
-    // EvilAST.g:146:1: lvalue[SymTable symtable, StructTable stable] : ^( DOT structId= ID subvalue[stable, $structId.text] ) ;
+    // EvilAST.g:154:1: lvalue[SymTable symtable, StructTable stable] : ^( DOT structId= ID subvalue[stable, $structId.text] ) ;
     public final void lvalue(SymTable symtable, StructTable stable) throws RecognitionException {
         CommonTree structId=null;
 
         try {
-            // EvilAST.g:147:2: ( ^( DOT structId= ID subvalue[stable, $structId.text] ) )
-            // EvilAST.g:147:4: ^( DOT structId= ID subvalue[stable, $structId.text] )
+            // EvilAST.g:155:2: ( ^( DOT structId= ID subvalue[stable, $structId.text] ) )
+            // EvilAST.g:155:4: ^( DOT structId= ID subvalue[stable, $structId.text] )
             {
-            match(input,DOT,FOLLOW_DOT_in_lvalue824); 
+            match(input,DOT,FOLLOW_DOT_in_lvalue827); 
 
             match(input, Token.DOWN, null); 
-            structId=(CommonTree)match(input,ID,FOLLOW_ID_in_lvalue828); 
+            structId=(CommonTree)match(input,ID,FOLLOW_ID_in_lvalue831); 
 
             			if(!symtable.isDefined((structId!=null?structId.getText():null)))
             			{
@@ -1422,7 +1429,7 @@ public class EvilAST extends TreeParser {
             			}
             			// Ok, this ID looks pretty valid.
             		
-            pushFollow(FOLLOW_subvalue_in_lvalue836);
+            pushFollow(FOLLOW_subvalue_in_lvalue839);
             subvalue(stable, (structId!=null?structId.getText():null));
 
             state._fsp--;
@@ -1445,13 +1452,13 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "subvalue"
-    // EvilAST.g:162:1: subvalue[StructTable stable, String parent] : ( ^( DOT structId= ID subvalue[stable, $structId.text] ) | valId= ID );
+    // EvilAST.g:170:1: subvalue[StructTable stable, String parent] : ( ^( DOT structId= ID subvalue[stable, $structId.text] ) | valId= ID );
     public final void subvalue(StructTable stable, String parent) throws RecognitionException {
         CommonTree structId=null;
         CommonTree valId=null;
 
         try {
-            // EvilAST.g:163:4: ( ^( DOT structId= ID subvalue[stable, $structId.text] ) | valId= ID )
+            // EvilAST.g:171:4: ( ^( DOT structId= ID subvalue[stable, $structId.text] ) | valId= ID )
             int alt15=2;
             int LA15_0 = input.LA(1);
 
@@ -1469,19 +1476,19 @@ public class EvilAST extends TreeParser {
             }
             switch (alt15) {
                 case 1 :
-                    // EvilAST.g:163:6: ^( DOT structId= ID subvalue[stable, $structId.text] )
+                    // EvilAST.g:171:6: ^( DOT structId= ID subvalue[stable, $structId.text] )
                     {
-                    match(input,DOT,FOLLOW_DOT_in_subvalue853); 
+                    match(input,DOT,FOLLOW_DOT_in_subvalue856); 
 
                     match(input, Token.DOWN, null); 
-                    structId=(CommonTree)match(input,ID,FOLLOW_ID_in_subvalue857); 
+                    structId=(CommonTree)match(input,ID,FOLLOW_ID_in_subvalue860); 
 
                             if(!stable.isField(parent, (structId!=null?structId.getText():null)))
                             {
                     	        System.err.println("line " + (structId!=null?structId.getLine():0) + ": invalid field '" + (structId!=null?structId.getText():null) + "' in struct '" + parent + "'");
                             }
                          
-                    pushFollow(FOLLOW_subvalue_in_subvalue872);
+                    pushFollow(FOLLOW_subvalue_in_subvalue875);
                     subvalue(stable, (structId!=null?structId.getText():null));
 
                     state._fsp--;
@@ -1492,9 +1499,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:171:6: valId= ID
+                    // EvilAST.g:179:6: valId= ID
                     {
-                    valId=(CommonTree)match(input,ID,FOLLOW_ID_in_subvalue883); 
+                    valId=(CommonTree)match(input,ID,FOLLOW_ID_in_subvalue886); 
 
                             if(!stable.isField(parent, (valId!=null?valId.getText():null)))
                             {
@@ -1519,12 +1526,12 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "expression"
-    // EvilAST.g:180:1: expression : ( ^( AND lexpr= expression rexpr= expression ) | ^( OR lexpr= expression rexpr= expression ) | ^( ( EQ | LT | GT | NE | LE | GE ) rexpr= expression lexpr= expression ) | ^( ( PLUS | MINUS ) rexpr= expression lexpr= expression ) | ^( ( TIMES | DIVIDE ) rexpr= expression lexpr= expression ) | ^( NEG expression ) | ^( NOT expression ) | ^( DOT expression ID ) | ^( INVOKE id= ID args= arguments ) | ID | INTEGER | TRUE | FALSE | ^( NEW ID ) | NULL );
+    // EvilAST.g:188:1: expression : ( ^( AND lexpr= expression rexpr= expression ) | ^( OR lexpr= expression rexpr= expression ) | ^( ( EQ | LT | GT | NE | LE | GE ) rexpr= expression lexpr= expression ) | ^( ( PLUS | MINUS ) rexpr= expression lexpr= expression ) | ^( ( TIMES | DIVIDE ) rexpr= expression lexpr= expression ) | ^( NEG expression ) | ^( NOT expression ) | ^( DOT expression ID ) | ^( INVOKE id= ID args= arguments ) | ID | INTEGER | TRUE | FALSE | ^( NEW ID ) | NULL );
     public final void expression() throws RecognitionException {
         CommonTree id=null;
 
         try {
-            // EvilAST.g:181:4: ( ^( AND lexpr= expression rexpr= expression ) | ^( OR lexpr= expression rexpr= expression ) | ^( ( EQ | LT | GT | NE | LE | GE ) rexpr= expression lexpr= expression ) | ^( ( PLUS | MINUS ) rexpr= expression lexpr= expression ) | ^( ( TIMES | DIVIDE ) rexpr= expression lexpr= expression ) | ^( NEG expression ) | ^( NOT expression ) | ^( DOT expression ID ) | ^( INVOKE id= ID args= arguments ) | ID | INTEGER | TRUE | FALSE | ^( NEW ID ) | NULL )
+            // EvilAST.g:189:4: ( ^( AND lexpr= expression rexpr= expression ) | ^( OR lexpr= expression rexpr= expression ) | ^( ( EQ | LT | GT | NE | LE | GE ) rexpr= expression lexpr= expression ) | ^( ( PLUS | MINUS ) rexpr= expression lexpr= expression ) | ^( ( TIMES | DIVIDE ) rexpr= expression lexpr= expression ) | ^( NEG expression ) | ^( NOT expression ) | ^( DOT expression ID ) | ^( INVOKE id= ID args= arguments ) | ID | INTEGER | TRUE | FALSE | ^( NEW ID ) | NULL )
             int alt16=15;
             switch ( input.LA(1) ) {
             case AND:
@@ -1618,17 +1625,17 @@ public class EvilAST extends TreeParser {
 
             switch (alt16) {
                 case 1 :
-                    // EvilAST.g:181:6: ^( AND lexpr= expression rexpr= expression )
+                    // EvilAST.g:189:6: ^( AND lexpr= expression rexpr= expression )
                     {
-                    match(input,AND,FOLLOW_AND_in_expression906); 
+                    match(input,AND,FOLLOW_AND_in_expression909); 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression910);
+                    pushFollow(FOLLOW_expression_in_expression913);
                     expression();
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_expression_in_expression914);
+                    pushFollow(FOLLOW_expression_in_expression917);
                     expression();
 
                     state._fsp--;
@@ -1639,17 +1646,17 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:182:6: ^( OR lexpr= expression rexpr= expression )
+                    // EvilAST.g:190:6: ^( OR lexpr= expression rexpr= expression )
                     {
-                    match(input,OR,FOLLOW_OR_in_expression923); 
+                    match(input,OR,FOLLOW_OR_in_expression926); 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression927);
+                    pushFollow(FOLLOW_expression_in_expression930);
                     expression();
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_expression_in_expression931);
+                    pushFollow(FOLLOW_expression_in_expression934);
                     expression();
 
                     state._fsp--;
@@ -1660,7 +1667,7 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 3 :
-                    // EvilAST.g:184:6: ^( ( EQ | LT | GT | NE | LE | GE ) rexpr= expression lexpr= expression )
+                    // EvilAST.g:192:6: ^( ( EQ | LT | GT | NE | LE | GE ) rexpr= expression lexpr= expression )
                     {
                     if ( (input.LA(1)>=EQ && input.LA(1)<=GE) ) {
                         input.consume();
@@ -1673,12 +1680,12 @@ public class EvilAST extends TreeParser {
 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression967);
+                    pushFollow(FOLLOW_expression_in_expression970);
                     expression();
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_expression_in_expression971);
+                    pushFollow(FOLLOW_expression_in_expression974);
                     expression();
 
                     state._fsp--;
@@ -1689,7 +1696,7 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 4 :
-                    // EvilAST.g:185:6: ^( ( PLUS | MINUS ) rexpr= expression lexpr= expression )
+                    // EvilAST.g:193:6: ^( ( PLUS | MINUS ) rexpr= expression lexpr= expression )
                     {
                     if ( (input.LA(1)>=PLUS && input.LA(1)<=MINUS) ) {
                         input.consume();
@@ -1702,12 +1709,12 @@ public class EvilAST extends TreeParser {
 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression990);
+                    pushFollow(FOLLOW_expression_in_expression993);
                     expression();
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_expression_in_expression994);
+                    pushFollow(FOLLOW_expression_in_expression997);
                     expression();
 
                     state._fsp--;
@@ -1718,7 +1725,7 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 5 :
-                    // EvilAST.g:186:6: ^( ( TIMES | DIVIDE ) rexpr= expression lexpr= expression )
+                    // EvilAST.g:194:6: ^( ( TIMES | DIVIDE ) rexpr= expression lexpr= expression )
                     {
                     if ( (input.LA(1)>=TIMES && input.LA(1)<=DIVIDE) ) {
                         input.consume();
@@ -1731,12 +1738,12 @@ public class EvilAST extends TreeParser {
 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression1013);
+                    pushFollow(FOLLOW_expression_in_expression1016);
                     expression();
 
                     state._fsp--;
 
-                    pushFollow(FOLLOW_expression_in_expression1017);
+                    pushFollow(FOLLOW_expression_in_expression1020);
                     expression();
 
                     state._fsp--;
@@ -1747,12 +1754,12 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 6 :
-                    // EvilAST.g:188:6: ^( NEG expression )
+                    // EvilAST.g:196:6: ^( NEG expression )
                     {
-                    match(input,NEG,FOLLOW_NEG_in_expression1027); 
+                    match(input,NEG,FOLLOW_NEG_in_expression1030); 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression1029);
+                    pushFollow(FOLLOW_expression_in_expression1032);
                     expression();
 
                     state._fsp--;
@@ -1763,12 +1770,12 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 7 :
-                    // EvilAST.g:189:6: ^( NOT expression )
+                    // EvilAST.g:197:6: ^( NOT expression )
                     {
-                    match(input,NOT,FOLLOW_NOT_in_expression1038); 
+                    match(input,NOT,FOLLOW_NOT_in_expression1041); 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression1040);
+                    pushFollow(FOLLOW_expression_in_expression1043);
                     expression();
 
                     state._fsp--;
@@ -1779,30 +1786,30 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 8 :
-                    // EvilAST.g:190:6: ^( DOT expression ID )
+                    // EvilAST.g:198:6: ^( DOT expression ID )
                     {
-                    match(input,DOT,FOLLOW_DOT_in_expression1049); 
+                    match(input,DOT,FOLLOW_DOT_in_expression1052); 
 
                     match(input, Token.DOWN, null); 
-                    pushFollow(FOLLOW_expression_in_expression1051);
+                    pushFollow(FOLLOW_expression_in_expression1054);
                     expression();
 
                     state._fsp--;
 
-                    match(input,ID,FOLLOW_ID_in_expression1053); 
+                    match(input,ID,FOLLOW_ID_in_expression1056); 
 
                     match(input, Token.UP, null); 
 
                     }
                     break;
                 case 9 :
-                    // EvilAST.g:192:6: ^( INVOKE id= ID args= arguments )
+                    // EvilAST.g:200:6: ^( INVOKE id= ID args= arguments )
                     {
-                    match(input,INVOKE,FOLLOW_INVOKE_in_expression1063); 
+                    match(input,INVOKE,FOLLOW_INVOKE_in_expression1066); 
 
                     match(input, Token.DOWN, null); 
-                    id=(CommonTree)match(input,ID,FOLLOW_ID_in_expression1067); 
-                    pushFollow(FOLLOW_arguments_in_expression1071);
+                    id=(CommonTree)match(input,ID,FOLLOW_ID_in_expression1070); 
+                    pushFollow(FOLLOW_arguments_in_expression1074);
                     arguments();
 
                     state._fsp--;
@@ -1813,49 +1820,49 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 10 :
-                    // EvilAST.g:193:6: ID
+                    // EvilAST.g:201:6: ID
                     {
-                    match(input,ID,FOLLOW_ID_in_expression1079); 
+                    match(input,ID,FOLLOW_ID_in_expression1082); 
 
                     }
                     break;
                 case 11 :
-                    // EvilAST.g:194:6: INTEGER
+                    // EvilAST.g:202:6: INTEGER
                     {
-                    match(input,INTEGER,FOLLOW_INTEGER_in_expression1086); 
+                    match(input,INTEGER,FOLLOW_INTEGER_in_expression1089); 
 
                     }
                     break;
                 case 12 :
-                    // EvilAST.g:195:6: TRUE
+                    // EvilAST.g:203:6: TRUE
                     {
-                    match(input,TRUE,FOLLOW_TRUE_in_expression1093); 
+                    match(input,TRUE,FOLLOW_TRUE_in_expression1096); 
 
                     }
                     break;
                 case 13 :
-                    // EvilAST.g:196:6: FALSE
+                    // EvilAST.g:204:6: FALSE
                     {
-                    match(input,FALSE,FOLLOW_FALSE_in_expression1100); 
+                    match(input,FALSE,FOLLOW_FALSE_in_expression1103); 
 
                     }
                     break;
                 case 14 :
-                    // EvilAST.g:197:6: ^( NEW ID )
+                    // EvilAST.g:205:6: ^( NEW ID )
                     {
-                    match(input,NEW,FOLLOW_NEW_in_expression1108); 
+                    match(input,NEW,FOLLOW_NEW_in_expression1111); 
 
                     match(input, Token.DOWN, null); 
-                    match(input,ID,FOLLOW_ID_in_expression1110); 
+                    match(input,ID,FOLLOW_ID_in_expression1113); 
 
                     match(input, Token.UP, null); 
 
                     }
                     break;
                 case 15 :
-                    // EvilAST.g:198:6: NULL
+                    // EvilAST.g:206:6: NULL
                     {
-                    match(input,NULL,FOLLOW_NULL_in_expression1118); 
+                    match(input,NULL,FOLLOW_NULL_in_expression1121); 
 
                     }
                     break;
@@ -1874,13 +1881,13 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "arguments"
-    // EvilAST.g:200:1: arguments : arg_list ;
+    // EvilAST.g:208:1: arguments : arg_list ;
     public final void arguments() throws RecognitionException {
         try {
-            // EvilAST.g:201:4: ( arg_list )
-            // EvilAST.g:201:6: arg_list
+            // EvilAST.g:209:4: ( arg_list )
+            // EvilAST.g:209:6: arg_list
             {
-            pushFollow(FOLLOW_arg_list_in_arguments1132);
+            pushFollow(FOLLOW_arg_list_in_arguments1135);
             arg_list();
 
             state._fsp--;
@@ -1901,10 +1908,10 @@ public class EvilAST extends TreeParser {
 
 
     // $ANTLR start "arg_list"
-    // EvilAST.g:204:1: arg_list : ( ^( ARGS ( expression )+ ) | ARGS );
+    // EvilAST.g:212:1: arg_list : ( ^( ARGS ( expression )+ ) | ARGS );
     public final void arg_list() throws RecognitionException {
         try {
-            // EvilAST.g:205:4: ( ^( ARGS ( expression )+ ) | ARGS )
+            // EvilAST.g:213:4: ( ^( ARGS ( expression )+ ) | ARGS )
             int alt18=2;
             int LA18_0 = input.LA(1);
 
@@ -1932,12 +1939,12 @@ public class EvilAST extends TreeParser {
             }
             switch (alt18) {
                 case 1 :
-                    // EvilAST.g:205:6: ^( ARGS ( expression )+ )
+                    // EvilAST.g:213:6: ^( ARGS ( expression )+ )
                     {
-                    match(input,ARGS,FOLLOW_ARGS_in_arg_list1148); 
+                    match(input,ARGS,FOLLOW_ARGS_in_arg_list1151); 
 
                     match(input, Token.DOWN, null); 
-                    // EvilAST.g:205:13: ( expression )+
+                    // EvilAST.g:213:13: ( expression )+
                     int cnt17=0;
                     loop17:
                     do {
@@ -1951,9 +1958,9 @@ public class EvilAST extends TreeParser {
 
                         switch (alt17) {
                     	case 1 :
-                    	    // EvilAST.g:205:13: expression
+                    	    // EvilAST.g:213:13: expression
                     	    {
-                    	    pushFollow(FOLLOW_expression_in_arg_list1150);
+                    	    pushFollow(FOLLOW_expression_in_arg_list1153);
                     	    expression();
 
                     	    state._fsp--;
@@ -1977,9 +1984,9 @@ public class EvilAST extends TreeParser {
                     }
                     break;
                 case 2 :
-                    // EvilAST.g:206:6: ARGS
+                    // EvilAST.g:214:6: ARGS
                     {
-                    match(input,ARGS,FOLLOW_ARGS_in_arg_list1159); 
+                    match(input,ARGS,FOLLOW_ARGS_in_arg_list1162); 
 
                     }
                     break;
@@ -2001,122 +2008,122 @@ public class EvilAST extends TreeParser {
 
  
 
-    public static final BitSet FOLLOW_PROGRAM_in_program50 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_types_in_program52 = new BitSet(new long[]{0x0000000001000000L});
-    public static final BitSet FOLLOW_declarations_in_program55 = new BitSet(new long[]{0x0000000002000000L});
-    public static final BitSet FOLLOW_functions_in_program64 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_TYPES_in_types85 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_type_sub_in_types87 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_TYPES_in_types97 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_type_declaration_in_type_sub113 = new BitSet(new long[]{0x0000000000000010L});
-    public static final BitSet FOLLOW_type_sub_in_type_sub116 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_STRUCT_in_type_declaration143 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_type_declaration147 = new BitSet(new long[]{0x0000000004000000L});
-    public static final BitSet FOLLOW_nested_decl_in_type_declaration166 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_decl_in_nested_decl199 = new BitSet(new long[]{0x0000000004000002L});
-    public static final BitSet FOLLOW_DECL_in_decl218 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_TYPE_in_decl221 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_type_in_decl225 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_ID_in_decl231 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_INT_in_type261 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_BOOL_in_type270 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_STRUCT_in_type280 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_type284 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_DECLS_in_declarations309 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_declaration_in_declarations311 = new BitSet(new long[]{0x0000000008000008L});
-    public static final BitSet FOLLOW_DECLLIST_in_declaration334 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_TYPE_in_declaration337 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_type_in_declaration341 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_id_list_in_declaration345 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_list_id_in_id_list366 = new BitSet(new long[]{0x0100000000000002L});
-    public static final BitSet FOLLOW_ID_in_list_id390 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_FUNCS_in_functions418 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_function_in_functions420 = new BitSet(new long[]{0x0000000000000088L});
-    public static final BitSet FOLLOW_FUN_in_function441 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_function445 = new BitSet(new long[]{0x0000000010000000L});
-    public static final BitSet FOLLOW_parameters_in_function461 = new BitSet(new long[]{0x0000000020000000L});
-    public static final BitSet FOLLOW_RETTYPE_in_function472 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_return_type_in_function476 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_declarations_in_function486 = new BitSet(new long[]{0x000002014001DA00L});
-    public static final BitSet FOLLOW_statement_in_function504 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_PARAMS_in_parameters524 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_decl_in_parameters526 = new BitSet(new long[]{0x0000000004000008L});
-    public static final BitSet FOLLOW_type_in_return_type550 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_VOID_in_return_type558 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_BLOCK_in_statement575 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_STMTS_in_statement578 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_statement_in_statement580 = new BitSet(new long[]{0x000002014001DA08L});
-    public static final BitSet FOLLOW_assignment_in_statement591 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_print_in_statement599 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_read_in_statement606 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_IF_in_statement615 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_statement617 = new BitSet(new long[]{0x000002014001DA00L});
-    public static final BitSet FOLLOW_statement_in_statement619 = new BitSet(new long[]{0x000002014001DA08L});
-    public static final BitSet FOLLOW_statement_in_statement623 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_WHILE_in_statement635 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_statement639 = new BitSet(new long[]{0x000002014001DA00L});
-    public static final BitSet FOLLOW_statement_in_statement643 = new BitSet(new long[]{0x03FFFC05001E0000L});
-    public static final BitSet FOLLOW_expression_in_statement648 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_delete_in_statement656 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_ret_in_statement663 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_invocation_in_statement670 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_ASSIGN_in_assignment687 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_assignment691 = new BitSet(new long[]{0x0000040000000000L});
-    public static final BitSet FOLLOW_lvalue_in_assignment695 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_PRINT_in_print713 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_print715 = new BitSet(new long[]{0x0000000000000408L});
-    public static final BitSet FOLLOW_ENDL_in_print718 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_READ_in_read739 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_lvalue_in_read741 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_DELETE_in_delete759 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_delete761 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_RETURN_in_ret778 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_ret781 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_INVOKE_in_invocation800 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_invocation804 = new BitSet(new long[]{0x0000000200000000L});
-    public static final BitSet FOLLOW_arguments_in_invocation808 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_DOT_in_lvalue824 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_lvalue828 = new BitSet(new long[]{0x0100040000000000L});
-    public static final BitSet FOLLOW_subvalue_in_lvalue836 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_DOT_in_subvalue853 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_subvalue857 = new BitSet(new long[]{0x0100040000000000L});
-    public static final BitSet FOLLOW_subvalue_in_subvalue872 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_ID_in_subvalue883 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_AND_in_expression906 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression910 = new BitSet(new long[]{0x03FFFC05001E0000L});
-    public static final BitSet FOLLOW_expression_in_expression914 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_OR_in_expression923 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression927 = new BitSet(new long[]{0x03FFFC05001E0000L});
-    public static final BitSet FOLLOW_expression_in_expression931 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_set_in_expression941 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression967 = new BitSet(new long[]{0x03FFFC05001E0000L});
-    public static final BitSet FOLLOW_expression_in_expression971 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_set_in_expression980 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression990 = new BitSet(new long[]{0x03FFFC05001E0000L});
-    public static final BitSet FOLLOW_expression_in_expression994 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_set_in_expression1003 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression1013 = new BitSet(new long[]{0x03FFFC05001E0000L});
-    public static final BitSet FOLLOW_expression_in_expression1017 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_NEG_in_expression1027 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression1029 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_NOT_in_expression1038 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression1040 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_DOT_in_expression1049 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_expression1051 = new BitSet(new long[]{0x0100000000000000L});
-    public static final BitSet FOLLOW_ID_in_expression1053 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_INVOKE_in_expression1063 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_expression1067 = new BitSet(new long[]{0x0000000200000000L});
-    public static final BitSet FOLLOW_arguments_in_expression1071 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_ID_in_expression1079 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_INTEGER_in_expression1086 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_TRUE_in_expression1093 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_FALSE_in_expression1100 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_NEW_in_expression1108 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_ID_in_expression1110 = new BitSet(new long[]{0x0000000000000008L});
-    public static final BitSet FOLLOW_NULL_in_expression1118 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_arg_list_in_arguments1132 = new BitSet(new long[]{0x0000000000000002L});
-    public static final BitSet FOLLOW_ARGS_in_arg_list1148 = new BitSet(new long[]{0x0000000000000004L});
-    public static final BitSet FOLLOW_expression_in_arg_list1150 = new BitSet(new long[]{0x03FFFC05001E0008L});
-    public static final BitSet FOLLOW_ARGS_in_arg_list1159 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_PROGRAM_in_program56 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_types_in_program58 = new BitSet(new long[]{0x0000000001000000L});
+    public static final BitSet FOLLOW_declarations_in_program65 = new BitSet(new long[]{0x0000000002000000L});
+    public static final BitSet FOLLOW_functions_in_program74 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_TYPES_in_types95 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_type_sub_in_types97 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_TYPES_in_types107 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_type_declaration_in_type_sub123 = new BitSet(new long[]{0x0000000000000010L});
+    public static final BitSet FOLLOW_type_sub_in_type_sub126 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_STRUCT_in_type_declaration153 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_type_declaration157 = new BitSet(new long[]{0x0000000004000000L});
+    public static final BitSet FOLLOW_nested_decl_in_type_declaration170 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_decl_in_nested_decl203 = new BitSet(new long[]{0x0000000004000002L});
+    public static final BitSet FOLLOW_DECL_in_decl222 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_TYPE_in_decl225 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_type_in_decl229 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_ID_in_decl235 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_INT_in_type264 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_BOOL_in_type273 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_STRUCT_in_type283 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_type287 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_DECLS_in_declarations312 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_declaration_in_declarations314 = new BitSet(new long[]{0x0000000008000008L});
+    public static final BitSet FOLLOW_DECLLIST_in_declaration337 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_TYPE_in_declaration340 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_type_in_declaration344 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_id_list_in_declaration348 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_list_id_in_id_list369 = new BitSet(new long[]{0x0100000000000002L});
+    public static final BitSet FOLLOW_ID_in_list_id393 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_FUNCS_in_functions421 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_function_in_functions423 = new BitSet(new long[]{0x0000000000000088L});
+    public static final BitSet FOLLOW_FUN_in_function444 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_function448 = new BitSet(new long[]{0x0000000010000000L});
+    public static final BitSet FOLLOW_parameters_in_function464 = new BitSet(new long[]{0x0000000020000000L});
+    public static final BitSet FOLLOW_RETTYPE_in_function475 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_return_type_in_function479 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_declarations_in_function489 = new BitSet(new long[]{0x000002014001DA00L});
+    public static final BitSet FOLLOW_statement_in_function507 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_PARAMS_in_parameters527 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_decl_in_parameters529 = new BitSet(new long[]{0x0000000004000008L});
+    public static final BitSet FOLLOW_type_in_return_type553 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_VOID_in_return_type561 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_BLOCK_in_statement578 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_STMTS_in_statement581 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_statement_in_statement583 = new BitSet(new long[]{0x000002014001DA08L});
+    public static final BitSet FOLLOW_assignment_in_statement594 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_print_in_statement602 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_read_in_statement609 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_IF_in_statement618 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_statement620 = new BitSet(new long[]{0x000002014001DA00L});
+    public static final BitSet FOLLOW_statement_in_statement622 = new BitSet(new long[]{0x000002014001DA08L});
+    public static final BitSet FOLLOW_statement_in_statement626 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_WHILE_in_statement638 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_statement642 = new BitSet(new long[]{0x000002014001DA00L});
+    public static final BitSet FOLLOW_statement_in_statement646 = new BitSet(new long[]{0x03FFFC05001E0000L});
+    public static final BitSet FOLLOW_expression_in_statement651 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_delete_in_statement659 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_ret_in_statement666 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_invocation_in_statement673 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_ASSIGN_in_assignment690 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_assignment694 = new BitSet(new long[]{0x0000040000000000L});
+    public static final BitSet FOLLOW_lvalue_in_assignment698 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_PRINT_in_print716 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_print718 = new BitSet(new long[]{0x0000000000000408L});
+    public static final BitSet FOLLOW_ENDL_in_print721 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_READ_in_read742 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_lvalue_in_read744 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_DELETE_in_delete762 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_delete764 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_RETURN_in_ret781 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_ret784 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_INVOKE_in_invocation803 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_invocation807 = new BitSet(new long[]{0x0000000200000000L});
+    public static final BitSet FOLLOW_arguments_in_invocation811 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_DOT_in_lvalue827 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_lvalue831 = new BitSet(new long[]{0x0100040000000000L});
+    public static final BitSet FOLLOW_subvalue_in_lvalue839 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_DOT_in_subvalue856 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_subvalue860 = new BitSet(new long[]{0x0100040000000000L});
+    public static final BitSet FOLLOW_subvalue_in_subvalue875 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_ID_in_subvalue886 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_AND_in_expression909 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression913 = new BitSet(new long[]{0x03FFFC05001E0000L});
+    public static final BitSet FOLLOW_expression_in_expression917 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_OR_in_expression926 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression930 = new BitSet(new long[]{0x03FFFC05001E0000L});
+    public static final BitSet FOLLOW_expression_in_expression934 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_set_in_expression944 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression970 = new BitSet(new long[]{0x03FFFC05001E0000L});
+    public static final BitSet FOLLOW_expression_in_expression974 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_set_in_expression983 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression993 = new BitSet(new long[]{0x03FFFC05001E0000L});
+    public static final BitSet FOLLOW_expression_in_expression997 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_set_in_expression1006 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression1016 = new BitSet(new long[]{0x03FFFC05001E0000L});
+    public static final BitSet FOLLOW_expression_in_expression1020 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_NEG_in_expression1030 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression1032 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_NOT_in_expression1041 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression1043 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_DOT_in_expression1052 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_expression1054 = new BitSet(new long[]{0x0100000000000000L});
+    public static final BitSet FOLLOW_ID_in_expression1056 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_INVOKE_in_expression1066 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_expression1070 = new BitSet(new long[]{0x0000000200000000L});
+    public static final BitSet FOLLOW_arguments_in_expression1074 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_ID_in_expression1082 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_INTEGER_in_expression1089 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_TRUE_in_expression1096 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_FALSE_in_expression1103 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_NEW_in_expression1111 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_ID_in_expression1113 = new BitSet(new long[]{0x0000000000000008L});
+    public static final BitSet FOLLOW_NULL_in_expression1121 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_arg_list_in_arguments1135 = new BitSet(new long[]{0x0000000000000002L});
+    public static final BitSet FOLLOW_ARGS_in_arg_list1151 = new BitSet(new long[]{0x0000000000000004L});
+    public static final BitSet FOLLOW_expression_in_arg_list1153 = new BitSet(new long[]{0x03FFFC05001E0008L});
+    public static final BitSet FOLLOW_ARGS_in_arg_list1162 = new BitSet(new long[]{0x0000000000000002L});
 
 }
