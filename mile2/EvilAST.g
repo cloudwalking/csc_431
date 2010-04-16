@@ -108,7 +108,9 @@ return_type [StructTable structTable] returns [String t = null]
    ;
 
 statement[SymTable symtable, StructTable structTable]
+//@init{ System.out.println("statement"); }
    : ^(BLOCK ^(STMTS statement[symtable, structTable]*))
+   | ^(STMTS statement[symtable, structTable]*)
    | assignment[symtable, structTable]
    | print
    | read[symtable, structTable]
@@ -120,10 +122,12 @@ statement[SymTable symtable, StructTable structTable]
    ;
 
 assignment[SymTable symtable, StructTable structTable]
+@init{ System.out.println("assignment"); }
    : ^(ASSIGN exprType=expression lvalType=lvalue[symtable, structTable])
      {
         if(!$lvalType.text.equals(exprType))
         {
+           System.out.println("left type is " + $lvalType.text + " right type is " + exprType);
            System.err.println("Type Mismatch in assignment\n");
         }
      }
@@ -142,6 +146,7 @@ delete
    ;
 
 ret
+@init{ System.out.println("ret"); }
    : ^(RETURN (expression)?)
    ;
 
@@ -149,7 +154,8 @@ invocation
    : ^(INVOKE id=ID args=arguments)
    ;
 
-lvalue[SymTable symtable, StructTable stable]// returns [String t = null]
+lvalue[SymTable symtable, StructTable stable] returns [String t = "dog"]
+@init{ System.out.println("lvalue");}
    : ^(DOT structId=ID
       {
          if(!symtable.isDefined($structId.text))
@@ -163,17 +169,18 @@ lvalue[SymTable symtable, StructTable stable]// returns [String t = null]
          // Ok, this ID looks pretty valid.
       }
       subvalue[stable, $structId.text])
-   | valId=ID
+   | ^(valId=ID
      {
         if(!symtable.isDefined($valId.text))
         {
            System.err.println("line " + $valId.line + ": invalid symbol '" + $valId.text + "'");
         }
         symtable.getType($valId.text);
-     }
+     })
    ;
 
-subvalue[StructTable stable, String parent]// returns [String t = null]
+subvalue[StructTable stable, String parent] returns [String t = null]
+@init{ System.out.println("subvalue"); }
    : ^(DOT structId=ID
      {
         if(!stable.isField($parent, $structId.text))
@@ -182,14 +189,14 @@ subvalue[StructTable stable, String parent]// returns [String t = null]
         }
      }
      subvalue[stable, $structId.text])
-   | valId=ID
+   | ^(valId=ID
      {
         if(!stable.isField($parent, $valId.text))
         {
            System.err.println("line " + $valId.line + ": invalid field '" + $valId.text + "' in struct '" + parent + "'");
         }
-        //symtable.getType($valId.text);
-     }
+        stable.getType($parent, $valId.text);
+     })
    ;
 
 expression returns [String t = null]
