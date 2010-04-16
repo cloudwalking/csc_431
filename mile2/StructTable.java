@@ -43,6 +43,10 @@ public class StructTable {
    public boolean isField(String struct, String field) {
       return structs != null && ((SymTable)structs.get(struct)).isDefined(field);
    }
+
+   public String getType(String struct, String field) {
+      return ((SymTable)structs.get(struct)).getType(field);
+   }
    
    public String getType(String struct, String field) {
       if(null == structs)
