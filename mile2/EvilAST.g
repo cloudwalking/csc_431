@@ -7,7 +7,7 @@ options {
 }
 
 program [StructTable structTable, SymTable symtable, FunTable funtable]
-   : ^(PROGRAM types[structTable, symtable] declarations[symtable]
+   : ^(PROGRAM types[structTable, symtable] declarations[symtable, structTable]
       functions[structTable, symtable, funtable])
    ;
   
@@ -24,25 +24,25 @@ type_sub [StructTable structTable, SymTable symtable]
 type_declaration [StructTable structTable, SymTable symtable]
    : ^(STRUCT id=ID
         { structTable.addStruct($id.text); }
-     structSymTable=nested_decl[symtable])
+     structSymTable=nested_decl[structTable])
         { structTable.updateStruct($id.text, $structSymTable.subtable); }
   ;
   
-nested_decl [SymTable symtable] returns [SymTable subtable = new SymTable()]
-  : decl[symtable, subtable]+
+nested_decl [StructTable stable] returns [SymTable subtable = new SymTable()]
+  : decl[subtable, stable]+
   ;
 
-decl [SymTable symtable, SymTable subtable]
-   : ^(DECL ^(TYPE t=type[symtable]) id=ID)
+decl [SymTable subtable, StructTable stable]
+   : ^(DECL ^(TYPE t=type[stable]) id=ID)
      { subtable.insertSymbol($id.text, t); }
    ;
 
-type [SymTable symtable] returns [String t = null]
+type [StructTable structTable] returns [String t = null]
   :  INT { $t = SymTable.intType(); }
   |  BOOL { $t = SymTable.boolType(); }
   |  ^(STRUCT id=ID)
      {
-        if (!symtable.isDefined($id.text))
+        if (!structTable.isDefined($id.text))
         {
           System.err.println("line " + $id.line + ": undefined struct type '" + $id + "'");
         }
@@ -50,12 +50,12 @@ type [SymTable symtable] returns [String t = null]
      }
   ;
 
-declarations [SymTable symtable]
-   : ^(DECLS declaration[symtable]*)
+declarations [SymTable symtable, StructTable structTable]
+   : ^(DECLS declaration[symtable, structTable]*)
    ;
 
-declaration [SymTable symtable]
-   :   ^(DECLLIST ^(TYPE t=type[symtable]) id_list[symtable, t])
+declaration [SymTable symtable, StructTable structTable]
+   :   ^(DECLLIST ^(TYPE t=type[structTable]) id_list[symtable, t])
    ;
 
 id_list [SymTable symtable, String t]
@@ -84,48 +84,45 @@ functions [StructTable structTable, SymTable symtable, FunTable funtable]
 function [StructTable structTable, SymTable symtable, FunTable funtable]
    : ^(FUN id=ID
      {
-        if (isDefined($id.text))
+        if (symtable.isDefined($id.text) || funtable.isDefined($id.text))
         {
            System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
         }
-        else
-        {
-           SymTable locals = new SymTable();
-        }
+        SymTable locals = new SymTable();
      }
-      parameters[symtable, locals] ^(RETTYPE retType=return_type[symtable])
-      locals=declarations[locals]
+      parameters[locals, structTable] ^(RETTYPE retType=return_type[structTable])
+      locals=declarations[locals, structTable]
       {
          symtable.insertSymbol($id.text, retType);
       }
-      statement[structTable])
+      statement[symtable, structTable])
    ;
 
-parameters [SymTable symtable, SymTable subtable]
-   : ^(PARAMS decl[symtable, subtable]*)
+parameters [SymTable subtable, StructTable structTable]
+   : ^(PARAMS decl[subtable, structTable]*)
    ;
 
-return_type [SymTable symtable] returns [String t = null]
-   : type[symtable]
+return_type [StructTable structTable] returns [String t = null]
+   : type[structTable]
    | VOID
    ;
 
-statement[StructTable structTable]
-   : ^(BLOCK ^(STMTS statement[structTable]*))
-   | assignment[structTable]
+statement[SymTable symtable, StructTable structTable]
+   : ^(BLOCK ^(STMTS statement[symtable, structTable]*))
+   | assignment[symtable, structTable]
    | print
-   | read
-   | ^(IF expression statement[structTable] (statement[structTable])?)
-   | ^(WHILE expr=expression b=statement[structTable] expr2=expression)
+   | read[symtable, structTable]
+   | ^(IF expression statement[symtable, structTable] (statement[symtable, structTable])?)
+   | ^(WHILE expr=expression b=statement[symtable, structTable] expr2=expression)
    | delete
    | ret
    | invocation
    ;
 
-assignment[StructTable structTable]
-   : ^(ASSIGN exprType=expression lvalType=lvalue)
+assignment[SymTable symtable, StructTable structTable]
+   : ^(ASSIGN exprType=expression lvalType=lvalue[symtable, structTable])
      {
-        if(!lvalType.equals(exprType))
+        if(!$lvalType.text.equals(exprType))
         {
            System.err.println("Type Mismatch in assignment\n");
         }
@@ -136,8 +133,8 @@ print
    : ^(PRINT expression (ENDL)?)
    ;
 
-read
-   : ^(READ lvalue)
+read [SymTable symtable, StructTable structTable]
+   : ^(READ lvalue[symtable, structTable])
    ;
 
 delete
@@ -152,7 +149,7 @@ invocation
    : ^(INVOKE id=ID args=arguments)
    ;
 
-lvalue[SymTable symtable, StructTable stable] returns [String t = null]
+lvalue[SymTable symtable, StructTable stable]// returns [String t = null]
    : ^(DOT structId=ID
       {
          if(!symtable.isDefined($structId.text))
@@ -165,21 +162,18 @@ lvalue[SymTable symtable, StructTable stable] returns [String t = null]
          }
          // Ok, this ID looks pretty valid.
       }
-      t=subvalue[stable, $structId.text])
+      subvalue[stable, $structId.text])
    | valId=ID
      {
         if(!symtable.isDefined($valId.text))
         {
            System.err.println("line " + $valId.line + ": invalid symbol '" + $valId.text + "'");
         }
-        else
-        {
-           t=symtable.getType($valId.text);
-        }
+        symtable.getType($valId.text);
      }
    ;
 
-subvalue[StructTable stable, String parent] returns [String t = null]
+subvalue[StructTable stable, String parent]// returns [String t = null]
    : ^(DOT structId=ID
      {
         if(!stable.isField($parent, $structId.text))
@@ -194,10 +188,7 @@ subvalue[StructTable stable, String parent] returns [String t = null]
         {
            System.err.println("line " + $valId.line + ": invalid field '" + $valId.text + "' in struct '" + parent + "'");
         }
-        else
-        {
-           t=symtable.getType($valId.text);
-        }
+        //symtable.getType($valId.text);
      }
    ;
 
