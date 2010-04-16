@@ -123,7 +123,13 @@ statement[StructTable structTable]
    ;
 
 assignment[StructTable structTable]
-   : ^(ASSIGN expr=expression lval=lvalue)
+   : ^(ASSIGN exprType=expression lvalType=lvalue)
+     {
+        if(!lvalType.equals(exprType))
+        {
+           System.err.println("Type Mismatch in assignment\n");
+        }
+     }
    ;
 
 print
@@ -146,23 +152,56 @@ invocation
    : ^(INVOKE id=ID args=arguments)
    ;
 
-lvalue[SymTable symtable]
+lvalue[SymTable symtable, StructTable stable] returns [String t = null]
    : ^(DOT structId=ID
+      {
+         if(!symtable.isDefined($structId.text))
+         {
+            System.err.println("line " + $structId.line + ": undeclared symbol '" + $structId.text + "'");
+         }
+         if(!stable.isDefined(symtable.getType($structId.text)))
+         {
+            System.err.println("line " + $structId.line + ": undefined struct type '" + $structId.text + "'");
+         }
+         // Ok, this ID looks pretty valid.
+      }
+      t=subvalue[stable, $structId.text])
+   | valId=ID
      {
-        if(symtable.isDefined($structId.text)
+        if(!symtable.isDefined($valId.text))
         {
-            //want to pass symbolTable
+           System.err.println("line " + $valId.line + ": invalid symbol '" + $valId.text + "'");
         }
-        else if(!structTable.isDefined($structId.text)
+        else
         {
-            //error
+           t=symtable.getType($valId.text);
         }
      }
-      lvalue[structTable.getField($structId)])
-   | valId=ID
    ;
 
-expression
+subvalue[StructTable stable, String parent] returns [String t = null]
+   : ^(DOT structId=ID
+     {
+        if(!stable.isField($parent, $structId.text))
+        {
+           System.err.println("line " + $structId.line + ": invalid field '" + $structId.text + "' in struct '" + parent + "'");
+        }
+     }
+     subvalue[stable, $structId.text])
+   | valId=ID
+     {
+        if(!stable.isField($parent, $valId.text))
+        {
+           System.err.println("line " + $valId.line + ": invalid field '" + $valId.text + "' in struct '" + parent + "'");
+        }
+        else
+        {
+           t=symtable.getType($valId.text);
+        }
+     }
+   ;
+
+expression returns [String t = null]
    : ^(AND lexpr=expression rexpr=expression)
    | ^(OR lexpr=expression rexpr=expression)
 
@@ -175,10 +214,10 @@ expression
    | ^(DOT expression ID)
 
    | ^(INVOKE id=ID args=arguments)
-   | ID
-   | INTEGER
-   | TRUE
-   | FALSE
+   | id=ID { t=
+   | INTEGER { t=SymTable.intType(); }
+   | TRUE { t=SymTable.boolType(); }
+   | FALSE { t=SymTable.boolType(); }
    | ^(NEW ID)
    | NULL
    ;
