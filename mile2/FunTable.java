@@ -30,4 +30,15 @@ public class FunTable {
    public boolean isDefined(String id) {
       return functions != null && functions.containsKey(id);
    }
+   
+   public void print() {
+      print("");
+   }
+   
+   public void print(String tabs) {
+      for(String key : functions.keySet()) {
+         System.out.println(tabs + key + "\t:\t" + functions.get(key));
+         functions.get(key).print("\t\t");
+      }
+   }
 }

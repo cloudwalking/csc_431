@@ -13,8 +13,11 @@ public class SymTable {
       table = new LinkedHashMap<String, SymEntry>();
    }
    
-   public void insertSymbol(String symbol, String type) {
+   public boolean insertSymbol(String symbol, String type) {
+      if(null != table.get(symbol))
+         return false;
       table.put(symbol, new SymEntry(symbol, type));
+      return true;
    }
    
    public int setValue(String symbol, int value) {
@@ -52,12 +55,12 @@ public class SymTable {
    }
    
    public void print() {
-      print(null);
+      print("");
    }
    
    public void print(String tabs) {
       for(String key : table.keySet()) {
-         System.out.println(tabs + key + " : " + table.get(key));
+         System.out.println(tabs + key + "\t:\t" + table.get(key));
       }
    }
    
@@ -83,5 +86,9 @@ public class SymTable {
       public int getValue() {
          return value;
       }
+
+	  public String toString() {
+		 return type;
+	  }
    }
 }
