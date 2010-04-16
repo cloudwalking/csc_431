@@ -6,52 +6,43 @@ options {
   ASTLabelType = CommonTree;
 }
 
-@members {
-  private boolean DEBUG = true;
-}
-
 program [StructTable structTable, SymTable symtable, FunTable funtable]
-   : ^(PROGRAM types[symtable, structTable]
-   	declarations[symtable, structTable]
+   : ^(PROGRAM types[structTable, symtable] declarations[symtable]
       functions[structTable, symtable, funtable])
    ;
   
-types [SymTable symtable, StructTable stable]
-  : ^(TYPES type_sub[symtable, stable])
+types [StructTable structTable, SymTable symtable]
+  : ^(TYPES type_sub[structTable, symtable])
   |   TYPES
   ;
 
-type_sub [SymTable symtable, StructTable stable]
-   : type_declaration[symtable, stable] type_sub[symtable, stable]
+type_sub [StructTable structTable, SymTable symtable]
+   : type_declaration[structTable, symtable] type_sub[structTable, symtable]
    | 
    ;
   
-type_declaration [SymTable symtable, StructTable stable]
+type_declaration [StructTable structTable, SymTable symtable]
    : ^(STRUCT id=ID
-		{
-			if(DEBUG) System.out.println("g> adding struct '" + $id.text + "'");
-			if(DEBUG) stable.print();
-			stable.addStruct($id.text); 
-		}
-     structSymTable=nested_decl[stable])
-        { stable.updateStruct($id.text, $structSymTable.subtable); }
+        { structTable.addStruct($id.text); }
+     structSymTable=nested_decl[symtable])
+        { structTable.updateStruct($id.text, $structSymTable.subtable); }
   ;
   
-nested_decl [StructTable stable] returns [SymTable subtable = new SymTable()]
-  : decl[subtable, stable]+
+nested_decl [SymTable symtable] returns [SymTable subtable = new SymTable()]
+  : decl[symtable, subtable]+
   ;
 
-decl [SymTable subtable, StructTable stable]
-   : ^(DECL ^(TYPE t=type[stable]) id=ID)
+decl [SymTable symtable, SymTable subtable]
+   : ^(DECL ^(TYPE t=type[symtable]) id=ID)
      { subtable.insertSymbol($id.text, t); }
    ;
 
-type [StructTable stable] returns [String t = null]
+type [SymTable symtable] returns [String t = null]
   :  INT { $t = SymTable.intType(); }
   |  BOOL { $t = SymTable.boolType(); }
   |  ^(STRUCT id=ID)
      {
-        if (!stable.isDefined($id.text))
+        if (!symtable.isDefined($id.text))
         {
           System.err.println("line " + $id.line + ": undefined struct type '" + $id + "'");
         }
@@ -59,12 +50,12 @@ type [StructTable stable] returns [String t = null]
      }
   ;
 
-declarations [SymTable symtable, StructTable stable]
-   : ^(DECLS declaration[symtable, stable]*)
+declarations [SymTable symtable]
+   : ^(DECLS declaration[symtable]*)
    ;
 
-declaration [SymTable symtable, StructTable stable]
-   :   ^(DECLLIST ^(TYPE t=type[stable]) id_list[symtable, t])
+declaration [SymTable symtable]
+   :   ^(DECLLIST ^(TYPE t=type[symtable]) id_list[symtable, t])
    ;
 
 id_list [SymTable symtable, String t]
@@ -92,43 +83,47 @@ functions [StructTable structTable, SymTable symtable, FunTable funtable]
 
 function [StructTable structTable, SymTable symtable, FunTable funtable]
    : ^(FUN id=ID
-     	{
-        if (symtable.isDefined($id.text) || funtable.isDefined($id.text))
+     {
+        if (isDefined($id.text))
         {
            System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
         }
-        SymTable locals = new SymTable();
-     	}
-      parameters[locals, structTable] // Adds them to the function's symtable
-      ^(RETTYPE retType=return_type[structTable])
-      declarations[locals, structTable] // Adds them to the function's symtable
-      { symtable.insertSymbol($id.text, retType); }
-      statement[symtable, structTable])
+        else
+        {
+           SymTable locals = new SymTable();
+        }
+     }
+      parameters[symtable, locals] ^(RETTYPE retType=return_type[symtable])
+      locals=declarations[locals]
+      {
+         symtable.insertSymbol($id.text, retType);
+      }
+      statement[structTable])
    ;
 
-parameters [SymTable subtable, StructTable stable]
-   : ^(PARAMS decl[subtable, stable]*)
+parameters [SymTable symtable, SymTable subtable]
+   : ^(PARAMS decl[symtable, subtable]*)
    ;
 
-return_type [StructTable stable] returns [String t = null]
-   : type[stable]
+return_type [SymTable symtable] returns [String t = null]
+   : type[symtable]
    | VOID
    ;
 
-statement[SymTable symtable, StructTable structTable]
-   : ^(BLOCK ^(STMTS statement[symtable, structTable]*))
-   | assignment[symtable, structTable]
+statement[StructTable structTable]
+   : ^(BLOCK ^(STMTS statement[structTable]*))
+   | assignment[structTable]
    | print
-   | read[symtable, structTable]
-   | ^(IF expression statement[symtable, structTable] (statement[symtable, structTable])?)
-   | ^(WHILE expr=expression b=statement[symtable, structTable] expr2=expression)
+   | read
+   | ^(IF expression statement[structTable] (statement[structTable])?)
+   | ^(WHILE expr=expression b=statement[structTable] expr2=expression)
    | delete
    | ret
    | invocation
    ;
 
-assignment[SymTable symtable, StructTable structTable]
-   : ^(ASSIGN exprType=expression lvalType=lvalue[symtable, stable])
+assignment[StructTable structTable]
+   : ^(ASSIGN exprType=expression lvalType=lvalue)
      {
         if(!lvalType.equals(exprType))
         {
@@ -141,8 +136,8 @@ print
    : ^(PRINT expression (ENDL)?)
    ;
 
-read [SymTable symtable, StructTable stable]
-   : ^(READ lvalue[symtable, stable])
+read
+   : ^(READ lvalue)
    ;
 
 delete
@@ -157,27 +152,7 @@ invocation
    : ^(INVOKE id=ID args=arguments)
    ;
 
-<<<<<<< HEAD:mile2/EvilAST.g
 lvalue[SymTable symtable, StructTable stable] returns [String t = null]
-=======
-lvalue[SymTable symtable, StructTable stable]
-	: ^(DOT structId=ID
-		{
-			if(!symtable.isDefined($structId.text))
-			{
-				System.err.println("line " + $structId.line + ": undeclared symbol '" + $structId.text + "'");
-			}
-			if(!stable.isDefined(symtable.getType($structId.text)))
-			{
-				System.err.println("line " + $structId.line + ": undefined struct type '" + $structId.text + "'");
-			}
-			// Ok, this ID looks pretty valid.
-		}
-		subvalue[stable, $structId.text])
-	;
-
-subvalue[StructTable stable, String parent]
->>>>>>> reed_431/mile2:mile2/EvilAST.g
    : ^(DOT structId=ID
       {
          if(!symtable.isDefined($structId.text))
@@ -193,47 +168,25 @@ subvalue[StructTable stable, String parent]
       t=subvalue[stable, $structId.text])
    | valId=ID
      {
-<<<<<<< HEAD:mile2/EvilAST.g
         if(!symtable.isDefined($valId.text))
         {
            System.err.println("line " + $valId.line + ": invalid symbol '" + $valId.text + "'");
         }
         else
-=======
-        if(!stable.isField($parent, $structId.text))
->>>>>>> reed_431/mile2:mile2/EvilAST.g
         {
-<<<<<<< HEAD:mile2/EvilAST.g
            t=symtable.getType($valId.text);
-=======
-	        System.err.println("line " + $structId.line + ": invalid field '" + $structId.text + "' in struct '" + parent + "'");
->>>>>>> reed_431/mile2:mile2/EvilAST.g
         }
      }
-<<<<<<< HEAD:mile2/EvilAST.g
    ;
 
 subvalue[StructTable stable, String parent] returns [String t = null]
    : ^(DOT structId=ID
-=======
-      subvalue[stable, $structId.text])
-   | valId=ID
->>>>>>> reed_431/mile2:mile2/EvilAST.g
      {
-<<<<<<< HEAD:mile2/EvilAST.g
         if(!stable.isField($parent, $structId.text))
-=======
-        if(!stable.isField($parent, $valId.text))
->>>>>>> reed_431/mile2:mile2/EvilAST.g
         {
-<<<<<<< HEAD:mile2/EvilAST.g
            System.err.println("line " + $structId.line + ": invalid field '" + $structId.text + "' in struct '" + parent + "'");
-=======
-	        System.err.println("line " + $valId.line + ": invalid field '" + $valId.text + "' in struct '" + parent + "'");
->>>>>>> reed_431/mile2:mile2/EvilAST.g
         }
      }
-<<<<<<< HEAD:mile2/EvilAST.g
      subvalue[stable, $structId.text])
    | valId=ID
      {
@@ -246,8 +199,6 @@ subvalue[StructTable stable, String parent] returns [String t = null]
            t=symtable.getType($valId.text);
         }
      }
-=======
->>>>>>> reed_431/mile2:mile2/EvilAST.g
    ;
 
 expression returns [String t = null]
@@ -263,7 +214,7 @@ expression returns [String t = null]
    | ^(DOT expression ID)
 
    | ^(INVOKE id=ID args=arguments)
-   | id=ID { t=
+   | id=ID
    | INTEGER { t=SymTable.intType(); }
    | TRUE { t=SymTable.boolType(); }
    | FALSE { t=SymTable.boolType(); }
