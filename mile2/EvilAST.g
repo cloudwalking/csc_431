@@ -84,16 +84,21 @@ functions [StructTable structTable, SymTable symtable, FunTable funtable]
 function [StructTable structTable, SymTable symtable, FunTable funtable]
    : ^(FUN id=ID
      {
-        if (symtable.isDefined($id.text) || funtable.isDefined($id.text))
+        if (symtable.isDefined($id.text))
         {
            System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
         }
         SymTable locals = new SymTable();
      }
-      parameters[locals, structTable] ^(RETTYPE retType=return_type[structTable])
-      locals=declarations[locals, structTable]
+      parameters[locals, structTable]
+      ^(RETTYPE retType=return_type[structTable])
+      {
+         symtable.insertSymbol($id.text, $retType.t);
+      }
+      declarations[locals, structTable]
       {
          symtable.insertSymbol($id.text, retType);
+         funtable.addFunction($id.text, locals);
       }
       statement[symtable, structTable])
    ;
@@ -103,8 +108,14 @@ parameters [SymTable subtable, StructTable structTable]
    ;
 
 return_type [StructTable structTable] returns [String t = null]
-   : type[structTable]
+   : retType=type[structTable]
+     {
+        $t = $retType.t;
+     }
    | VOID
+     {
+        $t = SymTable.voidType();
+     }
    ;
 
 statement[SymTable symtable, StructTable structTable]
@@ -112,7 +123,7 @@ statement[SymTable symtable, StructTable structTable]
    : ^(BLOCK ^(STMTS statement[symtable, structTable]*))
    | ^(STMTS statement[symtable, structTable]*)
    | assignment[symtable, structTable]
-   | print
+   | print[symtable]
    | read[symtable, structTable]
    | ^(IF expression statement[symtable, structTable] (statement[symtable, structTable])?)
    | ^(WHILE expr=expression b=statement[symtable, structTable] expr2=expression)
@@ -125,20 +136,28 @@ assignment[SymTable symtable, StructTable structTable]
 @init{ System.out.println("assignment"); }
    : ^(ASSIGN exprType=expression lvalType=lvalue[symtable, structTable])
      {
-        if(!$lvalType.text.equals(exprType))
+        if(!$lvalType.t.equals(exprType))
         {
-           System.out.println("left type is " + $lvalType.text + " right type is " + exprType);
            System.err.println("Type Mismatch in assignment\n");
         }
      }
    ;
 
-print
-   : ^(PRINT expression (ENDL)?)
+print [SymTable symtable]
+   : ^(PRINT exprType=expression (ENDL)?)
+    /* {
+        if (!exprType.equals(SymTable.intType()))
+        {
+           System.err.println("Cannot print non-integers");
+        }
+     }*/
    ;
 
 read [SymTable symtable, StructTable structTable]
-   : ^(READ lvalue[symtable, structTable])
+   : ^(READ lvalType=lvalue[symtable, structTable])
+     {
+        //check lvalType = int
+     }
    ;
 
 delete
@@ -154,7 +173,7 @@ invocation
    : ^(INVOKE id=ID args=arguments)
    ;
 
-lvalue[SymTable symtable, StructTable stable] returns [String t = "dog"]
+lvalue[SymTable symtable, StructTable stable] returns [String t = null]
 @init{ System.out.println("lvalue");}
    : ^(DOT structId=ID
       {
@@ -168,14 +187,17 @@ lvalue[SymTable symtable, StructTable stable] returns [String t = "dog"]
          }
          // Ok, this ID looks pretty valid.
       }
-      subvalue[stable, $structId.text])
+      tsub=subvalue[stable, $structId.text])
+	{
+		$t = $tsub.t;
+	}
    | ^(valId=ID
      {
         if(!symtable.isDefined($valId.text))
         {
            System.err.println("line " + $valId.line + ": invalid symbol '" + $valId.text + "'");
         }
-        symtable.getType($valId.text);
+        $t = symtable.getType($valId.text);
      })
    ;
 
@@ -188,22 +210,30 @@ subvalue[StructTable stable, String parent] returns [String t = null]
            System.err.println("line " + $structId.line + ": invalid field '" + $structId.text + "' in struct '" + parent + "'");
         }
      }
-     subvalue[stable, $structId.text])
+     tsub=subvalue[stable, $structId.text])
+     {
+        $t = $tsub.t;
+     }
    | ^(valId=ID
      {
         if(!stable.isField($parent, $valId.text))
         {
            System.err.println("line " + $valId.line + ": invalid field '" + $valId.text + "' in struct '" + parent + "'");
         }
-        stable.getType($parent, $valId.text);
+        $t=stable.getType($parent, $valId.text);
      })
    ;
 
 expression returns [String t = null]
+//@init{ System.out.println("expression"); }
    : ^(AND lexpr=expression rexpr=expression)
    | ^(OR lexpr=expression rexpr=expression)
 
-   | ^((EQ | LT | GT | NE | LE | GE) rexpr=expression lexpr=expression)
+   | ^((EQ | LT | GT | NE | LE | GE) lexpr=expression rexpr=expression)
+     {
+        System.out.println("rexpr type is " + rexpr);
+        System.out.println("lexpr type is " + lexpr);
+     }
    | ^((PLUS | MINUS) rexpr=expression lexpr=expression)
    | ^((TIMES | DIVIDE) rexpr=expression lexpr=expression)
 
@@ -212,8 +242,8 @@ expression returns [String t = null]
    | ^(DOT expression ID)
 
    | ^(INVOKE id=ID args=arguments)
-   | id=ID
-   | INTEGER { t=SymTable.intType(); }
+   | id=ID{}
+   | INTEGER {System.out.println("found an integer thats type is " + SymTable.intType()); $t=SymTable.intType(); }
    | TRUE { t=SymTable.boolType(); }
    | FALSE { t=SymTable.boolType(); }
    | ^(NEW ID)
