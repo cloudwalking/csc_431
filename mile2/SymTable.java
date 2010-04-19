@@ -46,6 +46,9 @@ public class SymTable {
    public static String boolType() {
       return BOOL;
    }
+   public static String voidType() {
+      return VOID;
+   }
    public static String structType(String symbol) {
       return STRUCT + symbol;
    }
