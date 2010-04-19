@@ -6,6 +6,7 @@ public class SymTable {
    public static String BOOL = "bool";
    public static String STRUCT = "struct ";
    public static String VOID = "void";
+   public static String NULL = "null";
    
    private LinkedHashMap<String, SymEntry> table;
    
