@@ -41,9 +41,9 @@ public class Evil
       try
       {
          //symbolTypes and structTypes contain variables and their types, no values
-         StructTable structTable = new StructTable();
+         /*StructTable structTable = new StructTable();
          SymTable symtable = new SymTable();
-         FunTable funtable = new FunTable();
+         FunTable funtable = new FunTable();*/
 
          CommonTreeNodeStream nodes = new CommonTreeNodeStream(parserRet);
          nodes.setTokenStream(tokens);
@@ -51,14 +51,14 @@ public class Evil
 
          //tree parser populates the type structures
       
-         tparser.program(structTable, symtable, funtable);
+         tparser.program();
          
          System.out.println("\n** SymTable **");
-         symtable.print();
+         tparser.symtable.print();
          System.out.println("\n** StructTable **");
-         structTable.print();
+         tparser.structTable.print();
          System.out.println("\n** FunTable **");
-         funtable.print();
+         tparser.funTable.print();
       }
       catch (org.antlr.runtime.RecognitionException e)
       {
