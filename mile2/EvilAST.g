@@ -11,13 +11,16 @@ options {
    StructTable structTable = new StructTable();
    SymTable symtable = new SymTable();
    FunTable funTable = new FunTable();
-   boolean hasReturn;
-   boolean consistentReturnType;
    String curFun;
 }
 
 program
-   : ^(PROGRAM types declarations[symtable] functions)
+   : ^(PROGRAM types declarations[symtable] functions) {
+        if (!symtable.contains("main")) {
+           System.err.println("main function not defined");
+           System.exit(1);
+        }
+     }
    ;
   
 types
@@ -94,7 +97,6 @@ function
         if (symtable.isDefined($id.text)) {
            System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
         }
-        hasReturn = false;
         SymTable locals = new SymTable();
      }
      parameters[locals]
@@ -109,14 +111,10 @@ function
         curFun = $id.text;
      }
 
-     statement[locals]) {
-        if (!hasReturn) {
+     hasReturn=statement[locals, false]) {
+        if (!retType.equals(SymTable.voidType()) && !$hasReturn.retVal) {
            System.err.println("Function '" + curFun +
             "' does not have return statement");
-        }
-        else if (!consistentReturnType) {
-           System.err.println("Function '" + curFun +
-            "' returns incorrect type");
         }
      }
    ;
@@ -130,18 +128,28 @@ return_type returns [String t = null]
    | VOID { $t = SymTable.voidType(); }
    ;
 
-statement[SymTable locals]
-//@init{ System.out.println("statement"); }
-   : ^(BLOCK ^(STMTS statement[locals]*))
-   | ^(STMTS statement[locals]*)
-   | assignment[locals]
-   | print[locals]
-   | read[locals]
-   | ^(IF expression[locals] statement[locals] (statement[locals])?)
-   | ^(WHILE expr=expression[locals] b=statement[locals] expr2=expression[locals])
-   | delete[locals]
-   | ret[locals]
-   | invocation[locals]
+statement[SymTable locals, boolean hasReturn] returns [boolean retVal = false]
+//@init{ System.out.println("statement on line " + getLine()); }
+   : ^(BLOCK ^(STMTS (r=statement[locals, hasReturn])*)) {
+        $retVal = $r.retVal || $hasReturn;
+     }
+   | ^(STMTS (r=statement[locals, hasReturn])*) {
+        $retVal = $r.retVal || $hasReturn;
+     }
+   | assignment[locals] { $retVal = $hasReturn; }
+   | print[locals] { $retVal = $hasReturn; }
+   | read[locals] { $retVal = $hasReturn; }
+   | ^(IF expression[locals] rthen=statement[locals, hasReturn]
+      (relse=statement[locals, hasReturn])?) {
+        $retVal = (($rthen.retVal && $relse.retVal) || $hasReturn);
+     }
+   | ^(WHILE expr=expression[locals] r=statement[locals, hasReturn]
+      expr2=expression[locals]) {
+        $retVal = $r.retVal;
+     }
+   | delete[locals] { $retVal = $hasReturn; }
+   | r2=ret[locals] { $retVal = $r2.hasReturn; }
+   | invocation[locals] { $retVal = $hasReturn; }
    ;
 
 assignment[SymTable locals]
@@ -155,10 +163,7 @@ assignment[SymTable locals]
 
 print[SymTable locals]
    : ^(PRINT extype=expression[locals] (ENDL)?) {
-        if (extype == null) {
-           System.err.println("Invalid print expression");
-        }
-        else if (!extype.equals(SymTable.intType())) {
+        if (extype != null && !extype.equals(SymTable.intType())) {
            System.err.println("Cannot print non-integers");
         }
      }
@@ -177,15 +182,21 @@ delete[SymTable locals]
    : ^(DELETE expression[locals])
    ;
 
-ret[SymTable locals] returns [String t = null]
+ret[SymTable locals] returns [boolean hasReturn = false]
    : ^(RETURN (retType=expression[locals])?) {
-        $t = retType;
-        if (retType != null && retType.equals(symtable.getType(curFun))) {
-           consistentReturnType = true;
+        if (retType == null && (symtable.getType(curFun) !=
+         SymTable.voidType())) {
+           System.err.println("Invalid return type in function '" + curFun +
+            "' expected '" + symtable.getType(curFun) + "', found '" +
+            SymTable.voidType() + "'");
         }
-        else { consistentReturnType = false; }
+        else if (!retType.equals(symtable.getType(curFun))) {
+           System.err.println("Invalid return type in function '" + curFun +
+            "' expected '" + symtable.getType(curFun) + "', found '" +
+            retType + "'");
+        }
 
-        hasReturn = true;
+        $hasReturn = true;
      }
    ;
 
@@ -254,14 +265,18 @@ expression [SymTable locals] returns [String t = null]
         else { $t = SymTable.boolType(); }
      }
 
-   | ^((EQ | LT | GT | NE | LE | GE) lexpr=expression[locals] rexpr=expression[locals]) {
+   | ^((EQ | LT | GT | NE | LE | GE) lexpr=expression[locals]
+      rexpr=expression[locals]) {
         if (!rexpr.equals(SymTable.intType())) {
            System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
+            " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
+            " in function " + curFun);
         }
         else if (!lexpr.equals(SymTable.intType())) {
            System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
+            " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
+            " in function " + curFun);
+
         }
         else { $t = SymTable.boolType(); }
      }
@@ -308,7 +323,21 @@ expression [SymTable locals] returns [String t = null]
      }
 
    | ^(DOT structType=expression[locals] fieldId=ID) {
-        if(structType != null && !structType.equals(SymTable.intType()) &&
+        if (structType == null) {
+           System.err.print("Undefined error trying to find struct type");
+           System.err.println(" on line " + $fieldId.line);
+           System.exit(1);
+        }
+        if (!locals.containsStructType(structType)) {
+           if (!symtable.containsStructType(structType)) {
+              System.err.println("unexpected type: expected 'struct', found" +
+               " '" + structType + "' on line " + $fieldId.line);
+
+              System.exit(1);
+           }
+        }
+
+        if(!structType.equals(SymTable.intType()) &&
          !structType.equals(SymTable.boolType())) {
            structType = structType.substring(7, structType.length());
 
@@ -317,7 +346,8 @@ expression [SymTable locals] returns [String t = null]
            }
         }
         else {
-           System.out.println("id '"+$fieldId.text+"' not defined");
+           System.out.println("symbol '" + $fieldId.text + "' not defined " +
+            "in struct '" + SymTable.structType(structType) + "'");
         }
      }
 
