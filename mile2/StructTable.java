@@ -3,7 +3,7 @@ import java.util.Hashtable;
 public class StructTable {
    private Hashtable<String, SymTable> structs = null;
    
-   private boolean DEBUG = true;
+   private boolean DEBUG = false;
    
    public StructTable() {
       structs = new Hashtable<String, SymTable>();
@@ -40,10 +40,10 @@ public class StructTable {
       return structs != null && structs.containsKey(id);
    }
    
-   public boolean isField(String struct, String field) {
-      return structs != null && ((SymTable)structs.get(struct)).isDefined(field);
+   public boolean isField(String structId, String field) {
+      return structs != null && ((SymTable)structs.get(structId)).isDefined(field);
    }
-   
+
    public String getType(String struct, String field) {
       if(null == structs)
          return null;
