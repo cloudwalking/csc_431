@@ -36,6 +36,20 @@ public class SymTable {
    public Map getMap() {
       return table;
    }
+
+   public boolean contains(String symbol) {
+      return table.containsKey(symbol);
+   }
+
+   public boolean containsStructType(String type) {
+      if (type.equals(intType()) || type.equals(boolType()))
+         return false;
+      for (SymEntry symbol : table.values()) {
+         if (type.equals(symbol.getType()))
+            return true;
+      }
+      return false;
+   }
    
    public boolean isDefined(String symbol) {
       return table != null && table.containsKey(symbol);
