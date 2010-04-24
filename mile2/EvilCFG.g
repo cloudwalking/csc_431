@@ -81,21 +81,16 @@ list_id [SymTable local, String t]
      }
    ;
 
-//figure out stuff with funtable, to know where they are instantiated
-//and what they will map to
 functions
    : ^(FUNCS function*)
    ;
 
 function
    : ^(FUN id=ID {
-        if (symtable.isDefined($id.text)) {
-           System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
-        }
-        //entry = new Block();
-        //exit = new Block();
-        //entry.next = (head = new Block());
-        SymTable locals = new SymTable();
+        //for CFG
+        entry = new Block();
+        exit = new Block();
+        head = new Block()
      }
      parameters[locals]
 
@@ -108,13 +103,9 @@ function
         funTable.addFunction($id.text, locals);
         curFun = $id.text;
      }
-     //head = statement[head, exit]
-     hasReturn=statement[locals, false]) {
-        if (!retType.equals(SymTable.voidType()) && !$hasReturn.retVal) {
-           System.err.println("Function '" + curFun +
-            "' does not have return statement");
-        }
-     }
+     //for CFG
+     head = statement[locals, head, exit]
+     entry.addNext(head);)
    ;
 
 parameters [SymTable subtable]
@@ -126,75 +117,90 @@ return_type returns [String t = null]
    | VOID { $t = SymTable.voidType(); }
    ;
 
-//statement[Block head, Block exit] returns [Block statement = null]
-statement[SymTable locals, boolean hasReturn] returns [boolean retVal = false]
+statement[SymTable locals, Block head, Block exit] returns [Block top = null]
 //@init{ System.out.println("statement on line " + getLine()); }
-   : ^(BLOCK ^(STMTS (r=statement[locals, hasReturn])*)) {
-     // { statement = head; }
-     //( { end = new Block(); } head = statement[head, end] { head = end; })*
-     //{ end.next = exit; }
+   : ^(BLOCK ^(STMTS { $top = head; }
+     ({ end = new Block(); } head = statement[locals, head, end] { head = end; })* {
+        end.addNext(exit);
+     })
 
-        $retVal = $r.retVal || $hasReturn;
+   | ^(STMTS { $top = head; }
+     ({ end = new Block(); } head = statement[locals, head, end] { head = end; })* {
+        end.addNext(exit);
+     })
+
+   | iloc=assignment[locals] {
+        /*head.addILoc(iloc);*/
+        head.addNext(exit);
+        $top = head;
      }
-   | ^(STMTS (r=statement[locals, hasReturn])*) {
-     // { statement = head; }
-     //( { end = new Block(); } head = statement[head, end] { head = end; })*
-     //{ end.next = exit; }
-        $retVal = $r.retVal || $hasReturn;
+
+   | iloc=print[locals] {
+        /*head.addILoc(iloc);*/
+        head.addNext(exit);
+        $top = head;
      }
-   | assignment[locals] { $retVal = $hasReturn; }
-     //iloc=assignment { head.iloc = iloc;head.next = exit;statement=head }
-   | print[locals] { $retVal = $hasReturn; }
-     //iloc=print { head.iloc = iloc;head.next = exit }
-   | read[locals] { $retVal = $hasReturn; }
-     //iloc=read { head.iloc = iloc;head.next = exit }
-   | ^(IF expression[locals] rthen=statement[locals, hasReturn]
-      (relse=statement[locals, hasReturn])?) {
-//remember to add the then and else heads to head
-     //iloc=expression {head.iloc = iloc;end = new Block(); thenHead = new Block(); elseHead = new Block(); }
-     //thenHead = statement[thenHead, end] elseHead = statement[elseHead, end]
-     //{ end.next = exit; statement = head; }
-        $retVal = (($rthen.retVal && $relse.retVal) || $hasReturn);
+
+   | iloc=read[locals] {
+        /*head.addILoc(iloc);*/
+        head.addNext(exit);
+        $top = head
      }
-   | ^(WHILE expr=expression[locals] r=statement[locals, hasReturn]
-      expr2=expression[locals]) {
-     //iloc=expression {head.iloc = iloc; end = new Block(); body = new Block();  }
-     //body = statement[body, head]
-     //{ remember to add the body and end to head's successors; statement = head; }
-        $retVal = $r.retVal;
+
+   | ^(IF iloc=expression[locals] {
+        /*head.addILoc(iloc);*/
+        end = new Block();
+        end.next = exit;
+        thenHead = new Block();
+        elseHead = new Block();
      }
-   | delete[locals] { $retVal = $hasReturn; }
-     //iloc=delete { head.iloc = iloc;head.next = exit }
-   | r2=ret[locals] { $retVal = $r2.hasReturn; }
-     //iloc=ret { head.iloc = iloc;head.next = exit }
-   | invocation[locals] { $retVal = $hasReturn; }
-     //iloc=invocation { head.iloc = iloc;head.next = exit }
+     thenHead = statement[locals, thenHead, end] elseHead = statement[locals, elseHead, end] {
+        head.addNext(thenHead);
+        head.addNext(elseHead);
+        $top = head;
+     })
+
+   | ^(WHILE iloc=expression[locals] {
+        /*head.addILoc(iloc);*/
+        end = new Block();
+        end.addNext(exit);
+        body = new Block();
+     }
+     body = statement[locals, body, head] {
+        head.addNext(body);
+        head.addNext(end);
+        $top = head;
+     })
+
+   | iloc=delete[locals] {
+        /*head.addILoc(iloc);*/
+        head.addNext(exit);
+        $top = head;
+     }
+
+   | iloc=ret[locals] {
+        /*head.addILoc(iloc);*/
+        head.addNext(exit);
+        $top = head;
+     }
+
+   | iloc=invocation[locals] {
+        /*head.addILoc(iloc);*/
+        head.addNext(exit);
+        $top = head;
+     }
    ;
 
 assignment[SymTable locals]
-   : ^(ASSIGN exprType=expression[locals] lvalType=lvalue[locals]) {
-        if(!lvalType.equals(exprType)) {
-           System.err.println("Type Mismatch in assignment: found '" +
-            exprType + "' type, expected '" + lvalType + "'");
-        }
-     }
+   : ^(ASSIGN exprType=expression[locals] lvalType=lvalue[locals])
    ;
 
 print[SymTable locals]
-   : ^(PRINT extype=expression[locals] (ENDL)?) {
-        if (extype != null && !extype.equals(SymTable.intType())) {
-           System.err.println("Cannot print non-integers");
-        }
-     }
+   : ^(PRINT extype=expression[locals] (ENDL)?)
    ;
 
 read[SymTable locals]
-   : ^(READ lvalType=lvalue[locals]) {
-        if (!lvalType.equals(SymTable.intType())) {
-           System.err.println("Invalid read operation: expected 'int'" +
-            " type, found '" + lvalType +"'");
-        }
-     }
+   : ^(READ lvalType=lvalue[locals])
    ;
 
 delete[SymTable locals]
@@ -202,21 +208,7 @@ delete[SymTable locals]
    ;
 
 ret[SymTable locals] returns [boolean hasReturn = false]
-   : ^(RETURN (retType=expression[locals])?) {
-        if (retType == null && (symtable.getType(curFun) !=
-         SymTable.voidType())) {
-           System.err.println("Invalid return type in function '" + curFun +
-            "' expected '" + symtable.getType(curFun) + "', found '" +
-            SymTable.voidType() + "'");
-        }
-        else if (!retType.equals(symtable.getType(curFun))) {
-           System.err.println("Invalid return type in function '" + curFun +
-            "' expected '" + symtable.getType(curFun) + "', found '" +
-            retType + "'");
-        }
-
-        $hasReturn = true;
-     }
+   : ^(RETURN (retType=expression[locals])?)
    ;
 
 invocation[SymTable locals]
@@ -224,170 +216,36 @@ invocation[SymTable locals]
    ;
 
 lvalue[SymTable locals] returns [String t = null]
-   : ^(DOT structId=subvalue fieldId=ID) {
-        if(!structTable.isField($structId.t, $fieldId.text)) {
-           System.err.println("line " + $fieldId.line + ": invalid field '" +
-            $fieldId.text + "' in struct '" + $structId.t + "'");
-        }
-        $t = structTable.getType($structId.t, $fieldId.text);
-     }
-
-   | valId=ID {
-        if(!symtable.isDefined($valId.text)) {
-           System.err.println("line " + $valId.line + ": invalid symbol '" +
-            $valId.text + "'");
-        }
-        $t = symtable.getType($valId.text);
-     }
+   : ^(DOT structId=subvalue fieldId=ID)
+   | valId=ID
    ;
 
 subvalue returns [String t = null]
-   : ^(DOT structId=subvalue fieldId=ID) {
-        if(!structTable.isField(structId, $fieldId.text)) {
-           System.err.println("line " + $fieldId.line + ": invalid field '" +
-            $fieldId.text + "' in struct '" + $structId.t + "'");
-        }
-        $t = $fieldId.text;
-     }
-
-   | id=ID {
-        if(!structTable.isDefined($id.text)) {
-           System.err.println("line " + $id.line + ": undefined struct type'" +
-            $id.text + "'");
-        }
-        $t = $id.text;
-     }
+   : ^(DOT structId=subvalue fieldId=ID)
+   | id=ID
    ;
 
 expression [SymTable locals] returns [String t = null]
-   : ^(AND lexpr=expression[locals] rexpr=expression[locals]) {
-        if (!rexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else if (!lexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else { $t = SymTable.boolType(); }
-     }
-
-   | ^(OR lexpr=expression[locals] rexpr=expression[locals]) {
-        if (!rexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else if (!lexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else { $t = SymTable.boolType(); }
-     }
+   : ^(AND lexpr=expression[locals] rexpr=expression[locals])
+   | ^(OR lexpr=expression[locals] rexpr=expression[locals])
 
    | ^((EQ | LT | GT | NE | LE | GE) lexpr=expression[locals]
-      rexpr=expression[locals]) {
-        if (!rexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
-            " in function " + curFun);
-        }
-        else if (!lexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
-            " in function " + curFun);
+      rexpr=expression[locals])
+   | ^((PLUS | MINUS) lexpr=expression[locals] rexpr=expression[locals])
+   | ^((TIMES | DIVIDE) lexpr=expression[locals] rexpr=expression[locals])
 
-        }
-        else { $t = SymTable.boolType(); }
-     }
+   | ^(NEG extype=expression[locals])
+   | ^(NOT expression[locals])
 
-   | ^((PLUS | MINUS) lexpr=expression[locals] rexpr=expression[locals]) {
-        if (!rexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else if (!lexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else { $t = SymTable.intType(); }
-     }
+   | ^(DOT structType=expression[locals] fieldId=ID)
+   | ^(INVOKE id=ID args=arguments[locals])
 
-   | ^((TIMES | DIVIDE) lexpr=expression[locals] rexpr=expression[locals]) {
-        if (!rexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else if (!lexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
-            " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
-        }
-        else { $t = SymTable.intType(); }
-     }
-
-   | ^(NEG extype=expression[locals]) {
-        if (extype.equals(SymTable.intType())) { $t = SymTable.intType(); }
-        else { System.err.println("Invalid operand for negative symbol"); }
-     }
-
-   | ^(NOT expression[locals]) {
-        if (extype.equals(SymTable.intType())) {
-           $t = SymTable.intType();
-        }
-        else if (extype.equals(SymTable.boolType())) {
-           $t = SymTable.boolType();
-        }
-        else {
-           System.err.println("Invalid operand for not symbol");
-        }
-     }
-
-   | ^(DOT structType=expression[locals] fieldId=ID) {
-        if (structType == null) {
-           System.err.print("Undefined error trying to find struct type");
-           System.err.println(" on line " + $fieldId.line);
-           System.exit(1);
-        }
-        if (!locals.containsStructType(structType)) {
-           if (!symtable.containsStructType(structType)) {
-              System.err.println("unexpected type: expected 'struct', found" +
-               " '" + structType + "' on line " + $fieldId.line);
-
-              System.exit(1);
-           }
-        }
-
-        if(!structType.equals(SymTable.intType()) &&
-         !structType.equals(SymTable.boolType())) {
-           structType = structType.substring(7, structType.length());
-
-           if(structTable.isField(structType, $fieldId.text)) {
-              $t = structTable.getType(structType, $fieldId.text);
-           }
-        }
-        else {
-           System.out.println("symbol '" + $fieldId.text + "' not defined " +
-            "in struct '" + SymTable.structType(structType) + "'");
-        }
-     }
-
-   | ^(INVOKE id=ID args=arguments[locals]){
-        $t = symtable.getType($id.text);
-     }
-
-   | id=ID {
-        if (locals.isDefined($id.text)) {
-           $t = locals.getType($id.text);
-        }
-        else if (symtable.isDefined($id.text)) {
-           $t = symtable.getType($id.text);
-        }
-     }
-
-   | INTEGER { $t=SymTable.intType(); }
-   | TRUE { $t=SymTable.boolType(); }
-   | FALSE { $t=SymTable.boolType(); }
-   | ^(NEW id=ID) { $t = SymTable.structType($id.text); }
-   | NULL { $t = "null"; }
+   | id=ID
+   | INTEGER
+   | TRUE
+   | FALSE
+   | ^(NEW id=ID)
+   | NULL
    ;
 
 arguments[SymTable locals]
