@@ -170,36 +170,40 @@ statement[SymTable locals, Block head, Block exit] returns [Block top = null]
      }
    ;
 
-assignment[SymTable locals]
-   : ^(ASSIGN exp=expression[locals] lval=lvalue[locals])
+assignment[SymTable locals] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int r = regTable.newRegister(); }
+   : ^(ASSIGN exp=expression[r] lval=lvalue[locals])
+   	{	// Lookup right register
+   		// Store
+   	}
    ;
 
-print[SymTable locals] returns [InstructionNode node = null]
+print[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(PRINT exp=expression[locals] (ENDL)?)
-	   { $node = new InstructionNode(Expression.Operator.PRINT, $exp); }
+
    ;
 
-read[SymTable locals] returns [InstructionNode node = null]
+read[SymTable locals] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(READ exp=lvalue[locals])
-   	{ $node = new InstructionNode(Expression.Operator.READ, $exp); }
+
    ;
 
-delete[SymTable locals] returns [InstructionNode node = null]
+delete[SymTable locals] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(DELETE exp=expression[locals])
-   	{ $node = new InstructionNode(Expression.Operator.DEL, $exp); }
+
    ;
 
-ret[SymTable locals] returns [InstructionNode node = null]
+ret[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(RETURN (exp=expression[locals])?)
-   	{ $node = new InstructionNode(null, $exp); }
+
    ;
 
-invocation[SymTable locals] returns [InstructionNode node = null]
+invocation[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(INVOKE id=ID args=arguments[locals])
-   	{ $node = new InstructionNode(Instruction.Operation.JUMPI, $id, $exp); }
+   	//{ $node = new InstructionNode(Instruction.Operation.JUMPI, $id, $exp); }
    ;
 
-lvalue[SymTable locals] returns [String t = null]
+lvalue[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(DOT structId=subvalue fieldId=ID)
    | valId=ID
    ;
@@ -215,30 +219,31 @@ expression [int resultReg] returns [LinkedList<Instruction> instructions = new L
    : ^(op=(AND | OR | EQ | LT | GT | NE | LE | GE | PLUS | MINUS | TIMES | DIVIDE)
    		lexpr=expression[r1] 
    		rexpr=expression[r2])
-   		{ 	$instructions.addAll(0, $lexpr);
-   			$instructions.addAll(0, $rexpr);
-   			$instructions.add(new Instruction(Instruction.getOperator($op), r1, r2, resultReg)); })
-   | ^(op=(TIMES | DIVIDE) 
-   		lexpr=expression[r1] 
-   		rexpr=expression[r2])
-			{ 	$instructions.addAll(0, $lexpr);
-   			$instructions.addAll(0, $rexpr);
+   		{ 	$instructions.addAll(0, $lexpr.instructions);
+   			$instructions.addAll(0, $rexpr.instructions);
    			$instructions.add(new Instruction(Instruction.getOperator($op), r1, r2, resultReg)); }
-   | ^(NEG $expr=expression[locals])
+   | ^(NEG expr=expression[r1])
    		// Is this just a negative number?
-   		{ $node = new InstructionNode(Instruction.Operator.MULT, $expr, -1); }
-   | ^(NOT expression[locals])
-			{ $node = new InstructionNode(/* something */, $lexpr, $rexpr)); }
-   | ^(DOT structType=expression[locals] fieldId=ID)
+   		{ 	$instructions.addAll(0, $expr.instructions);
+   			$instructions.add(new Instruction(Instruction.Operator.LOADI, r2, -1);
+   			$instructions.add(new Instruction(Instruction.Operator.MULT, r1, r2, resultReg); }
+   | ^(NOT expr=expression[r1])
+			// Something
+   | ^(DOT expr=expression[r1] fieldId=ID)
+	   // Load
+	   // Store
    | ^(INVOKE id=ID args=arguments[locals])
-
+		// Jump
    | id=ID
-   	{ $node = new InstructionNode(new Instruction(id)); }
+		// Load into resultReg
    | i=INTEGER
-   	{ $node = new InstructionNode(new Instruction(i)); }
+   		
    | TRUE
+   		{ $instructions.add(new Instruction(Instructions.Operator.LOADI, resultReg, 1)); }
    | FALSE
+   		{ $instructions.add(new Instruction(Instructions.Operator.LOADI, resultReg, 0)); }
    | ^(NEW id=ID)
+   	// Allocate
    | NULL
    ;
 
