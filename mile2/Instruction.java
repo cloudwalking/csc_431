@@ -27,7 +27,7 @@ public class Instruction {
          returns = Operator.EQ;
    }
 */
-   private enum Operator {
+   public enum Operator {
       ADD,
       ADDI,
       DIV,
