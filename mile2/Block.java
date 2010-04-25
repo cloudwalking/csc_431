@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class Block {
-   private ArrayList<Block> successors = new ArrayList<Block>();
+   private ArrayList<Block> successors;
    private ArrayList<String> instrs, labels;
    private int entered, exited;
 
@@ -23,9 +23,9 @@ public class Block {
       labels.add(blockLabel);
    }
 
-   public String printList(ArrayList<Block> children) {
-      String childString = "";
-   }
+   // public String printList(ArrayList<Block> children) {
+   //    String childString = "";
+   // }
 
    public String printList(ArrayList<String> asmContents) {
       String retStr = "";
@@ -49,8 +49,8 @@ public class Block {
 
    public void topoPrint(Block top, int counter) {
       top.entered = counter++;
-      printPadding(numIter);
-      System.out.println("Block " + numIter + ":");
+      // printPadding(numIter);
+      // System.out.println("Block " + numIter + ":");
       if (top.successors.isEmpty()) {
          
       }
@@ -58,19 +58,19 @@ public class Block {
 
    public void printBlockTree(int numIter) {
       printPadding(numIter);
-      System.out.println("Block " + numIter + ":");
+      // System.out.println("Block " + numIter + ":");
       printPadding(numIter);
-      System.out.println("Labels: " + printList(labels));
+      // System.out.println("Labels: " + printList(labels));
       printPadding(numIter);
-      System.out.println("ILOC: " + printList(instrs));
+      // System.out.println("ILOC: " + printList(instrs));
       for (Block b: successors) {
          numIter++;
          printPadding(numIter);
-         System.out.println("Block " + numIter + ":");
+         // System.out.println("Block " + numIter + ":");
          printPadding(numIter);
-         System.out.println("Labels: " + printList(labels));
+         // System.out.println("Labels: " + printList(labels));
          printPadding(numIter);
-         System.out.println("ILOC: " + printList(instrs));
+         // System.out.println("ILOC: " + printList(instrs));
       }
    }
 }

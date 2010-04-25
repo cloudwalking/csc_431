@@ -8,10 +8,7 @@ options {
 }
 
 @members{
-   StructTable structTable = new StructTable();
-   SymTable symtable = new SymTable();
-   FunTable funTable = new FunTable();
-   String curFun;
+   RegTable regTable = new RegTable();
 }
 
 program
@@ -29,56 +26,37 @@ type_sub
    ;
   
 type_declaration
-   : ^(STRUCT id=ID {
-        structTable.addStruct($id.text);
-     }
-     structSymTable=nested_decl) {
-        structTable.updateStruct($id.text, $structSymTable.subtable);
-     }
+   : ^(STRUCT ID nested_decl)
    ;
   
-nested_decl returns [SymTable subtable = new SymTable()]
-   : decl[subtable]+
+nested_decl
+   : decl+
    ;
 
-decl [SymTable subtable]
-   : ^(DECL ^(TYPE t=type) id=ID) { subtable.insertSymbol($id.text, t); }
+decl
+   : ^(DECL ^(TYPE type) ID)
    ;
 
-type returns [String t = null]
-   :  INT { $t = SymTable.intType(); }
-   |  BOOL { $t = SymTable.boolType(); }
-   |  ^(STRUCT id=ID) {
-        if (!structTable.isDefined($id.text)) {
-          System.err.println("line " + $id.line +
-           ": undefined struct type '" + $id + "'");
-        }
-        $t = SymTable.structType($id.text);
-     }
+type
+   :  INT
+   |  BOOL
+   |  ^(STRUCT id=ID)
    ;
 
-declarations [SymTable locals]
-   : ^(DECLS declaration[locals]*)
+declarations
+   : ^(DECLS declaration*)
    ;
 
-declaration [SymTable local]
-   : ^(DECLLIST ^(TYPE t=type) id_list[local, t])
+declaration
+   : ^(DECLLIST ^(TYPE type) id_list)
    ;
 
-id_list [SymTable local, String t]
-   : list_id[local, t]+
+id_list
+   : list_id+
    ;
    
-list_id [SymTable local, String t]
-   : id=ID {
-        if (!$local.isDefined($id.text)) {
-           local.insertSymbol($id.text, $t);
-        }
-        else {
-           System.err.println("line " + $id.line +
-            ": already declared '" + $id + "'");
-        }
-     }
+list_id
+   : ID
    ;
 
 functions
@@ -154,7 +132,8 @@ statement[SymTable locals, Block head, Block exit] returns [Block top = null]
         thenHead = new Block();
         elseHead = new Block();
      }
-     thenHead = statement[locals, thenHead, end] elseHead = statement[locals, elseHead, end] {
+     thenHead = statement[locals, thenHead, end] 
+     elseHead = statement[locals, elseHead, end] {
         head.addNext(thenHead);
         head.addNext(elseHead);
         $top = head;
@@ -192,27 +171,32 @@ statement[SymTable locals, Block head, Block exit] returns [Block top = null]
    ;
 
 assignment[SymTable locals]
-   : ^(ASSIGN exprType=expression[locals] lvalType=lvalue[locals])
+   : ^(ASSIGN exp=expression[locals] lval=lvalue[locals])
    ;
 
-print[SymTable locals]
-   : ^(PRINT extype=expression[locals] (ENDL)?)
+print[SymTable locals] returns [InstructionNode node = null]
+   : ^(PRINT exp=expression[locals] (ENDL)?)
+	   { $node = new InstructionNode(Expression.Operator.PRINT, $exp); }
    ;
 
-read[SymTable locals]
-   : ^(READ lvalType=lvalue[locals])
+read[SymTable locals] returns [InstructionNode node = null]
+   : ^(READ exp=lvalue[locals])
+   	{ $node = new InstructionNode(Expression.Operator.READ, $exp); }
    ;
 
-delete[SymTable locals]
-   : ^(DELETE expression[locals])
+delete[SymTable locals] returns [InstructionNode node = null]
+   : ^(DELETE exp=expression[locals])
+   	{ $node = new InstructionNode(Expression.Operator.DEL, $exp); }
    ;
 
-ret[SymTable locals] returns [boolean hasReturn = false]
-   : ^(RETURN (retType=expression[locals])?)
+ret[SymTable locals] returns [InstructionNode node = null]
+   : ^(RETURN (exp=expression[locals])?)
+   	{ $node = new InstructionNode(null, $exp); }
    ;
 
-invocation[SymTable locals]
+invocation[SymTable locals] returns [InstructionNode node = null]
    : ^(INVOKE id=ID args=arguments[locals])
+   	{ $node = new InstructionNode(Instruction.Operation.JUMPI, $id, $exp); }
    ;
 
 lvalue[SymTable locals] returns [String t = null]
@@ -225,23 +209,33 @@ subvalue returns [String t = null]
    | id=ID
    ;
 
-expression [SymTable locals] returns [String t = null]
-   : ^(AND lexpr=expression[locals] rexpr=expression[locals])
-   | ^(OR lexpr=expression[locals] rexpr=expression[locals])
-
-   | ^((EQ | LT | GT | NE | LE | GE) lexpr=expression[locals]
-      rexpr=expression[locals])
-   | ^((PLUS | MINUS) lexpr=expression[locals] rexpr=expression[locals])
-   | ^((TIMES | DIVIDE) lexpr=expression[locals] rexpr=expression[locals])
-
-   | ^(NEG extype=expression[locals])
+// Returns a list of it's instructions
+expression [int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int r1 = regTable.newRegister(), r2 = regTable.newRegister(); }
+   : ^(op=(AND | OR | EQ | LT | GT | NE | LE | GE | PLUS | MINUS | TIMES | DIVIDE)
+   		lexpr=expression[r1] 
+   		rexpr=expression[r2])
+   		{ 	$instructions.addAll(0, $lexpr);
+   			$instructions.addAll(0, $rexpr);
+   			$instructions.add(new Instruction(Instruction.getOperator($op), r1, r2, resultReg)); })
+   | ^(op=(TIMES | DIVIDE) 
+   		lexpr=expression[r1] 
+   		rexpr=expression[r2])
+			{ 	$instructions.addAll(0, $lexpr);
+   			$instructions.addAll(0, $rexpr);
+   			$instructions.add(new Instruction(Instruction.getOperator($op), r1, r2, resultReg)); }
+   | ^(NEG $expr=expression[locals])
+   		// Is this just a negative number?
+   		{ $node = new InstructionNode(Instruction.Operator.MULT, $expr, -1); }
    | ^(NOT expression[locals])
-
+			{ $node = new InstructionNode(/* something */, $lexpr, $rexpr)); }
    | ^(DOT structType=expression[locals] fieldId=ID)
    | ^(INVOKE id=ID args=arguments[locals])
 
    | id=ID
-   | INTEGER
+   	{ $node = new InstructionNode(new Instruction(id)); }
+   | i=INTEGER
+   	{ $node = new InstructionNode(new Instruction(i)); }
    | TRUE
    | FALSE
    | ^(NEW id=ID)
