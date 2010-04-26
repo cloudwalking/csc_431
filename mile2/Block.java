@@ -5,7 +5,7 @@ public class Block {
    private ArrayList<Block> successors;
    private LinkedList<Instruction> instrs;
    private ArrayList<String> labels;
-   private int entered, exited, numLabels;
+   private int entered, exited;
 
    public Block() {
       successors = new ArrayList<Block>();
@@ -13,10 +13,10 @@ public class Block {
       labels = new ArrayList<String>();
       entered = 0;
       exited = 0;
-      numLabels = 0;
    }
 
    public void addILoc(LinkedList instructions) {
+System.out.println("Hello new instruction ;D " + instructions.toString());
       instrs.addAll(instructions);
    }
 
@@ -25,7 +25,15 @@ public class Block {
    }
 
    public void addLabel(String blockLabel) {
-      labels.add(blockLabel + " " + (numLabels++));
+      labels.add(blockLabel);
+   }
+
+   public String printInstrs(LinkedList<Instruction> iLoc) {
+      String myInstrs = "";
+      for (Instruction i : iLoc) {
+         myInstrs += i.toString() + "\n";
+      }
+      return myInstrs.trim();
    }
 
    public String printList(ArrayList<String> asmContents) {
@@ -39,6 +47,7 @@ public class Block {
    public void printBlock() {
       LinkedList<Block> cfg = new LinkedList<Block>();
       topoPrint(this, 0, cfg, 0);
+      printBlockTree(0, cfg);
       cleanTracks(this);
    }
 
@@ -57,12 +66,27 @@ public class Block {
          counter = topoPrint(b, counter, cfg, ++nested);
       }
       top.exited = ++counter;
-      printPadding(nested);
-      System.out.println("Block " + nested + ":");
-      printPadding(nested);
-      System.out.println("Labels: " + printList(top.labels));
       cfg.addFirst(top);
       return counter;
+   }
+
+   public String successors(Block head) {
+      String children = "";
+      for (Block b: head.successors) {
+         children += printList(b.labels);
+      }
+      return children.trim();
+   }
+
+   public void printBlockTree(int numBlock, LinkedList<Block> cfg) {
+      if (cfg.isEmpty())
+         return;
+      Block curBlock = cfg.removeFirst();
+      System.out.println("Block " + numBlock + ":");
+      System.out.println("   labels: " + printList(curBlock.labels));
+      System.out.println("   successors are: " + successors(curBlock));
+      System.out.println("   contains iloc: " + printInstrs(instrs));
+      printBlockTree(++numBlock, cfg);
    }
 
    public void cleanTracks(Block top) {
