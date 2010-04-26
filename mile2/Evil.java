@@ -6,6 +6,7 @@ import java.io.*;
 import java.util.Vector;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedList;
 
 public class Evil
 {
@@ -41,9 +42,6 @@ public class Evil
       try
       {
          //symbolTypes and structTypes contain variables and their types, no values
-         /*StructTable structTable = new StructTable();
-         SymTable symtable = new SymTable();
-         FunTable funtable = new FunTable();*/
 
          CommonTreeNodeStream nodes = new CommonTreeNodeStream(parserRet);
          nodes.setTokenStream(tokens);
@@ -59,6 +57,14 @@ public class Evil
          tparser.structTable.print();
          System.out.println("\n** FunTable **");
          tparser.funTable.print();*/
+
+         CommonTreeNodeStream CFGnodes = new CommonTreeNodeStream(parserRet);
+         CFGnodes.setTokenStream(tokens);
+         EvilCFG cfgParser = new EvilCFG(CFGnodes);
+
+         //cfg parser populates the CFG
+      
+         cfgParser.program();
       }
       catch (org.antlr.runtime.RecognitionException e)
       {
