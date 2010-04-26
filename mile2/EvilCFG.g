@@ -18,7 +18,7 @@ options {
 
 program
    : ^(PROGRAM types declarations cfgList=functions) {
-        for (Block block : cfgList) {
+        for (Block block:cfgList) {
            block.printBlock();
         }
      }
@@ -26,7 +26,7 @@ program
 
 types
    : ^(TYPES type_sub)
-   |   TYPES
+   | TYPES
    ;
 
 type_sub
@@ -61,7 +61,7 @@ declaration
    ;
 
 id_list
-   : ID+
+   : list_id+
    ;
 
 list_id returns [int reg]
@@ -170,7 +170,7 @@ statement[Block head, Block exit] returns [Block top = null]
         head.addNext($body.top);
         head.addNext(end);
         $top = head;
-     })
+     } iloc=expression[regTable.newRegister()])
 
    | iloc=delete {
         head.addILoc($iloc.instructions);
