@@ -1,5 +1,5 @@
 //make certain structuress global, then propagate changes
-tree grammar EvilAST;
+tree grammar EvilCFG;
 
 options {
   language = Java;
@@ -7,251 +7,288 @@ options {
   ASTLabelType = CommonTree;
 }
 
+@header {
+   import java.util.LinkedList;
+}
+
 @members{
    RegTable regTable = new RegTable();
 }
 
 program
-   : ^(PROGRAM types declarations[symtable] functions)
+   : ^(PROGRAM types top_instrs=declarations functions[top_instrs])
    ;
   
 types
    : ^(TYPES type_sub)
    |   TYPES
    ;
-
 type_sub
    : type_declaration type_sub
    | 
    ;
-  
 type_declaration
    : ^(STRUCT ID nested_decl)
    ;
-  
 nested_decl
    : decl+
    ;
-
 decl
    : ^(DECL ^(TYPE type) ID)
    ;
-
 type
    :  INT
    |  BOOL
    |  ^(STRUCT id=ID)
    ;
 
-declarations
-   : ^(DECLS declaration*)
+declarations returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+   : ^(DECLS (instr=declaration)*)
+   {	$instructions.addAll(instr); }
    ;
 
-declaration
-   : ^(DECLLIST ^(TYPE type) id_list)
+declaration returns [LinkedList<Instruction> instructions = null]
+   : ^(DECLLIST ^(TYPE type) inst=id_list)
+   {	$instructions = $inst.instructions;}
    ;
 
-id_list
-   : list_id+
+id_list returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+   : (register=list_id)+
+	   {	$instructions.add(new Instruction(Instruction.Operator.NEW, register)); }
    ;
    
-list_id
-   : ID
+list_id returns [int reg]
+   : id=ID
+   {	$reg = regTable.lookupId($id.text); }
    ;
 
-functions
-   : ^(FUNCS function*)
+functions[LinkedList<Instruction> top_instrs]
+@init { LinkedList<Instruction> blank_instrs = new LinkedList<Instruction>(); }
+   : ^(FUNCS function[top_instrs] function[blank_instrs]*)
    ;
 
-function
+function[LinkedList<Instruction> top_instrs]
+//@init { RegTable localRegisters = new RegTable(); }
    : ^(FUN id=ID {
         //for CFG
-        entry = new Block();
-        exit = new Block();
-        head = new Block()
-     }
-     parameters[locals]
-
-     ^(RETTYPE retType=return_type) {
-        symtable.insertSymbol($id.text, $retType.t);
-     }
-
-     declarations[locals] {
-        symtable.insertSymbol($id.text, retType);
-        funTable.addFunction($id.text, locals);
-        curFun = $id.text;
-     }
-     //for CFG
-     head = statement[locals, head, exit]
-     entry.addNext(head);)
+        Block entry = new Block();
+        Block exit = new Block();
+        Block head = new Block();
+        head.addILoc(top_instrs); // Globals
+	     }
+	     parameters
+	     ^(RETTYPE return_type)
+	     declarations
+	     //for CFG
+	     head = statement[head, exit]
+	     { entry.addNext($head.top); }
+     )
    ;
 
-parameters [SymTable subtable]
-   : ^(PARAMS decl[subtable]*)
+parameters
+   : ^(PARAMS decl*)
    ;
 
-return_type returns [String t = null]
-   : retType=type { $t = $retType.t; }
-   | VOID { $t = SymTable.voidType(); }
+return_type 
+   : type
+   | VOID
    ;
 
-statement[SymTable locals, Block head, Block exit] returns [Block top = null]
+statement[Block head, Block exit] returns [Block top = null]
 //@init{ System.out.println("statement on line " + getLine()); }
-   : ^(BLOCK ^(STMTS { $top = head; }
-     ({ end = new Block(); } head = statement[locals, head, end] { head = end; })* {
-        end.addNext(exit);
+   :^(BLOCK ^(STMTS {
+        $top = head;
+        $top.addLabel("Block");
+        Block end = null;
+     }
+     ({ end = new Block(); } statement[head, end] { head = end; })* {
+        if (end != null)
+           end.addNext(exit);
+     }))
+
+
+   | ^(STMTS {
+        $top = head;
+        $top.addLabel("Compound Statement");
+        Block end = null;
+     }
+     ({ end = new Block(); } statement[head, end] { head = end; })* {
+        if (end != null)
+           end.addNext(exit);
      })
 
-   | ^(STMTS { $top = head; }
-     ({ end = new Block(); } head = statement[locals, head, end] { head = end; })* {
-        end.addNext(exit);
-     })
-
-   | iloc=assignment[locals] {
-        /*head.addILoc(iloc);*/
+   | iloc=assignment {
+        head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
-   | iloc=print[locals] {
-        /*head.addILoc(iloc);*/
+   | iloc=print {
+        head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
-   | iloc=read[locals] {
-        /*head.addILoc(iloc);*/
+   | iloc=read {
+        head.addILoc($iloc.instructions);
         head.addNext(exit);
-        $top = head
-     }
+        $top = head;
+		}
 
-   | ^(IF iloc=expression[locals] {
-        /*head.addILoc(iloc);*/
+	// This register needs to be allocated? Or we dont care about it?
+   | ^(IF iloc=expression[0] {
+        head.addILoc($iloc.instructions);
         end = new Block();
         end.next = exit;
         thenHead = new Block();
         elseHead = new Block();
      }
-     thenHead = statement[locals, thenHead, end] 
-     elseHead = statement[locals, elseHead, end] {
+     thenHead = statement[thenHead, end] 
+     elseHead = statement[elseHead, end] {
         head.addNext(thenHead);
         head.addNext(elseHead);
         $top = head;
      })
 
-   | ^(WHILE iloc=expression[locals] {
-        /*head.addILoc(iloc);*/
+	// This register needs to be allocated? Or we dont care about it?
+   | ^(WHILE iloc=expression[0] {
+        head.addILoc($iloc.instructions);
         end = new Block();
         end.addNext(exit);
         body = new Block();
      }
-     body = statement[locals, body, head] {
+     body = statement[body, head] {
         head.addNext(body);
         head.addNext(end);
         $top = head;
      })
 
-   | iloc=delete[locals] {
-        /*head.addILoc(iloc);*/
+   | iloc=delete {
+        head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
-   | iloc=ret[locals] {
-        /*head.addILoc(iloc);*/
+   | iloc=ret {
+        head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
-   | iloc=invocation[locals] {
-        /*head.addILoc(iloc);*/
+   | iloc=invocation {
+        head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
    ;
 
-assignment[SymTable locals] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-@init { int r = regTable.newRegister(); }
-   : ^(ASSIGN exp=expression[r] lval=lvalue[locals])
-   	{	// Lookup right register
-   		// Store
+assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int r1 = regTable.newRegister(); }
+   : ^(ASSIGN exp=expression[r1] register=lvalue)
+   	{	//$instructions.addAll(0, $lval.instructions);
+   		$instructions.addAll(0, $exp.instructions);
+   		$instructions.add(new Instruction(Instruction.Operation.STOREAI, r1, $register.register, 0));
    	}
    ;
 
-print[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-   : ^(PRINT exp=expression[locals] (ENDL)?)
-
+print returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int r1 = regTable.newRegister(); }
+   : ^(PRINT exp=expression[r1] (ENDL)?)
+		{ 	$instructions.addAll(0, $exp.instructions);
+			$instructions.add(new Instruction(Instruction.Operation.PRINT, r1)); }
    ;
 
-read[SymTable locals] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-   : ^(READ exp=lvalue[locals])
-
+read returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+   : ^(READ register=lvalue)
+		{ 	$instructions.addAll(0, $exp.instructions);
+			$instructions.add(new Instruction(Instruction.Operation.READ, register)); }
    ;
 
-delete[SymTable locals] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-   : ^(DELETE exp=expression[locals])
-
+delete returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int r1 = regTable.newRegister(); }
+   : ^(DELETE exp=expression[r1])
+		{ 	$instructions.addAll(0, $exp.instructions);
+			$instructions.add(new Instruction(Instruction.Operation.DEL, r1)); }
    ;
 
-ret[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-   : ^(RETURN (exp=expression[locals])?)
-
+ret returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int r1 = regTable.getReturnRegister(); }
+   : ^(RETURN (exp=expression[r1])?)
+		{ 	$instructions.addAll(0, $exp.instructions);
+			$instructions.add(new Instruction(Instruction.Operation.RET)); }
    ;
 
-invocation[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-   : ^(INVOKE id=ID args=arguments[locals])
-   	//{ $node = new InstructionNode(Instruction.Operation.JUMPI, $id, $exp); }
+invocation  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+   : ^(INVOKE id=ID args=arguments)
+   	{	// Store the args in arg registers
+   		$instructions.add(new Instruction(Instruction.Operation.JUMPI, $id.text)); }
    ;
 
-lvalue[SymTable locals]  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-   : ^(DOT structId=subvalue fieldId=ID)
-   | valId=ID
-   ;
-
-subvalue returns [String t = null]
+lvalue returns [int register]
    : ^(DOT structId=subvalue fieldId=ID)
    | id=ID
+   	{	$register = regTable.lookupId($id.text); }
+   ;
+
+subvalue returns [int register]
+   : ^(DOT structId=subvalue fieldId=ID)
+   | id=ID
+		{	$register = regTable.lookupId($id.text); }
    ;
 
 // Returns a list of it's instructions
 expression [int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-@init { int r1 = regTable.newRegister(), r2 = regTable.newRegister(); }
-   : ^(op=(AND | OR | EQ | LT | GT | NE | LE | GE | PLUS | MINUS | TIMES | DIVIDE)
+   : ^(op=(AND | OR | PLUS | MINUS | TIMES | DIVIDE)
+   		{ int r1 = regTable.newRegister(), r2 = regTable.newRegister(); }
    		lexpr=expression[r1] 
    		rexpr=expression[r2])
    		{ 	$instructions.addAll(0, $lexpr.instructions);
    			$instructions.addAll(0, $rexpr.instructions);
-   			$instructions.add(new Instruction(Instruction.getOperator($op), r1, r2, resultReg)); }
-   | ^(NEG expr=expression[r1])
+   			$instructions.add(new Instruction(Instruction.getOperator($op.text), r1, r2, resultReg)); }
+   | ^((EQ | LT | GT | NE | LE | GE)
+   		{ int r1 = regTable.newRegister(), r2 = regTable.newRegister(); }
+   		lexpr=expression[r1] 
+   		rexpr=expression[r2])
+   		{	$instructions.addAll(0);}
+   | ^(NEG { int r1 = regTable.newRegister(); }  expr=expression[r1])
+   		{ int r2 = regTable.newRegister(); }
    		// Is this just a negative number?
    		{ 	$instructions.addAll(0, $expr.instructions);
-   			$instructions.add(new Instruction(Instruction.Operator.LOADI, r2, -1);
-   			$instructions.add(new Instruction(Instruction.Operator.MULT, r1, r2, resultReg); }
-   | ^(NOT expr=expression[r1])
-			// Something
-   | ^(DOT expr=expression[r1] fieldId=ID)
+   			$instructions.add(new Instruction(Instruction.Operator.LOADI, r2, -1));
+   			$instructions.add(new Instruction(Instruction.Operator.MULT, r1, r2, resultReg)); }
+   | ^(NOT { int r1 = regTable.newRegister(); } expr=expression[r1])
+			{ 	$instructions.add(new Instruction(Instruction.Operator.XORI, r1, 1, resultReg)); }
+   | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] fieldId=ID)
 	   // Load
 	   // Store
-   | ^(INVOKE id=ID args=arguments[locals])
+   | ^(INVOKE id=ID args=arguments)
 		// Jump
    | id=ID
-		// Load into resultReg
+		{ 	$instructions.add(new Instruction(Instruction.Operator.LOADAI, regTable.lookupId($id.text), 0, resultReg)); }
    | i=INTEGER
-   		
-   | TRUE
-   		{ $instructions.add(new Instruction(Instructions.Operator.LOADI, resultReg, 1)); }
-   | FALSE
-   		{ $instructions.add(new Instruction(Instructions.Operator.LOADI, resultReg, 0)); }
-   | ^(NEW id=ID)
-   	// Allocate
+   	{ $instructions.add(new Instruction(Instruction.Operator.LOADI, resultReg, $i.text)); }
+   | TRUE {
+        $instructions.add(new Instruction(
+         Instruction.Operator.LOADI, resultReg, 1));
+     }
+   | FALSE {
+        $instructions.add(new Instruction(
+         Instruction.Operator.LOADI, resultReg, 0));
+     }
+   | ^(NEW id=ID) {
+        $instructions.add(new Instruction(
+         Instruction.Operator.NEW, resultReg, $id.text));
+     }
    | NULL
+   	// Something
    ;
 
-arguments[SymTable locals]
-   : arg_list[locals]
+arguments
+   : arg_list
    ;
 
-arg_list[SymTable locals]
-   : ^(ARGS expression[locals]+)
+arg_list
+@init { int r1 = regTable.getReturnRegister(); }
+   : ^(ARGS expression[r1]+)
    | ARGS
    ;

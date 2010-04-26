@@ -1,26 +1,31 @@
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Block {
    private ArrayList<Block> successors;
-   private ArrayList<String> instrs, labels;
-   private int entered, exited;
+   private LinkedList<Instruction> instrs;
+   private ArrayList<String> labels;
+   private int entered, exited, numLabels;
 
    public Block() {
       successors = new ArrayList<Block>();
-      instrs = new ArrayList<String>();
+      instrs = new LinkedList<Instruction>();
       labels = new ArrayList<String>();
+      entered = 0;
+      exited = 0;
+      numLabels = 0;
+   }
+
+   public void addILoc(LinkedList instructions) {
+      instrs.addAll(instructions);
    }
 
    public void addNext(Block childBlock) {
-      successors.add(childBlock);
-   }
+         successors.add(childBlock);
+      }
 
-   public void addILoc(String ilocInstr) {
-      instrs.add(ilocInstr);
-   }
-
-   public void setLabel(String blockLabel) {
-      labels.add(blockLabel);
+   public void addLabel(String blockLabel) {
+      labels.add(blockLabel + " " + (numLabels++));
    }
 
    // public String printList(ArrayList<Block> children) {
@@ -28,16 +33,17 @@ public class Block {
    // }
 
    public String printList(ArrayList<String> asmContents) {
-      String retStr = "";
-      for (String s: asmContents) {
-         retStr += asmContents + ", ";
+         String retStr = "";
+         for (String s: asmContents) {
+            retStr += asmContents + ", ";
+         }
+         return retStr.trim();
       }
-      return retStr.trim();
-   }
 
    public void printBlock() {
-      topoPrint(this, 0);
-      printBlockTree(0);
+      LinkedList<Block> cfg = new LinkedList<Block>();
+      topoPrint(this, 0, cfg, 0);
+      cleanTracks(this);
    }
 
    public void printPadding(int paddingAmt) {
@@ -47,30 +53,29 @@ public class Block {
       System.out.print(padding);
    }
 
-   public void topoPrint(Block top, int counter) {
-      top.entered = counter++;
-      // printPadding(numIter);
-      // System.out.println("Block " + numIter + ":");
-      if (top.successors.isEmpty()) {
-         
+   public int topoPrint(Block top, int counter, LinkedList<Block> cfg, int nested) {
+      if (top == null || top.entered != 0)
+         return counter;
+      top.entered = ++counter;
+      for (Block b: top.successors) {
+         counter = topoPrint(b, counter, cfg, ++nested);
       }
+      top.exited = ++counter;
+      printPadding(nested);
+      System.out.println("Block " + nested + ":");
+      printPadding(nested);
+      System.out.println("Labels: " + printList(top.labels));
+      cfg.addFirst(top);
+      return counter;
    }
 
-   public void printBlockTree(int numIter) {
-      printPadding(numIter);
-      // System.out.println("Block " + numIter + ":");
-      printPadding(numIter);
-      // System.out.println("Labels: " + printList(labels));
-      printPadding(numIter);
-      // System.out.println("ILOC: " + printList(instrs));
-      for (Block b: successors) {
-         numIter++;
-         printPadding(numIter);
-         // System.out.println("Block " + numIter + ":");
-         printPadding(numIter);
-         // System.out.println("Labels: " + printList(labels));
-         printPadding(numIter);
-         // System.out.println("ILOC: " + printList(instrs));
+   public void cleanTracks(Block top) {
+      if (top == null || top.entered == 0)
+         return;
+      top.entered = 0;
+      for (Block b: top.successors) {
+         cleanTracks(b);
       }
+      top.exited = 0;
    }
 }
