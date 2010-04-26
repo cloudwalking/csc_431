@@ -13,6 +13,7 @@ options {
 
 @members{
    RegTable regTable = new RegTable();
+   int uniqueBlock = 0, uniqueStatement = 0;
 }
 
 program
@@ -65,17 +66,21 @@ id_list
 
 list_id returns [int reg]
    : id=ID {
-        $reg = regTable.getRegister($id.text);
-   }
+        $reg = regTable.newRegister($id.text);
+     }
+   ;
 
 functions returns [LinkedList<Block> cfgList = new LinkedList<Block>()]
-   : ^(FUNCS (topBlock=function {cfgList.add($topBlock.entry);})*)
+   : ^(FUNCS (topBlock=function {
+        cfgList.add($topBlock.entry);
+     })*)
    ;
 
 function returns [Block entry = null]
    : ^(FUN id=ID {
         //for CFG
         $entry = new Block();
+        $entry.addLabel($id.text);
         Block exit = new Block();
      }
      parameters ^(RETTYPE return_type) declarations
@@ -98,7 +103,7 @@ statement[Block head, Block exit] returns [Block top = null]
 @init{ System.out.println("statement "); }
    : ^(BLOCK ^(STMTS {
         $top = head;
-        $top.addLabel("Block");
+        $top.addLabel("Block " + (uniqueBlock++));
         Block end = null;
      }
      ({ end = new Block(); } statement[head, end] { head = end; })* {
@@ -108,7 +113,7 @@ statement[Block head, Block exit] returns [Block top = null]
 
    | ^(STMTS {
         $top = head;
-        $top.addLabel("Compound Statement");
+        //$top.addLabel("Compound Statement");
         Block end = null;
      }
      ({ end = new Block(); } statement[head, end] { head = end; })* {
@@ -117,21 +122,21 @@ statement[Block head, Block exit] returns [Block top = null]
      })
 
    | iloc=assignment {
-        head.addLabel("assignment");
+        head.addLabel("S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=print {
-        head.addLabel("print");
+        head.addLabel("S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=read {
-        head.addLabel("read");
+        head.addLabel("S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
@@ -139,29 +144,29 @@ statement[Block head, Block exit] returns [Block top = null]
 
    | ^(IF iloc=expression[regTable.newRegister()] {
         head.addILoc($iloc.instructions);
-        head.addLabel("IF");
+        head.addLabel("S" + (uniqueStatement++));
         Block end = new Block();
         end.addNext(exit);
      }
      thenHead = statement[new Block(), end] {
-        $thenHead.top.addLabel("then");
+        $thenHead.top.addLabel("S" + (uniqueStatement++));
         head.addNext($thenHead.top);
      }
      (elseHead = statement[new Block(), end] {
-        $elseHead.top.addLabel("else");
+        $thenHead.top.addLabel("S" + (uniqueStatement++));
         head.addNext($elseHead.top);
         $top = head;
      })?)
 
    | ^(WHILE iloc=expression[regTable.newRegister()] {
         head.addILoc($iloc.instructions);
-        head.addLabel("WHILE");
+        head.addLabel("S" + (uniqueStatement++));
         Block end = new Block();
         end.addNext(exit);
      }
 
      body = statement[new Block(), head] {
-        $body.top.addLabel("while body");
+        $body.top.addLabel("S" + (uniqueStatement++));
         head.addNext($body.top);
         head.addNext(end);
         $top = head;
@@ -169,21 +174,21 @@ statement[Block head, Block exit] returns [Block top = null]
 
    | iloc=delete {
         head.addILoc($iloc.instructions);
-        head.addLabel("delete");
+        head.addLabel("S" + (uniqueStatement++));
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=ret {
         head.addILoc($iloc.instructions);
-        head.addLabel("ret");
+        head.addLabel("S" + (uniqueStatement++));
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=invocation {
         head.addILoc($iloc.instructions);
-        head.addLabel("invocation");
+        head.addLabel("S" + (uniqueStatement++));
         head.addNext(exit);
         $top = head;
      }
@@ -193,26 +198,25 @@ assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instru
 @init { int r1 = regTable.newRegister(); }
    : ^(ASSIGN exp=expression[r1] register=lvalue) {
         //$instructions.addAll(0, $lval.instructions);
-   		$instructions.addAll(0, $exp.instructions);
-   		$instructions.add(new Instruction(
-         Instruction.Operation.STOREAI, r1, $register.register, 0));
-   	}
+         $instructions.addAll(0, $exp.instructions);
+         $instructions.add(new Instruction(
+         Instruction.Operator.STOREAI, r1, $register.register, 0));
+      }
    ;
 
 print returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister(); }
    : ^(PRINT exp=expression[r1] (ENDL)?) {
         $instructions.addAll(0, $exp.instructions);
-		$instructions.add(new Instruction(
-         Instruction.Operation.PRINT, r1));
+        $instructions.add(new Instruction(
+         Instruction.Operator.PRINT, r1));
      }
    ;
 
 read returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(READ register=lvalue) {
-        $instructions.addAll(0, $exp.instructions);
-		$instructions.add(new Instruction(
-         Instruction.Operation.READ, register));
+        $instructions.add(new Instruction(
+         Instruction.Operator.READ, register));
      }
    ;
 
@@ -220,8 +224,8 @@ delete returns [LinkedList<Instruction> instructions = new LinkedList<Instructio
 @init { int r1 = regTable.newRegister(); }
    : ^(DELETE exp=expression[r1]) {
         $instructions.addAll(0, $exp.instructions);
-		$instructions.add(new Instruction(
-         Instruction.Operation.DEL, r1));
+        $instructions.add(new Instruction(
+         Instruction.Operator.DEL, r1));
      }
    ;
 
@@ -229,29 +233,31 @@ ret returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>(
 @init { int r1 = regTable.getReturnRegister(); }
    : ^(RETURN (exp=expression[r1])?) {
         $instructions.addAll(0, $exp.instructions);
-		$instructions.add(new Instruction(
-         Instruction.Operation.RET));
+        $instructions.add(new Instruction(
+         Instruction.Operator.RET));
      }
    ;
 
 invocation  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(INVOKE id=ID args=arguments) {
         // Store the args in arg registers
-   	    $instructions.add(new Instruction(
-        Instruction.Operation.JUMPI, $id.text));
+        $instructions.add(new Instruction(
+        Instruction.Operator.JUMPI, $id.text));
      }
    ;
 
 lvalue returns [int register]
    : ^(DOT structId=subvalue fieldId=ID)
-   | id=ID
-   	{	$register = regTable.lookupId($id.text); }
+   | id=ID {
+        $register = regTable.lookupId($id.text);
+     }
    ;
 
 subvalue returns [int register]
    : ^(DOT structId=subvalue fieldId=ID)
-   | id=ID
-		{	$register = regTable.lookupId($id.text); }
+   | id=ID {
+        $register = regTable.lookupId($id.text);
+     }
    ;
 
 // Returns a list of it's instructions
@@ -260,21 +266,29 @@ expression [int resultReg] returns [LinkedList<Instruction> instructions = new L
         int r1 = regTable.newRegister();
         int r2 = regTable.newRegister();
      }
-   		lexpr=expression[r1] 
-   		rexpr=expression[r2]) {
-           $instructions.addAll(0, $lexpr.instructions);
-   		   $instructions.addAll(0, $rexpr.instructions);
-   		   $instructions.add(new Instruction(
-            Instruction.getOperator($op.text), r1, r2, resultReg));
+
+     lexpr=expression[r1] 
+     rexpr=expression[r2]) {
+        $instructions.addAll(0, $lexpr.instructions);
+        $instructions.addAll(0, $rexpr.instructions);
+        $instructions.add(new Instruction(
+         Instruction.getOperator($op.text), r1, r2, resultReg));
      }
-   | ^((EQ | LT | GT | NE | LE | GE) {
+
+   | ^(op=(EQ | LT | GT | NE | LE | GE) {
         int r1 = regTable.newRegister();
         int r2 = regTable.newRegister();
      }
 
-   	 lexpr=expression[r1] 
-   	 rexpr=expression[r2]) {
-        $instructions.addAll(0);
+     lexpr=expression[r1] 
+     rexpr=expression[r2]) {
+        $instructions.addAll(0, $lexpr.instructions);
+        $instructions.addAll(0, $rexpr.instructions);
+        $instructions.add(new Instruction(
+         Instruction.Operator.COMP, r1, r2, regTable.getCCRegister()));
+        $instructions.add(new Instruction(
+//use labels instead of r1, r2
+         Instruction.getOperator($op.text), r1, r2, resultReg));
      }
 
    | ^(NEG {
@@ -283,9 +297,9 @@ expression [int resultReg] returns [LinkedList<Instruction> instructions = new L
      }
      expr=expression[r1]) {
         $instructions.addAll(0, $expr.instructions);
-   	    $instructions.add(new Instruction(
+          $instructions.add(new Instruction(
          Instruction.Operator.LOADI, r2, -1));
-   	    $instructions.add(new Instruction(
+          $instructions.add(new Instruction(
          Instruction.Operator.MULT, r1, r2, resultReg));
      }
    | ^(NOT {
@@ -296,10 +310,10 @@ expression [int resultReg] returns [LinkedList<Instruction> instructions = new L
          Instruction.Operator.XORI, r1, 1, resultReg));
      }
    | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] fieldId=ID)
-	   // Load
-	   // Store
+      // Load
+      // Store
    | ^(INVOKE id=ID args=arguments)
-		// Jump
+      // Jump
    | id=ID {
         $instructions.add(new Instruction(
          Instruction.Operator.LOADAI, regTable.lookupId($id.text), 0, resultReg));
@@ -307,7 +321,7 @@ expression [int resultReg] returns [LinkedList<Instruction> instructions = new L
 
    | i=INTEGER {
         $instructions.add(new Instruction(
-         Instruction.Operator.LOADI, resultReg, $i.text));
+         Instruction.Operator.LOADI, resultReg, Integer.parseInt($i.text)));
      }
 
    | TRUE {
@@ -320,12 +334,12 @@ expression [int resultReg] returns [LinkedList<Instruction> instructions = new L
      }
 
    | ^(NEW id=ID) {
-        $instructions.add(new Instruction(
-         Instruction.Operator.NEW, resultReg, $id.text));
+//        $instructions.add(new Instruction(
+  //       Instruction.Operator.NEW, resultReg, $id.text));
      }
 
    | NULL
-   	// Something
+        // Something
    ;
 
 arguments
