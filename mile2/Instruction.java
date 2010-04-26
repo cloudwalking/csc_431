@@ -12,38 +12,46 @@ public class Instruction {
    private int register2;
    private int result;
    private int immediate;
+   private String label;
    
    private String type;
    private ArrayList<String> fieldNames;
    
    public Instruction(Operator op) {
-      this(op, (Integer)null, (Integer)null, (Integer)null);
+      this(op, -1, -1, -1);
    }
    
    public Instruction(Operator op, int result) {
-      this(op, (Integer)null, (Integer)null, result);
+      this(op, -1, -1, result);
+   }
+
+   public Instruction(Operator op, String target) {
+      this(op, -1, -1, -1, target);
    }
    
-   public Instruction(Operator op, String type, ArrayList<String> fieldNames) {
+   /*public Instruction(Operator op, String type, ArrayList<String> fieldNames) {
       this.op = op;
       this.type = type;
       this.fieldNames = fieldNames;
-   }
+   }*/
    
    public Instruction(Operator op, int result, int immediate) {
-      this(op, (Integer)null, immediate, result);
+      this(op, -1, immediate, result, null);
    }
    
    public Instruction(Operator op, int register1, int register2, int result) {
+      this(op, register1, register2, result, null);
+   }
+
+   public Instruction(Operator op, int register1, int register2, int result, String target) {
       this.op = op;
       this.register1 = register1;
       this.register2 = register2;
       this.result = result;
+      this.label = target;
    }
    
    public static Operator getOperator(String op) {
-      //EQ | LT | GT | NE | LE | GE
-      //Operator returns;
       if (op.equals("AND"))
          return Operator.AND;
       else if (op.equals("OR"))
@@ -70,6 +78,16 @@ public class Instruction {
          return Operator.DIV;
       return null;
    }
+
+   public String toString() {
+      String instrString = op + "";
+      instrString += register1 > -1 ? ", " + register1 : "";
+      instrString += register2 > -1 ? ", " + register2 : "";
+      instrString += result > -1 ? ", " + result : "";
+      instrString += label != null ? ", " + label : "";
+      return instrString;
+   }
+
    public enum Operator {
       ADD,
       ADDI,
