@@ -3,15 +3,21 @@ import java.util.LinkedList;
 
 public class Block {
    private ArrayList<Block> successors;
+   private LinkedList<Instruction> instrs;
    private ArrayList<String> labels;
    private int entered, exited, numLabels;
 
    public Block() {
       successors = new ArrayList<Block>();
+      instrs = new LinkedList<Instruction>();
       labels = new ArrayList<String>();
       entered = 0;
       exited = 0;
       numLabels = 0;
+   }
+
+   public void addILoc(LinkedList instructions) {
+      instrs.addAll(instructions);
    }
 
    public void addNext(Block childBlock) {
