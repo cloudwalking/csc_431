@@ -85,7 +85,7 @@ function returns [Block entry = null]
      }
      parameters ^(RETTYPE return_type) declarations
      //for CFG
-     head = statement[new Block(), exit] {
+     head = statement[new Block("function body"), exit] {
         $entry.addNext(head);
      })
    ;
@@ -106,7 +106,7 @@ statement[Block head, Block exit] returns [Block top = null]
         $top.addLabel("Block " + (uniqueBlock++));
         Block end = null;
      }
-     ({ end = new Block(); } statement[head, end] { head = end; })* {
+     ({ end = new Block(/*"statements"*/); } statement[head, end] { head = end; })* {
         if (end != null)
            end.addNext(exit);
      }))
@@ -116,7 +116,7 @@ statement[Block head, Block exit] returns [Block top = null]
         //$top.addLabel("Compound Statement");
         Block end = null;
      }
-     ({ end = new Block(); } statement[head, end] { head = end; })* {
+     ({ end = new Block(/*"statements"*/); } statement[head, end] { head = end; })* {
         if (end != null)
            end.addNext(exit);
      })
@@ -145,14 +145,14 @@ statement[Block head, Block exit] returns [Block top = null]
    | ^(IF iloc=expression[regTable.newRegister()] {
         head.addILoc($iloc.instructions);
         head.addLabel("S" + (uniqueStatement++));
-        Block end = new Block();
+        Block end = new Block("end if");
         end.addNext(exit);
      }
-     thenHead = statement[new Block(), end] {
+     thenHead = statement[new Block("then branch"), end] {
         $thenHead.top.addLabel("S" + (uniqueStatement++));
         head.addNext($thenHead.top);
      }
-     (elseHead = statement[new Block(), end] {
+     (elseHead = statement[new Block("else Branch"), end] {
         $thenHead.top.addLabel("S" + (uniqueStatement++));
         head.addNext($elseHead.top);
         $top = head;
@@ -161,11 +161,11 @@ statement[Block head, Block exit] returns [Block top = null]
    | ^(WHILE iloc=expression[regTable.newRegister()] {
         head.addILoc($iloc.instructions);
         head.addLabel("S" + (uniqueStatement++));
-        Block end = new Block();
+        Block end = new Block("end while");
         end.addNext(exit);
      }
 
-     body = statement[new Block(), head] {
+     body = statement[new Block("while body"), head] {
         $body.top.addLabel("S" + (uniqueStatement++));
         head.addNext($body.top);
         head.addNext(end);
@@ -196,27 +196,26 @@ statement[Block head, Block exit] returns [Block top = null]
 
 assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister(); }
-   : ^(ASSIGN exp=expression[r1] register=lvalue) {
+   : ^(ASSIGN exp=expression[r1] destReg=lvalue) {
         //$instructions.addAll(0, $lval.instructions);
          $instructions.addAll(0, $exp.instructions);
          $instructions.add(new Instruction(
-         Instruction.Operator.STOREAI, r1, $register.register, 0));
+          "STAI", r1, 0, $destReg.register));
       }
    ;
 
 print returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister(); }
    : ^(PRINT exp=expression[r1] (ENDL)?) {
+//check to see if ENDL is present
         $instructions.addAll(0, $exp.instructions);
-        $instructions.add(new Instruction(
-         Instruction.Operator.PRINT, r1));
+        $instructions.add(new Instruction("PRINT", r1));
      }
    ;
 
 read returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(READ register=lvalue) {
-        $instructions.add(new Instruction(
-         Instruction.Operator.READ, register));
+        $instructions.add(new Instruction("READ", register));
      }
    ;
 
@@ -224,8 +223,7 @@ delete returns [LinkedList<Instruction> instructions = new LinkedList<Instructio
 @init { int r1 = regTable.newRegister(); }
    : ^(DELETE exp=expression[r1]) {
         $instructions.addAll(0, $exp.instructions);
-        $instructions.add(new Instruction(
-         Instruction.Operator.DEL, r1));
+        $instructions.add(new Instruction("DEL", r1));
      }
    ;
 
@@ -233,16 +231,14 @@ ret returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>(
 @init { int r1 = regTable.getReturnRegister(); }
    : ^(RETURN (exp=expression[r1])?) {
         $instructions.addAll(0, $exp.instructions);
-        $instructions.add(new Instruction(
-         Instruction.Operator.RET));
+        $instructions.add(new Instruction("RET"));
      }
    ;
 
 invocation  returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(INVOKE id=ID args=arguments) {
         // Store the args in arg registers
-        $instructions.add(new Instruction(
-        Instruction.Operator.JUMPI, $id.text));
+        $instructions.add(new Instruction("CALL", $id.text));
      }
    ;
 
@@ -263,74 +259,94 @@ subvalue returns [int register]
 // Returns a list of it's instructions
 expression [int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : ^(op=(AND | OR | PLUS | MINUS | TIMES | DIVIDE) {
-        int r1 = regTable.newRegister();
-        int r2 = regTable.newRegister();
+        int lexprReg = regTable.newRegister();
+        int rexprReg = regTable.newRegister();
      }
 
-     lexpr=expression[r1] 
-     rexpr=expression[r2]) {
+     lexpr=expression[lexprReg] 
+     rexpr=expression[rexprReg]) {
         $instructions.addAll(0, $lexpr.instructions);
         $instructions.addAll(0, $rexpr.instructions);
+
         $instructions.add(new Instruction(
-         Instruction.getOperator($op.text), r1, r2, resultReg));
+         $op.text, lexprReg, rexprReg, resultReg));
      }
 
    | ^(op=(EQ | LT | GT | NE | LE | GE) {
-        int r1 = regTable.newRegister();
-        int r2 = regTable.newRegister();
+        int lexprReg = regTable.newRegister();
+        int rexprReg = regTable.newRegister();
      }
 
-     lexpr=expression[r1] 
-     rexpr=expression[r2]) {
+     lexpr=expression[lexprReg] 
+     rexpr=expression[rexprReg]) {
         $instructions.addAll(0, $lexpr.instructions);
         $instructions.addAll(0, $rexpr.instructions);
+
         $instructions.add(new Instruction(
-         Instruction.Operator.COMP, r1, r2, regTable.getCCRegister()));
-        $instructions.add(new Instruction(
-//use labels instead of r1, r2
-         Instruction.getOperator($op.text), r1, r2, resultReg));
+         "COMP", lexprReg, rexprReg, resultReg));
+         //"COMP", lexprReg, rexprReg, regTable.getCCRegister()));
      }
 
    | ^(NEG {
-        int r1 = regTable.newRegister();
-        int r2 = regTable.newRegister();
+        int srcReg1 = regTable.newRegister();
+        int srcReg2 = regTable.newRegister();
      }
-     expr=expression[r1]) {
+
+     expr=expression[srcReg1]) {
         $instructions.addAll(0, $expr.instructions);
-          $instructions.add(new Instruction(
-         Instruction.Operator.LOADI, r2, -1));
-          $instructions.add(new Instruction(
-         Instruction.Operator.MULT, r1, r2, resultReg));
-     }
-   | ^(NOT {
-        int r1 = regTable.newRegister();
-     }
-     expr=expression[r1]) {
+
+        $instructions.add(
+         new Instruction("LOADI", -1, srcReg2));
+
         $instructions.add(new Instruction(
-         Instruction.Operator.XORI, r1, 1, resultReg));
+         "TIMES", srcReg1, srcReg2, resultReg));
      }
+
+   | ^(NOT {
+        int srcReg = regTable.newRegister();
+        int immReg = regTable.newRegister();
+     }
+
+     expr=expression[srcReg]) {
+        $instructions.add(
+         new Instruction("LOADI", 1, immReg));
+
+        $instructions.add(new Instruction(
+         "XORI", srcReg, immReg, resultReg));
+     }
+
    | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] fieldId=ID)
       // Load
       // Store
-   | ^(INVOKE id=ID args=arguments)
-      // Jump
+
+   | ^(INVOKE id=ID args=arguments) {
+        // Jump
+        $instructions.add(
+         new Instruction("CALL", $id.text));
+     }
    | id=ID {
+        int immRegister = regTable.newRegister();
+
+        $instructions.add(
+         new Instruction("LOADI", 0, immRegister));
+
         $instructions.add(new Instruction(
-         Instruction.Operator.LOADAI, regTable.lookupId($id.text), 0, resultReg));
+         "LOADAI", regTable.lookupId($id.text), immRegister, resultReg));
      }
 
    | i=INTEGER {
-        $instructions.add(new Instruction(
-         Instruction.Operator.LOADI, resultReg, Integer.parseInt($i.text)));
+        int immRegister = regTable.newRegister();
+        $instructions.add(
+         new Instruction("LOADI", Integer.parseInt($i.text), immRegister));
      }
 
    | TRUE {
-        $instructions.add(new Instruction(
-         Instruction.Operator.LOADI, resultReg, 1));
+        $instructions.add(
+         new Instruction("LOADI", 1, resultReg));
      }
    | FALSE {
-        $instructions.add(new Instruction(
-         Instruction.Operator.LOADI, resultReg, 0));
+        $instructions.add(
+         new Instruction("LOADI", 0, resultReg));
      }
 
    | ^(NEW id=ID) {
@@ -343,11 +359,20 @@ expression [int resultReg] returns [LinkedList<Instruction> instructions = new L
    ;
 
 arguments
-@init { int r = regTable.newRegister(); }
-   : arg_list[r]
+   : arg_list
    ;
 
-arg_list[int resultReg]
-   : ^(ARGS expression[resultReg]+)
+arg_list returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init{ int srcReg = regTable.newRegister(); }
+   : ^(ARGS (exprInstr=expression[srcReg] {
+        int newLocal = regTable.newRegister();
+        int offSetReg = regTable.newRegister();
+
+        $instructions.addAll(0, $exprInstr.instructions);
+        $instructions.add(
+         new Instruction("LOADI", 0, offSetReg));
+        $instructions.add(
+         new Instruction("STIN", srcReg, newLocal, offSetReg));
+     })+)
    | ARGS
    ;
