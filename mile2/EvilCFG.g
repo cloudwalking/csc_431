@@ -17,24 +17,24 @@ options {
 }
 
 program
-   : ^(PROGRAM types declarations cfgList=functions) {
+   : ^(PROGRAM structDefs=types declarations cfgList=functions) {
         for (Block block:cfgList) {
            block.printBlock();
         }
      }
    ;
 
-types
-   : ^(TYPES type_sub)
+types returns [LinkedList<String> structs = new LinkedList<String>()]
+   : ^(TYPES type_sub[structs])
    | TYPES
    ;
 
-type_sub
-   : type_declaration type_sub
+type_sub [LinkedList<String> structs]
+   : type_declaration[structs] type_sub[structs]
    | 
    ;
 
-type_declaration
+type_declaration [LinkedList<String> structs]
    : ^(STRUCT ID nested_decl)
    ;
 
