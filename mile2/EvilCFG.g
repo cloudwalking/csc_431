@@ -13,28 +13,30 @@ options {
 
 @members{
    RegTable regTable = new RegTable();
+   LabelTable labTable = new LabelTable();
+   LinkedList<Instruction> globalInstrs = new LinkedList<Instruction>();
    int uniqueBlock = 0, uniqueStatement = 0;
 }
 
 program
-   : ^(PROGRAM structDefs=types declarations cfgList=functions) {
+   : ^(PROGRAM types declarations cfgList=functions) {
         for (Block block:cfgList) {
            block.printBlock();
         }
      }
    ;
 
-types returns [LinkedList<String> structs = new LinkedList<String>()]
-   : ^(TYPES type_sub[structs])
+types
+   : ^(TYPES type_sub)
    | TYPES
    ;
 
-type_sub [LinkedList<String> structs]
-   : type_declaration[structs] type_sub[structs]
+type_sub
+   : type_declaration type_sub
    | 
    ;
 
-type_declaration [LinkedList<String> structs]
+type_declaration
    : ^(STRUCT ID nested_decl)
    ;
 
@@ -61,7 +63,11 @@ declaration
    ;
 
 id_list
-   : list_id+
+   : (localReg=list_id {
+//need to add storeglobal instruction, which requires a new Instruction constructor
+//        $globalInstrs.add(
+//         new Instruction("STGLBL", 
+     })+
    ;
 
 list_id returns [int reg]
