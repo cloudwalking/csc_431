@@ -54,6 +54,8 @@ public class Instruction {
       fields.add(new Immediate(imm));
       fields.add(new Register(destReg));
    }
+
+//need to include a way for handling struct fields.
    
 /**
  * This constructor will be used for add, div, mult, sub, and, or,and other
