@@ -12,6 +12,7 @@ import java.util.LinkedList;
 public class Instruction {
    private Operator op;
    private LinkedList<InstrField> fields = new LinkedList<InstrField>();
+   private String comment = "";
    
 /**
  * This constructor will be used for return instructions.
@@ -22,6 +23,7 @@ public class Instruction {
    
 /**
  * This constructor will be used for call and JumpI instructions.
+ * And individual instrution labels, when needed.
  */
    public Instruction(String opString, String target) {
       this.op = getOperator(opString);
@@ -31,7 +33,8 @@ public class Instruction {
 /**
  * This constructor will be used for branch instructions.
  */
-   public Instruction(String opString, int ccReg, String trueTarget, String falseTarget) {
+   public Instruction(String opString, int ccReg, String trueTarget, String 
+falseTarget) {
       this.op = getOperator(opString);
       fields.add(new Register(ccReg));
       fields.add(new Label(trueTarget));
@@ -54,27 +57,35 @@ public class Instruction {
       fields.add(new Immediate(imm));
       fields.add(new Register(destReg));
    }
-
-//need to include a way for handling struct fields.
    
 /**
  * This constructor will be used for add, div, mult, sub, and, or,and other
  * instructions that have two source registers and a destination register
  * Edit: This will also be used for instructions with immediates, immediates
- * will be loaded into registers immediately before creating this instruction.
+ * should be loaded into registers immediately before creating this 
+instruction.
  */
-   public Instruction(String opString, int srcReg1, int srcReg2, int destReg) {
+   public Instruction(String opString, int srcReg1, int srcReg2, int destReg) 
+{
       this.op = getOperator(opString);
       fields.add(new Register(srcReg1));
       fields.add(new Register(srcReg2));
       fields.add(new Register(destReg));
    }
    
+   public void setComment(String comment) {
+      this.comment = "\t"+comment;
+   }
+   
+   public void setTarget(String target) {
+      fields.add(new Label(target));
+   }
+   
 /**
  * Returns OPcode representing the instruction, such as ADD, AND, GT, etc.
  */
    public static Operator getOperator(String op) {
-      if (op.equals("PLUS"))
+      if (op.equals("PLUS") || op.equals("+"))
          return Operator.ADD;
       else if (op.equals("ADDI"))
          return Operator.ADDI;
@@ -82,17 +93,17 @@ public class Instruction {
          return Operator.AND;
       else if (op.equals("CALL"))
          return Operator.CALL;
-      else if(op.equals("EQ"))
+      else if(op.equals("EQ") || op.equals("=="))
          return Operator.CBREQ;
-      else if (op.equals("GE"))
+      else if (op.equals("GE") || op.equals(">="))
          return Operator.CBRGE;
-      else if (op.equals("GT"))
+      else if (op.equals("GT") || op.equals(">"))
          return Operator.CBRGT;
-      else if (op.equals("LE"))
+      else if (op.equals("LE") || op.equals("<="))
          return Operator.CBRLE;
-      else if (op.equals("LT"))
+      else if (op.equals("LT") || op.equals("<"))
          return Operator.CBRLT;
-      else if (op.equals("NE"))
+      else if (op.equals("NE") || op.equals("!="))
          return Operator.CBRNE;
       else if (op.equals("COMP"))
          return Operator.COMP;
@@ -104,10 +115,12 @@ public class Instruction {
          return Operator.COMPUTEGLOBALADDRESS;
       else if (op.equals("DEL"))
          return Operator.DEL;
-      else if (op.equals("DIVIDE"))
+      else if (op.equals("DIVIDE") || op.equals("/"))
          return Operator.DIV;
       else if (op.equals("JUMPI"))
          return Operator.JUMPI;
+      else if(op.equals("LABEL"))
+         return Operator.LABEL;
       else if (op.equals("LOADI"))
          return Operator.LOADI;
       else if (op.equals("LOADAI"))
@@ -118,10 +131,12 @@ public class Instruction {
          return Operator.LOADINARGUMENT;
       else if (op.equals("LOADRET"))
          return Operator.LOADRET;
-      else if (op.equals("TIMES"))
+      else if (op.equals("TIMES") || op.equals("*"))
          return Operator.MULT;
       else if (op.equals("NEW"))
          return Operator.NEW;
+      else if(op.equals("NOP"))
+         return Operator.NOP;
       else if (op.equals("OR"))
          return Operator.OR;
       else if (op.equals("PRINT"))
@@ -146,18 +161,18 @@ public class Instruction {
          return Operator.STOREOUTARGUMENT;
       else if (op.equals("STRET"))
          return Operator.STORERET;
-      else if (op.equals("MINUS"))
+      else if (op.equals("MINUS") || op.equals("-"))
          return Operator.SUB;
       else if (op.equals("XORI"))
          return Operator.XORI;
       else {
-         System.err.println("Invalid Instruction OPCode");
+         System.err.println("Invalid Instruction OPCode: " + op);
          return null;
       }
    }
 
    public String toString() {
-      return op + fields.toString();
+      return op + fields.toString() + " " + comment;
    }
 
    public enum Operator {
@@ -178,6 +193,7 @@ public class Instruction {
       DEL,
       DIV,
       JUMPI,
+      LABEL,
       LOADI,
       LOADAI,
       LOADGLOBAL,
@@ -185,6 +201,7 @@ public class Instruction {
       LOADRET,
       MULT,
       NEW,
+      NOP,
       OR,
       PRINT,
       PRINTLN,

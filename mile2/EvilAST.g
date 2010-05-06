@@ -95,7 +95,8 @@ functions
 function
    : ^(FUN id=ID {
         if (symtable.isDefined($id.text)) {
-           System.err.println("line " + $id.line + ": symbol '" + $id + "' already defined");
+           System.err.println("line " + $id.line + ": symbol '" + $id + "' 
+already defined");
         }
         SymTable locals = new SymTable();
      }
@@ -128,7 +129,8 @@ return_type returns [String t = null]
    | VOID { $t = SymTable.voidType(); }
    ;
 
-statement[SymTable locals, boolean hasReturn] returns [boolean retVal = false]
+statement[SymTable locals, boolean hasReturn] returns [boolean retVal = 
+false]
 //@init{ System.out.println("statement on line " + getLine()); }
    : ^(BLOCK ^(STMTS (r=statement[locals, hasReturn])*)) {
         $retVal = $r.retVal || $hasReturn;
@@ -154,9 +156,9 @@ statement[SymTable locals, boolean hasReturn] returns [boolean retVal = false]
 
 assignment[SymTable locals]
    : ^(ASSIGN exprType=expression[locals] lvalType=lvalue[locals]) {
-        if(!lvalType.equals(exprType)) {
+        if(!$lvalType.t.equals(exprType)) {
            System.err.println("Type Mismatch in assignment: found '" +
-            exprType + "' type, expected '" + lvalType + "'");
+            $exprType.t + "' type, expected '" + $lvalType.t + "'");
         }
      }
    ;
@@ -205,7 +207,7 @@ invocation[SymTable locals]
    ;
 
 lvalue[SymTable locals] returns [String t = null]
-   : ^(DOT structId=subvalue fieldId=ID) {
+   : ^(DOT structId=subvalue[locals] fieldId=ID) {
         if(!structTable.isField($structId.t, $fieldId.text)) {
            System.err.println("line " + $fieldId.line + ": invalid field '" +
             $fieldId.text + "' in struct '" + $structId.t + "'");
@@ -214,16 +216,20 @@ lvalue[SymTable locals] returns [String t = null]
      }
 
    | valId=ID {
-        if(!symtable.isDefined($valId.text)) {
+        if(locals.isDefined($valId.text)) {
+           $t = locals.getType($valId.text);
+        }
+        else if(symtable.isDefined($valId.text)) {
+           $t = symtable.getType($valId.text);
+        } else {
            System.err.println("line " + $valId.line + ": invalid symbol '" +
             $valId.text + "'");
         }
-        $t = symtable.getType($valId.text);
      }
    ;
 
-subvalue returns [String t = null]
-   : ^(DOT structId=subvalue fieldId=ID) {
+subvalue[SymTable locals] returns [String t = null]
+   : ^(DOT structId=subvalue[locals] fieldId=ID) {
         if(!structTable.isField(structId, $fieldId.text)) {
            System.err.println("line " + $fieldId.line + ": invalid field '" +
             $fieldId.text + "' in struct '" + $structId.t + "'");
@@ -232,22 +238,41 @@ subvalue returns [String t = null]
      }
 
    | id=ID {
-        if(!structTable.isDefined($id.text)) {
-           System.err.println("line " + $id.line + ": undefined struct type'" +
-            $id.text + "'");
+        String type = null;
+        if(locals.isDefined($id.text)) {
+           type = locals.getType($id.text);
         }
-        $t = $id.text;
+        else if(symtable.isDefined($id.text)) {
+           type = symtable.getType($id.text);
+        }
+        else {
+           System.err.println("line " + $id.line + ": invalid symbol '" +
+              $id.text + "'");
+        }
+        
+        // Hack: take struct off the front to get the raw type.
+        // struct and a space = 7 chars
+        type = type.substring(7);
+        
+        if(type == null || !structTable.isDefined(type)) {
+           System.err.println("line " + $id.line + ": undefined struct type'" 
++
+            type + "'");
+        }
+        $t = type;
      }
    ;
 
 expression [SymTable locals] returns [String t = null]
    : ^(AND lexpr=expression[locals] rexpr=expression[locals]) {
         if (!rexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else if (!lexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else { $t = SymTable.boolType(); }
@@ -255,11 +280,13 @@ expression [SymTable locals] returns [String t = null]
 
    | ^(OR lexpr=expression[locals] rexpr=expression[locals]) {
         if (!rexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else if (!lexpr.equals(SymTable.boolType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else { $t = SymTable.boolType(); }
@@ -268,12 +295,14 @@ expression [SymTable locals] returns [String t = null]
    | ^((EQ | LT | GT | NE | LE | GE) lexpr=expression[locals]
       rexpr=expression[locals]) {
         if (!rexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
             " in function " + curFun);
         }
         else if (!lexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
             " in function " + curFun);
 
@@ -283,11 +312,13 @@ expression [SymTable locals] returns [String t = null]
 
    | ^((PLUS | MINUS) lexpr=expression[locals] rexpr=expression[locals]) {
         if (!rexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else if (!lexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else { $t = SymTable.intType(); }
@@ -295,11 +326,13 @@ expression [SymTable locals] returns [String t = null]
 
    | ^((TIMES | DIVIDE) lexpr=expression[locals] rexpr=expression[locals]) {
         if (!rexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else if (!lexpr.equals(SymTable.intType())) {
-           System.err.println("Invalid arithmetic operation: expected 'int'" +
+           System.err.println("Invalid arithmetic operation: expected 'int'" 
++
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'");
         }
         else { $t = SymTable.intType(); }
@@ -330,7 +363,8 @@ expression [SymTable locals] returns [String t = null]
         }
         if (!locals.containsStructType(structType)) {
            if (!symtable.containsStructType(structType)) {
-              System.err.println("unexpected type: expected 'struct', found" +
+              System.err.println("unexpected type: expected 'struct', found" 
++
                " '" + structType + "' on line " + $fieldId.line);
 
               System.exit(1);

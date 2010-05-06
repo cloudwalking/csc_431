@@ -41,7 +41,8 @@ public class Evil
       */
       try
       {
-         //symbolTypes and structTypes contain variables and their types, no values
+         //symbolTypes and structTypes contain variables and their types, no 
+values
 
          CommonTreeNodeStream nodes = new CommonTreeNodeStream(parserRet);
          nodes.setTokenStream(tokens);
@@ -50,13 +51,15 @@ public class Evil
          //tree parser populates the type structures
       
          tparser.program();
-         /*
-         System.out.println("\n** SymTable **");
-         tparser.symtable.print();
-         System.out.println("\n** StructTable **");
-         tparser.structTable.print();
-         System.out.println("\n** FunTable **");
-         tparser.funTable.print();*/
+         
+         if(_displayTypecheck) {
+            System.out.println("\n** SymTable **");
+            tparser.symtable.print();
+            System.out.println("\n** StructTable **");
+            tparser.structTable.print();
+            System.out.println("\n** FunTable **");
+            tparser.funTable.print();
+         }
 
          CommonTreeNodeStream CFGnodes = new CommonTreeNodeStream(parserRet);
          CFGnodes.setTokenStream(tokens);
@@ -64,7 +67,7 @@ public class Evil
 
          //cfg parser populates the CFG
       
-         cfgParser.program();
+         cfgParser.program(_displayCFG);
       }
       catch (org.antlr.runtime.RecognitionException e)
       {
@@ -73,9 +76,13 @@ public class Evil
    }
 
    private static final String DISPLAYAST = "-displayAST";
+   private static final String DISPLAYTYPECHECK = "-displayTypecheck";
+   private static final String DISPLAYCFG = "-displayCFG";
 
    private static String _inputFile = null;
    private static boolean _displayAST = false;
+   private static boolean _displayTypecheck = false;
+   private static boolean _displayCFG = true;
 
    private static void parseParameters(String [] args)
    {
@@ -84,6 +91,14 @@ public class Evil
          if (args[i].equals(DISPLAYAST))
          {
             _displayAST = true;
+         }
+         else if (args[i].equals(DISPLAYTYPECHECK))
+         {
+            _displayTypecheck = true;
+         }
+         else if (args[i].equals(DISPLAYCFG))
+         {
+            _displayCFG = true;
          }
          else if (args[i].charAt(0) == '-')
          {

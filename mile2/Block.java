@@ -5,6 +5,9 @@ public class Block {
    private LinkedList<Instruction> instrs;
    private LinkedList<String> labels;
    private int entered, exited;
+   
+   private boolean flag;
+   private int depth;
 
    public Block() {
       successors = new LinkedList<Block>();
@@ -12,6 +15,9 @@ public class Block {
       labels = new LinkedList<String>();
       entered = 0;
       exited = 0;
+      
+      depth = 0;
+      flag = false;
    }
 
    public Block(String label) {
@@ -29,6 +35,57 @@ public class Block {
 
    public void addLabel(String blockLabel) {
       labels.add(blockLabel);
+   }
+   
+   public LinkedList<Instruction> getInstructionList() {
+      return this.instrs;
+   }
+   
+   /**
+    * Returns true if the label exists on this block.
+    */
+   public boolean hasLabel(String blockLabel) {
+      for(String l : labels) {
+         if(l.equals(blockLabel)) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   public void reedPrint(int offset) {
+      String tabs = "";
+      
+      // Has this node been seen?
+      if(flag && !hasLabel("#function-exit")) {
+         return;
+      }
+      flag = !flag;
+      
+      for(int i=0; i<offset; i++) tabs += "   ";
+      
+      if(successors.size() > 1) {
+         offset++;
+      }
+      
+      System.out.println(tabs+"BLOCK \""+labels+"\"");
+      
+      if(hasLabel("#exit")) {
+         System.out.println("\n");
+         return;
+      }
+      
+      // Print instructions, if we have them
+      if(instrs.size() > 0) {
+         System.out.println(tabs+"instructions:");
+         for(Instruction i : instrs)
+            System.out.println(tabs+"   "+i);
+      }
+      System.out.println(" ");
+      
+      // Recurse
+      for(Block b : successors)
+         b.reedPrint(offset);
    }
 
    public String printInstrs(LinkedList<Instruction> iLoc) {
@@ -53,7 +110,8 @@ public class Block {
       System.out.print(padding);
    }
 
-   public int topoPrint(Block top, int counter, LinkedList<Block> cfg, int nested) {
+   public int topoPrint(Block top, int counter, LinkedList<Block> cfg, int 
+nested) {
       if (top == null || top.entered != 0)
          return counter;
       top.entered = ++counter;
@@ -80,7 +138,8 @@ public class Block {
       System.out.println("Block " + numBlock + ":");
       System.out.println("   labels: " + curBlock.labels.toString());
       System.out.println("   successors are: " + successors(curBlock));
-      System.out.println("   contains iloc:\n" + printInstrs(curBlock.instrs));
+      System.out.println("   contains iloc:\n" + 
+printInstrs(curBlock.instrs));
       printBlockTree(++numBlock, cfg);
    }
 
