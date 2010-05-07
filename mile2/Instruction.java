@@ -12,7 +12,7 @@ import java.util.LinkedList;
 public class Instruction {
    private Operator op;
    private LinkedList<InstrField> fields = new LinkedList<InstrField>();
-   private String comment = "";
+   protected String comment = "";
    
 /**
  * This constructor will be used for return instructions.
@@ -218,6 +218,84 @@ instruction.
       XORI
    }
 
+   public SparcOperator getSparc(Operator ilocOp) {
+      if (ilocOp == Operator.ADD)
+         return SparcOperator.ADD;
+      else if (ilocOp == Operator.AND)
+         return SparcOperator.AND;
+      else if (ilocOp == Operator.CBREQ)
+         return SparcOperator.BE;
+      else if (ilocOp == Operator.CBRGT)
+         return SparcOperator.BG;
+      else if (ilocOp == Operator.CBRGE)
+         return SparcOperator.BGE;
+      else if (ilocOp == Operator.CBRLT)
+         return SparcOperator.BL;
+      else if (ilocOp == Operator.CBRLE)
+         return SparcOperator.BLE;
+      else if (ilocOp == Operator.CBRNE)
+         return SparcOperator.BNE;
+      else if (ilocOp == Operator.CALL)
+         return SparcOperator.CALL;
+      else if (ilocOp == Operator.COMP)
+         return SparcOperator.CMP;
+      else if (ilocOp == Operator.JUMPI)
+         return SparcOperator.JMPL;
+/*sttill need to change everything from here
+      else if (ilocOp == Operator.LOAD)
+         return SparcOperator.LDX; how to do load?*/
+      else if (ilocOp == Operator.OR)
+         return SparcOperator.OR;
+      //else if (ilocOp == Operator.SAVE)
+        // return SparcOperator.SAVE;
+      else if (ilocOp == Operator.DIV)
+         return SparcOperator.SDIV;
+      else if (ilocOp == Operator.MULT)
+         return SparcOperator.SMUL;
+      //else if (ilocOp == Operator.STORE)
+         //return SparcOperator.STX;
+      else if (ilocOp == Operator.SUB)
+         return SparcOperator.SUB;
+      //else if (ilocOp == Operator.RESTORE)
+         //return SparcOperator.RESTORE;
+      else if (ilocOp == Operator.RET)
+         return SparcOperator.RETURN;
+      else if (ilocOp == Operator.XORI)
+         return SparcOperator.XOR;
+      else {
+         System.err.println("Invalid Sparc Operator requested");
+         return null;
+      }
+   }
+
+   public String toSparc() {
+      return getSparc(op) + fields.toString() + " " + comment;
+   }
+
+   public enum SparcOperator {
+      ADD,
+      SDIV,
+      SMUL,
+      SUB,
+      AND,
+      OR,
+      XOR,
+      CMP,
+      BE,
+      BNE,
+      BGE,
+      BL,
+      BG,
+      BLE,
+      JMPL,
+      LDX,
+      STX,
+      CALL,
+      RETURN,
+      SAVE,
+      RESTORE
+   }
+
 private abstract class InstrField {
    abstract Object getValue();
 }
@@ -253,5 +331,4 @@ private class Immediate extends InstrField {
    public Integer getValue() { return val; }
    public String toString() { return val.toString(); }
 }
-
 }
