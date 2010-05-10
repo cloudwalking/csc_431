@@ -53,7 +53,7 @@ public class Block {
       return false;
    }
 
-   public void reedPrint(int offset) {
+   public void reedPrint(int offset, boolean toSparc) {
       String tabs = "";
       
       // Has this node been seen?
@@ -78,14 +78,18 @@ public class Block {
       // Print instructions, if we have them
       if(instrs.size() > 0) {
          System.out.println(tabs+"instructions:");
-         for(Instruction i : instrs)
-            System.out.println(tabs+"   "+i);
+         for(Instruction i : instrs) {
+            if (toSparc)
+               System.out.println(tabs+"   "+i.toSparc());
+            else
+               System.out.println(tabs+"   "+i);
+         }
       }
       System.out.println(" ");
       
       // Recurse
       for(Block b : successors)
-         b.reedPrint(offset);
+         b.reedPrint(offset, toSparc);
    }
 
    public String printInstrs(LinkedList<Instruction> iLoc) {

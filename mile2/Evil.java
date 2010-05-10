@@ -41,8 +41,8 @@ public class Evil
       */
       try
       {
-         //symbolTypes and structTypes contain variables and their types, no 
-values
+         //symbolTypes and structTypes contain variables
+         //and their types, no values
 
          CommonTreeNodeStream nodes = new CommonTreeNodeStream(parserRet);
          nodes.setTokenStream(tokens);
@@ -67,7 +67,7 @@ values
 
          //cfg parser populates the CFG
       
-         cfgParser.program(_displayCFG);
+         cfgParser.program(_displayCFG, _displaySparc);
       }
       catch (org.antlr.runtime.RecognitionException e)
       {
@@ -78,11 +78,13 @@ values
    private static final String DISPLAYAST = "-displayAST";
    private static final String DISPLAYTYPECHECK = "-displayTypecheck";
    private static final String DISPLAYCFG = "-displayCFG";
+   private static final String DISPLAYSPARC = "-displaySparc";
 
    private static String _inputFile = null;
    private static boolean _displayAST = false;
    private static boolean _displayTypecheck = false;
    private static boolean _displayCFG = true;
+   private static boolean _displaySparc = false;
 
    private static void parseParameters(String [] args)
    {
@@ -99,6 +101,10 @@ values
          else if (args[i].equals(DISPLAYCFG))
          {
             _displayCFG = true;
+         }
+         else if (args[i].equals(DISPLAYSPARC))
+         {
+            _displaySparc = true;
          }
          else if (args[i].charAt(0) == '-')
          {

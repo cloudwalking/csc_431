@@ -17,11 +17,11 @@ options {
    String currentFunction = "";
 }
 
-program[Boolean print]
+program[Boolean print, Boolean printSparc]
    : ^(PROGRAM types declarations cfgList=functions) {
       if(print) {
          for (Block block:cfgList) {
-            block.reedPrint(0);
+            block.reedPrint(0, printSparc);
          }
          regTable.print();
       }
@@ -89,10 +89,17 @@ function returns [Block entry = null]
         //for CFG
         $entry = new Block("#function-entry");
         $entry.addLabel($id.text);
+        LinkedList<Instruction> beginFunc = new LinkedList<Instruction>();
+        beginFunc.add(new Instruction("SAVE"));
+
         Block exit = new Block("#function-exit");
+        LinkedList<Instruction> endFunc = new LinkedList<Instruction>();
+        endFunc.add(new Instruction("RESTORE"));
      }
      iloc=parameters[$id.text] ^(RETTYPE return_type) declarations {
-        $entry.addILoc(iloc);
+        beginFunc.addAll(iloc);
+        //allocate next activation record here
+        $entry.addILoc(beginFunc);
      }
      //for CFG
      head = statement[new Block("#function-body"), exit] {
@@ -107,12 +114,12 @@ instructions = new LinkedList<Instruction>()]
       (id=decl {
          int reg = regTable.newRegister($functionLabel + $id.id);
          Instruction newInst = new Instruction("LOADI", count, 
-regTable.getImmRegister());
+          regTable.getImmRegister());
          newInst.setComment("parameter: put counter into immediate reg");
          $instructions.add(newInst);
          newInst = new Instruction("STIN", reg, regTable.getImmRegister());
-         newInst.setComment("parameter: store-in param '"+$id.id+"' in reg 
-"+reg);
+         newInst.setComment("parameter: store-in param '" + $id.id +
+          "' in reg " + reg);
          $instructions.add(newInst);
          count += 4;
       })*)
@@ -185,13 +192,13 @@ LinkedList<Instruction>();;
         
         // If guard evaluates to false, bail out
         newInst = new Instruction("COMPI", guardBooleanReg, 1);
-        newInst.setComment("if: compare guard result (reg 
-"+guardBooleanReg+") to true");
+        newInst.setComment("if: compare guard result (reg " + guardBooleanReg +
+         ") to true");
         instructions.add(newInst);
         newInst = new Instruction("EQ", regTable.getCCRegister(), thenLabel, 
-elseLabel);
-        newInst.setComment("if: branch true: '"+thenLabel+"' false: 
-'"+elseLabel+"'");
+         elseLabel);
+        newInst.setComment("if: branch true: '" + thenLabel + "' false: '" +
+         elseLabel + "'");
         instructions.add(newInst);
         
         head.addILoc(instructions);
@@ -207,7 +214,7 @@ elseLabel);
         // Jump to exit block
         instructions = new LinkedList<Instruction>();
         newInst = new Instruction("JUMPI", endLabel);
-        newInst.setComment("then: jump to #end-if '"+endLabel+"'");
+        newInst.setComment("then: jump to #end-if '" + endLabel + "'");
         instructions.add(newInst);
         $thenHead.top.addILoc(instructions);
      }
@@ -218,7 +225,7 @@ elseLabel);
         // Jump to exit block
         instructions = new LinkedList<Instruction>();
         newInst = new Instruction("JUMPI", endLabel);
-        newInst.setComment("if: jump to #end-if '"+endLabel+"'");
+        newInst.setComment("if: jump to #end-if '" + endLabel + "'");
         instructions.add(newInst);
         $elseHead.top.addILoc(instructions);
         
@@ -244,14 +251,14 @@ elseLabel);
         newInst.setComment("while: set immediate 1 (true)");
         instructions.add(newInst);
         newInst = new Instruction("COMPI", guardBooleanReg, 
-regTable.getImmRegister());
-        newInst.setComment("while: compare guard result (reg 
-"+guardBooleanReg+") to true");
+         regTable.getImmRegister());
+        newInst.setComment("while: compare guard result (reg " +
+         guardBooleanReg + ") to true");
         instructions.add(newInst);
         newInst = new Instruction("EQ", regTable.getCCRegister(), bodyLabel, 
-endLabel);
-        newInst.setComment("while: branch true: '"+bodyLabel+"' false: 
-'"+endLabel+"'");
+         endLabel);
+        newInst.setComment("while: branch true: '" + bodyLabel +
+         "' false: '" + endLabel + "'");
         instructions.add(newInst);
 
         head.addILoc(instructions);
@@ -380,8 +387,8 @@ LinkedList<Instruction>()]
    | id=ID {
         int reg = regTable.lookupId(currentFunction+$id.text);
         Instruction newInst = new Instruction("ADDI", reg, 0, resultReg);
-        newInst.setComment("lvalue: got an id stored in reg "+reg+", stuck it 
-in reg "+resultReg);
+        newInst.setComment("lvalue: got an id stored in reg " + reg +
+         ", stuck it in reg " + resultReg);
         $instructions.add(newInst);
      }
    ;
@@ -410,8 +417,8 @@ new LinkedList<Instruction>()]
         $instructions.addAll(0, $rexpr.instructions);
         Instruction newInst = new Instruction(
           $op.text, lexprReg, rexprReg, resultReg);
-        newInst.setComment("expression: reg "+lexprReg+" "+$op.text+" 
-"+rexprReg+" in reg "+resultReg);
+        newInst.setComment("expression: reg " + lexprReg + " " + $op.text +
+         " " + rexprReg + " in reg " + resultReg);
         $instructions.add(newInst);
      }
 
@@ -428,8 +435,8 @@ new LinkedList<Instruction>()]
         // Do the comparison, set cc
         Instruction newInst = new Instruction(
             "COMP", lexprReg, rexprReg, regTable.getCCRegister());
-        newInst.setComment("expression: compare: reg "+lexprReg+" to 
-"+rexprReg+", store in cc-reg");
+        newInst.setComment("expression: compare: reg " + lexprReg +
+         " to " + rexprReg + ", store in cc-reg");
         $instructions.add(newInst);
         
         // Here we set the return register to true or false
@@ -439,9 +446,9 @@ new LinkedList<Instruction>()]
         
         // Do the comparison
         newInst = new Instruction($op.text, regTable.getCCRegister(), 
-trueLabel, falseLabel);
-        newInst.setComment("expression: branch true: '"+trueLabel+"' false: 
-'"+falseLabel+"'");
+         trueLabel, falseLabel);
+        newInst.setComment("expression: branch true: '" + trueLabel +
+         "' false: '" + falseLabel + "'");
         $instructions.add(newInst);
         
         // If comparison is true
@@ -450,8 +457,8 @@ trueLabel, falseLabel);
         $instructions.add(newInst);
         // Set result register to true
         newInst = new Instruction("LOADI", 1, resultReg);
-        newInst.setComment("expression: evaluated to true, setting resultReg 
-"+resultReg);
+        newInst.setComment("expression: evaluated to true, setting resultReg " +
+         resultReg);
         $instructions.add(newInst);
         // Go to finish
         newInst = new Instruction("JUMPI", doneLabel);
@@ -460,13 +467,12 @@ trueLabel, falseLabel);
         
         // Comparison was false
         newInst = new Instruction("LABEL", falseLabel);
-        newInst.setComment("expression: FALSE branch label 
-'"+falseLabel+"'");
+        newInst.setComment("expression: FALSE branch label '" + falseLabel + "'");
         $instructions.add(newInst);
         // Set result register to false
         newInst = new Instruction("LOADI", 0, resultReg);
-        newInst.setComment("expression: evaluated to false, setting resultReg 
-"+resultReg);
+        newInst.setComment("expression: evaluated to false, setting resultReg " +
+         resultReg);
         $instructions.add(newInst);
         
         // Finish
@@ -503,21 +509,20 @@ trueLabel, falseLabel);
          "XORI", srcReg, immReg, resultReg));
      }
 
-   | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] 
-fieldId=ID) {
+   | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] fieldId=ID) {
         // Load
         int leftRegister = regTable.lookupId(currentFunction+$fieldId.text);
         if(-1 == leftRegister) {
              leftRegister = regTable.lookupId($fieldId.text);
         }
         int offset = 0; // set this offset somehow:
-        // lookup id of struct, find type in symtable, get offset for that 
-field, add to
+        // lookup id of struct, find type in symtable,
+        // get offset for that field, add to
         // offset for all other fields
         Instruction newInst = new Instruction("LOADAI", r1, offset, 
-resultReg);
-        newInst.setComment("dot: load from pointer '"+$fieldId.text+"' (reg 
-"+r1+"), store in reg "+resultReg);
+          resultReg);
+        newInst.setComment("dot: load from pointer '" + $fieldId.text +
+         "' (reg " + r1 + "), store in reg " + resultReg);
         $instructions.add(newInst);
         
         // Or figure out last label and loadglobal
@@ -542,10 +547,10 @@ resultReg);
            targetRegister = regTable.lookupId($id.text);
         }
 
-        newInst = new Instruction(
-           "LOADAI", targetRegister, immRegister, resultReg);
-        newInst.setComment("id: load '"+currentFunction+$id.text+"' from mem 
-to reg "+resultReg);
+        newInst = new Instruction("LOADAI",
+         targetRegister, immRegister, resultReg);
+        newInst.setComment("id: load '" + currentFunction + $id.text +
+         "' from mem to reg " + resultReg);
         $instructions.add(newInst);
      }
 
@@ -555,7 +560,7 @@ to reg "+resultReg);
                                     Integer.parseInt($i.text),
                                     resultReg);
         newInst.setComment("int: reg "+resultReg+" gets val "+ 
-Integer.parseInt($i.text));
+         Integer.parseInt($i.text));
         $instructions.add(newInst);
      }
 
@@ -602,8 +607,8 @@ LinkedList<Instruction>()]
         newInst.setComment("argument: set immediate reg to " + count);
         $instructions.add(newInst);
         newInst = new Instruction("STOUT", srcReg, 
-regTable.getImmRegister());
-        newInst.setComment("argument: store-out param in reg "+srcReg);
+         regTable.getImmRegister());
+        newInst.setComment("argument: store-out param in reg " + srcReg);
         $instructions.add(newInst);
         count += 4;
      })+)

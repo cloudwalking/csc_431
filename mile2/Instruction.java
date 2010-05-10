@@ -165,6 +165,11 @@ instruction.
          return Operator.SUB;
       else if (op.equals("XORI"))
          return Operator.XORI;
+//ILOC instructions to make translation to sparc easier
+      else if (op.equals("SAVE"))
+         return Operator.SAVE;
+      else if (op.equals("RESTORE"))
+         return Operator.RESTORE;
       else {
          System.err.println("Invalid Instruction OPCode: " + op);
          return null;
@@ -215,11 +220,14 @@ instruction.
       STOREOUTARGUMENT,
       STORERET,
       SUB,
-      XORI
+      XORI,
+      SAVE,
+      RESTORE
    }
 
    public SparcOperator getSparc(Operator ilocOp) {
-      if (ilocOp == Operator.ADD)
+      if (ilocOp == Operator.ADD || ilocOp == Operator.LOADI ||
+       ilocOp == Operator.ADDI)
          return SparcOperator.ADD;
       else if (ilocOp == Operator.AND)
          return SparcOperator.AND;
@@ -237,38 +245,77 @@ instruction.
          return SparcOperator.BNE;
       else if (ilocOp == Operator.CALL)
          return SparcOperator.CALL;
-      else if (ilocOp == Operator.COMP)
+      else if (ilocOp == Operator.COMP || ilocOp == Operator.COMPI)
          return SparcOperator.CMP;
       else if (ilocOp == Operator.JUMPI)
-         return SparcOperator.JMPL;
-/*sttill need to change everything from here
-      else if (ilocOp == Operator.LOAD)
-         return SparcOperator.LDX; how to do load?*/
+         return SparcOperator.BA;
+      else if (ilocOp == Operator.LOADAI || ilocOp == Operator.LOADI)
+         return SparcOperator.LDX;
       else if (ilocOp == Operator.OR)
          return SparcOperator.OR;
-      //else if (ilocOp == Operator.SAVE)
-        // return SparcOperator.SAVE;
       else if (ilocOp == Operator.DIV)
          return SparcOperator.SDIV;
       else if (ilocOp == Operator.MULT)
          return SparcOperator.SMUL;
-      //else if (ilocOp == Operator.STORE)
-         //return SparcOperator.STX;
+      else if (ilocOp == Operator.SAVE)
+         return SparcOperator.SAVE;
+      else if (ilocOp == Operator.STOREAI)
+         return SparcOperator.STX;
       else if (ilocOp == Operator.SUB)
          return SparcOperator.SUB;
-      //else if (ilocOp == Operator.RESTORE)
-         //return SparcOperator.RESTORE;
       else if (ilocOp == Operator.RET)
-         return SparcOperator.RETURN;
+         return SparcOperator.RET;
+      else if (ilocOp == Operator.RESTORE)
+         return SparcOperator.RESTORE;
       else if (ilocOp == Operator.XORI)
          return SparcOperator.XOR;
+//anything to be stored in out, move to an out register o0 - o5
+      else if (ilocOp == Operator.STOREOUTARGUMENT)
+         return SparcOperator.MOV;
       else {
-         System.err.println("Invalid Sparc Operator requested");
+         System.err.println("Invalid Sparc Operator requested: " + ilocOp);
          return null;
       }
    }
 
    public String toSparc() {
+      if (op == Operator.COMP) {
+         fields.removeLast();
+      }
+      else if (op == Operator.CBREQ || op == Operator.CBRGE ||
+        op == Operator.CBRGT || op == Operator.CBRLE ||
+        op == Operator.CBRLT || op == Operator.CBRNE) {
+         InstrField otherBranch = fields.removeLast();
+         return getSparc(op) + fields.toString() + " " + comment + "\n   " +
+          SparcOperator.BA + "\t" + otherBranch + " " + comment;
+      }
+      else if (op == Operator.NEW) {
+         //determine address where struct will be stored;
+         //n++;
+         //%fp - n = address of struct;
+      }
+      else if (op == Operator.DEL) {
+         //get address of struct to be deleted
+         //delete struct at address
+         //flag as deleted?
+      }
+      else if (op == Operator.LOADI) {
+         fields.addFirst(new Label("%g0"));
+      }
+      else if (op == Operator.LABEL) {
+         return "";
+      }
+      else if (op == Operator.STOREINARGUMENT) {
+//anything to be stored in in, need not be moved
+         return "";
+      }
+      else if (op == Operator.SAVE) {
+         return getSparc(op) + " %sp, -112, %sp " + comment;
+      }
+      else if (op == Operator.PRINT) {
+         return SparcOperator.MOV + fields.toString() + ", %o0" +
+          "\n   " + SparcOperator.CALL + "printf, 0";
+      }
       return getSparc(op) + fields.toString() + " " + comment;
    }
 
@@ -287,11 +334,14 @@ instruction.
       BL,
       BG,
       BLE,
+      BA,
       JMPL,
       LDX,
+      MOV,
+      NOP,
       STX,
       CALL,
-      RETURN,
+      RET,
       SAVE,
       RESTORE
    }

@@ -27,5 +27,6 @@ clean:
 	rm antlr.*
 	rm EvilLexer.java
 	rm EvilParser.java
-	rm Evil.tokens
+	rm *.tokens
 	rm EvilAST.java
+	rm EvilCFG.java

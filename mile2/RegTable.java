@@ -34,7 +34,7 @@ public class RegTable {
       }
       Integer reg = table.get(id);
       if (reg == null) {
-         System.err.println("no register allocated to '"+id+"'");
+         //System.err.println("no register allocated to '"+id+"'");
          return -1;
       }
       return ((Integer)table.get(id)).intValue();
