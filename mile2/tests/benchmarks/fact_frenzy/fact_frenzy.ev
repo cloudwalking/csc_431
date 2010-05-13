@@ -1,0 +1,53 @@
+#EVIL implementation of factorial calculation benchmark
+
+struct myvals
+{
+  int val;
+  int acc;
+};
+
+fun factarth(struct myvals var) struct myvals
+{
+  var.acc = var.acc * var.val;
+  var.val = var.val - 1;
+  return var;
+}
+
+fun fact(int var) int
+{
+  struct myvals myvar;
+  int acc;
+  myvar = new myvals;
+  myvar.val = var;
+  myvar.acc = 1;
+
+  while(myvar.val > 1)
+  {
+    myvar = factarth(myvar);
+  }
+  acc = myvar.acc;
+  delete myvar;
+  return acc;
+}
+
+fun main() int
+{
+  int resval;
+  int i;
+  int loopval;
+  int inputval;
+
+  read inputval;
+  read loopval;
+
+  i = 0;
+
+  while(i < loopval)
+  {
+    resval = fact(inputval);
+    i = i + 1;
+  }
+  print inputval;
+  print resval endl;
+  return 0;
+}
