@@ -156,16 +156,24 @@ statement[SymTable locals, boolean hasReturn] returns
 
 assignment[SymTable locals]
    : ^(ASSIGN exprType=expression[locals] lvalType=lvalue[locals]) {
-        if(!$lvalType.t.equals(exprType)) {
-           System.err.println("Type Mismatch in assignment: found '" +
-            $exprType.t + "' type, expected '" + $lvalType.t + "'");
+        if(!$lvalType.t.equals($exprType.t)) {
+           if (structTable.isDefined($lvalType.t.replace("struct ", ""))) {
+              if (!$exprType.t.equals("null") ) {
+                 System.err.println("Type Mismatch in assignment: found '" +
+                  $exprType.t + "', expected '" + $lvalType.t + "'");
+              }
+           }
+           else {
+              System.err.println("Type Mismatch in assignment: found '" +
+               $exprType.t + "' type, expected '" + $lvalType.t + "'");
+           }
         }
      }
    ;
 
 print[SymTable locals]
    : ^(PRINT extype=expression[locals] (ENDL)?) {
-        if (extype != null && !extype.equals(SymTable.intType())) {
+        if ($extype.t != null && !$extype.t.equals(SymTable.intType())) {
            System.err.println("Cannot print non-integers");
         }
      }
@@ -186,16 +194,21 @@ delete[SymTable locals]
 
 ret[SymTable locals] returns [boolean hasReturn = false]
    : ^(RETURN (retType=expression[locals])?) {
-        if (retType == null && (symtable.getType(curFun) !=
+if (retType == null) { $hasReturn = true; }
+        else if ($retType.t == null && (symtable.getType(curFun) !=
          SymTable.voidType())) {
            System.err.println("Invalid return type in function '" + curFun +
             "' expected '" + symtable.getType(curFun) + "', found '" +
             SymTable.voidType() + "'");
         }
-        else if (!retType.equals(symtable.getType(curFun))) {
-           System.err.println("Invalid return type in function '" + curFun +
-            "' expected '" + symtable.getType(curFun) + "', found '" +
-            retType + "'");
+
+        else if (!$retType.t.equals(symtable.getType(curFun))) {
+           if ($retType.t != "null" || (!structTable.isDefined(
+            symtable.getType(curFun).replace("struct ", "")))) {
+              System.err.println("Invalid return type in function '" + curFun +
+               "' expected '" + symtable.getType(curFun) + "', found '" +
+               $retType.t + "'");
+           }
         }
 
         $hasReturn = true;
@@ -230,11 +243,11 @@ lvalue[SymTable locals] returns [String t = null]
 
 subvalue[SymTable locals] returns [String t = null]
    : ^(DOT structId=subvalue[locals] fieldId=ID) {
-        if(!structTable.isField(structId, $fieldId.text)) {
+        if(!structTable.isField($structId.t, $fieldId.text)) {
            System.err.println("line " + $fieldId.line + ": invalid field '" +
             $fieldId.text + "' in struct '" + $structId.t + "'");
         }
-        $t = $fieldId.text;
+        $t = structTable.getType($structId.t, $fieldId.text).replace("struct ", "");
      }
 
    | id=ID {
@@ -250,11 +263,15 @@ subvalue[SymTable locals] returns [String t = null]
               $id.text + "'");
         }
         
+        if(type == null) {
+           System.err.println("line " + $id.line + ": undefined struct type'" +
+            type + "'");
+        }
+
         // Hack: take struct off the front to get the raw type.
-        // struct and a space = 7 chars
-        type = type.substring(7);
+        type = type.replace("struct ", "");
         
-        if(type == null || !structTable.isDefined(type)) {
+        if(!structTable.isDefined(type)) {
            System.err.println("line " + $id.line + ": undefined struct type'" +
             type + "'");
         }
@@ -289,12 +306,35 @@ expression [SymTable locals] returns [String t = null]
 
    | ^((EQ | LT | GT | NE | LE | GE) lexpr=expression[locals]
       rexpr=expression[locals]) {
-        if (!rexpr.equals(SymTable.intType())) {
+
+        if (structTable.isDefined($lexpr.t.replace("struct ", "")) ||
+         structTable.isDefined(rexpr.replace("struct ", ""))) {
+
+           if (!$lexpr.t.equals($rexpr.t)) {
+              if ($rexpr.t.equals("null") || $lexpr.t.equals("null")) { $t = SymTable.boolType(); }
+
+              else if (!$rexpr.t.equals("null") && !$lexpr.t.equals("null")) {
+                 System.err.println("Invalid equality operation: expected 'struct'" +
+                  " and 'null', found '" + $lexpr.t + "' and '" + $rexpr.t +
+                  "' in function " + curFun);
+              }
+
+              else {
+                 System.err.println("Invalid equality operation: expected '" +
+                  $lexpr.t + "' and '" + $lexpr.t + "', found '" + $lexpr.t +
+                  "' and '" + $rexpr.t + "' in function " + curFun);
+              }
+           }
+
+           else { $t = SymTable.boolType(); }
+
+        }
+        else if (!$rexpr.t.equals(SymTable.intType())) {
            System.err.println("Invalid arithmetic operation: expected 'int'" +
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
             " in function " + curFun);
         }
-        else if (!lexpr.equals(SymTable.intType())) {
+        else if (!$lexpr.t.equals(SymTable.intType())) {
            System.err.println("Invalid arithmetic operation: expected 'int'" +
             " and 'int', found '" + lexpr + "' and '" + rexpr + "'" +
             " in function " + curFun);
@@ -328,15 +368,15 @@ expression [SymTable locals] returns [String t = null]
      }
 
    | ^(NEG extype=expression[locals]) {
-        if (extype.equals(SymTable.intType())) { $t = SymTable.intType(); }
-        else { System.err.println("Invalid operand for negative symbol"); }
+        if ($extype.t.equals(SymTable.intType())) { $t = SymTable.intType(); }
+        else { System.err.println("Invalid operand for negative symbol");$t = SymTable.boolType(); }
      }
 
-   | ^(NOT expression[locals]) {
-        if (extype.equals(SymTable.intType())) {
+   | ^(NOT extype=expression[locals]) {
+        if ($extype.t.equals(SymTable.intType())) {
            $t = SymTable.intType();
         }
-        else if (extype.equals(SymTable.boolType())) {
+        else if ($extype.t.equals(SymTable.boolType())) {
            $t = SymTable.boolType();
         }
         else {
