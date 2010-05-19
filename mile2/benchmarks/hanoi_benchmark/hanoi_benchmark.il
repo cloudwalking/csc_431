@@ -1,0 +1,1 @@
+{hanoifrom=54, numMoves=6, hanoito=55, moveplateToMove=9, mainnumPlates=84, printPegaPlate=69, mainaPlate=85, hanoin=53, printPegpeg=68, peg3=5, peg2=4, peg1=3, moveto=8, movefrom=7, maincount=83, hanoiother=56}

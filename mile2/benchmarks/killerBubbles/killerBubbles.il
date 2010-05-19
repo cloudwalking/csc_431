@@ -1,0 +1,1 @@
+{deathSortcurrNode=13, maincounter=77, compareb=5, printEVILListhead=53, maincurrNode=78, printEVILListcurrNode=54, swapped=3, comparea=4, mainprevious=80, mainhead=79, deathSortswap=12, deathSorthead=10, deathSortswapped=11, mainnumNodes=76, printEVILListtoFree=55}
