@@ -22,6 +22,12 @@ antlr.generated.evilCFG : EvilCFG.g
 safe:
 	\cp *.g *.java ~/.431
 
+testiloc:
+	perl testScript.pl iloc
+
+testsparc:
+	perl testScript.pl sparc
+
 clean:
 	rm *.class
 	rm antlr.*
