@@ -67,7 +67,7 @@ public class Evil
 
          //cfg parser populates the CFG
       
-         cfgParser.program(_displayCFG, _displaySparc);
+         cfgParser.program(_inputFile, _displayCFG, _displaySparc);
       }
       catch (org.antlr.runtime.RecognitionException e)
       {
