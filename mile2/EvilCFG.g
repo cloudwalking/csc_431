@@ -9,19 +9,50 @@ options {
 
 @header {
    import java.util.LinkedList;
+   import java.io.File;
+   import java.io.FileWriter;
+   import java.io.BufferedWriter;
 }
 
 @members{
    RegTable regTable = new RegTable();
    int uniqueBlock = 0, uniqueStatement = 0;
    String currentFunction = "";
+   boolean debug = false;
 }
 
-program[Boolean print, Boolean printSparc]
+program[String fileName, Boolean print, Boolean printSparc]
    : ^(PROGRAM types declarations cfgList=functions) {
       if(print) {
          for (Block block:cfgList) {
-            block.reedPrint(0, printSparc);
+            if (debug) {
+               block.reedPrint(0, printSparc);
+            }
+            else if (!debug) {
+               BufferedWriter codeWriter = null;
+               /*if (fileName.indexOf(".") == -1) {
+                  System.err.println("filename is: " + fileName);
+                  System.exit(1);
+               }
+               fileName = fileName.substring(0, fileName.indexOf("."));*/
+               try {
+                  if (printSparc)
+                     fileName = fileName.replace(".ev", ".s");
+                  else if (!printSparc)
+                     fileName = fileName.replace(".ev", ".il");
+
+
+                  File tmpFile = new File(fileName);
+                  tmpFile.createNewFile();
+                  //tmpFile.setWritable(true);
+                  codeWriter = new BufferedWriter(new FileWriter(tmpFile));
+               }
+               catch (java.io.IOException e) {
+                  System.err.println("Error initializing file writer: ");
+                  e.printStackTrace();
+               }
+               block.filePrint(codeWriter, printSparc);
+            }
          }
          regTable.print();
       }
@@ -90,6 +121,14 @@ function returns [Block entry = null]
         $entry = new Block("#function-entry");
         $entry.addLabel($id.text);
         LinkedList<Instruction> beginFunc = new LinkedList<Instruction>();
+
+        beginFunc.add(new Instruction("SECTION", "\".text\""));
+        beginFunc.add(new Instruction("ALIGN", 4));
+        beginFunc.add(new Instruction("GLBL", $id.text));
+        Instruction typePseudoInstr = new Instruction("TYPE", $id.text);
+        typePseudoInstr.setComment("#function");
+        beginFunc.add(typePseudoInstr);
+        beginFunc.add(new Instruction("PROC", "04"));
         beginFunc.add(new Instruction("SAVE"));
 
         Block exit = new Block("#function-exit");
@@ -182,8 +221,7 @@ end; })* {
         String elseLabel = "S" + uniqueStatement++;
         String endLabel = "S" + uniqueStatement++;
         
-        LinkedList<Instruction> instructions = new 
-LinkedList<Instruction>();;
+        LinkedList<Instruction> instructions = new LinkedList<Instruction>();
         Instruction newInst;
 
         // Add guard instructions
@@ -362,7 +400,8 @@ ret returns [LinkedList<Instruction> instructions = new
 LinkedList<Instruction>()]
 @init { int r1 = regTable.getReturnRegister(); }
    : ^(RETURN (exp=expression[r1])?) {
-        $instructions.addAll(0, $exp.instructions);
+        if (exp != null)
+           $instructions.addAll(0, $exp.instructions);
         $instructions.add(new Instruction("RET"));
      }
    ;
