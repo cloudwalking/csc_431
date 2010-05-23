@@ -24,35 +24,46 @@ options {
 program[String fileName, Boolean print, Boolean printSparc]
    : ^(PROGRAM types declarations cfgList=functions) {
       if(print) {
+         BufferedWriter codeWriter = null;
+         if(!debug) {
+            /*if (fileName.indexOf(".") == -1) {
+               System.err.println("filename is: " + fileName);
+               System.exit(1);
+            }
+            fileName = fileName.substring(0, fileName.indexOf("."));*/
+            try {
+               String sourceFile = fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length());
+               if (printSparc)
+                  fileName = fileName.replace(".ev", ".s");
+               else if (!printSparc)
+                  fileName = fileName.replace(".ev", ".il");
+
+               File tmpFile = new File(fileName);
+               tmpFile.createNewFile();
+               //tmpFile.setWritable(true);
+               codeWriter = new BufferedWriter(new FileWriter(tmpFile));
+               codeWriter.write(".file\t\"" + sourceFile + "\"\n");
+               Block.printSparcConstants(codeWriter);
+            }
+            catch (java.io.IOException e) {
+               System.err.println("Error initializing file writer: ");
+               e.printStackTrace();
+            }
+         }
          for (Block block:cfgList) {
             if (debug) {
                block.reedPrint(0, printSparc);
             }
             else if (!debug) {
-               BufferedWriter codeWriter = null;
-               /*if (fileName.indexOf(".") == -1) {
-                  System.err.println("filename is: " + fileName);
-                  System.exit(1);
-               }
-               fileName = fileName.substring(0, fileName.indexOf("."));*/
-               try {
-                  if (printSparc)
-                     fileName = fileName.replace(".ev", ".s");
-                  else if (!printSparc)
-                     fileName = fileName.replace(".ev", ".il");
-
-
-                  File tmpFile = new File(fileName);
-                  tmpFile.createNewFile();
-                  //tmpFile.setWritable(true);
-                  codeWriter = new BufferedWriter(new FileWriter(tmpFile));
-               }
-               catch (java.io.IOException e) {
-                  System.err.println("Error initializing file writer: ");
-                  e.printStackTrace();
-               }
                block.filePrint(codeWriter, printSparc);
             }
+         }
+         try {
+            codeWriter.close();
+         }
+         catch (java.io.IOException e) {
+            System.err.println("Error closing file writer: ");
+            e.printStackTrace();
          }
          regTable.print();
       }
@@ -121,14 +132,6 @@ function returns [Block entry = null]
         $entry = new Block("#function-entry");
         $entry.addLabel($id.text);
         LinkedList<Instruction> beginFunc = new LinkedList<Instruction>();
-
-        beginFunc.add(new Instruction("SECTION", "\".text\""));
-        beginFunc.add(new Instruction("ALIGN", 4));
-        beginFunc.add(new Instruction("GLBL", $id.text));
-        Instruction typePseudoInstr = new Instruction("TYPE", $id.text);
-        typePseudoInstr.setComment("#function");
-        beginFunc.add(typePseudoInstr);
-        beginFunc.add(new Instruction("PROC", "04"));
         beginFunc.add(new Instruction("SAVE"));
 
         Block exit = new Block("#function-exit");
@@ -193,21 +196,21 @@ end; })* {
      })
 
    | iloc=assignment {
-        head.addLabel("S" + (uniqueStatement++));
+        head.addLabel(".S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=print {
-        head.addLabel("S" + (uniqueStatement++));
+        head.addLabel(".S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=read {
-        head.addLabel("S" + (uniqueStatement++));
+        head.addLabel(".S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
         head.addNext(exit);
         $top = head;
@@ -217,9 +220,9 @@ end; })* {
          int guardBooleanReg = regTable.newRegister();
       }
       iloc=expression[guardBooleanReg] {
-        String thenLabel = "S" + uniqueStatement++;
-        String elseLabel = "S" + uniqueStatement++;
-        String endLabel = "S" + uniqueStatement++;
+        String thenLabel = ".S" + uniqueStatement++;
+        String elseLabel = ".S" + uniqueStatement++;
+        String endLabel = ".S" + uniqueStatement++;
         
         LinkedList<Instruction> instructions = new LinkedList<Instruction>();
         Instruction newInst;
@@ -272,9 +275,9 @@ end; })* {
 
    | ^(WHILE {int guardBooleanReg = regTable.newRegister();}
      iloc=expression[guardBooleanReg] {
-        String guardLabel = "S" + uniqueStatement++;
-        String bodyLabel = "S" + uniqueStatement++;
-        String endLabel = "S" + uniqueStatement++;
+        String guardLabel = ".S" + uniqueStatement++;
+        String bodyLabel = ".S" + uniqueStatement++;
+        String endLabel = ".S" + uniqueStatement++;
         LinkedList<Instruction> instructions;
         Instruction newInst;
         
@@ -326,21 +329,21 @@ end; })* {
 
    | iloc=delete {
         head.addILoc($iloc.instructions);
-        head.addLabel("S" + (uniqueStatement++));
+        head.addLabel(".S" + (uniqueStatement++));
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=ret {
         head.addILoc($iloc.instructions);
-        head.addLabel("S" + (uniqueStatement++));
+        head.addLabel(".S" + (uniqueStatement++));
         head.addNext(exit);
         $top = head;
      }
 
    | iloc=invocation {
         head.addILoc($iloc.instructions);
-        head.addLabel("S" + (uniqueStatement++));
+        head.addLabel(".S" + (uniqueStatement++));
         head.addNext(exit);
         $top = head;
      }
@@ -479,9 +482,9 @@ new LinkedList<Instruction>()]
         $instructions.add(newInst);
         
         // Here we set the return register to true or false
-        String trueLabel = "S" + uniqueStatement++;
-        String falseLabel = "S" + uniqueStatement++;
-        String doneLabel = "S" + uniqueStatement++;
+        String trueLabel = ".S" + uniqueStatement++;
+        String falseLabel = ".S" + uniqueStatement++;
+        String doneLabel = ".S" + uniqueStatement++;
         
         // Do the comparison
         newInst = new Instruction($op.text, regTable.getCCRegister(), 

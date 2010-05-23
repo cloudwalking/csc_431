@@ -35,7 +35,7 @@ public class Block {
    }
 
    public void addLabel(String blockLabel) {
-      labels.add("." + blockLabel + ":\n");
+      labels.add(blockLabel);
    }
    
    public LinkedList<Instruction> getInstructionList() {
@@ -52,18 +52,98 @@ public class Block {
          }
       }
       return false;
+   } 
+
+   public static void printSparcConstants(BufferedWriter writer) {
+      try {
+         String evilPrint, evilPrintln, evilRead, tab, align, section;
+         String printLabel, printLnLabel, readLabel, readOnly, constString;
+
+         tab = "\t";
+         //tells the linker what this section will contain
+         section = ".section";
+         //represents a static string
+         constString = ".asciz";
+         align = ".align";
+         //represents a readonly section
+         readOnly = "\".rodata\"";
+
+         evilPrint = "\"%d \"";
+         evilPrintln = "\"%d\\n\"";
+         evilRead = "\"%d\"";
+
+         printLabel = ".EV1LPR";
+         printLnLabel = ".EV1LPRL";
+         readLabel = ".EV1LRD";
+
+         writer.write(tab + section + tab + readOnly + "\n");
+         writer.write(tab + align + tab + "8\n");
+
+         writer.write(printLabel + "\n");
+         writer.write(tab + constString + tab + evilPrint + "\n");
+         writer.write(tab + align + tab + "8\n");
+
+         writer.write(printLnLabel + "\n");
+         writer.write(tab + constString + tab + evilPrintln + "\n");
+         writer.write(tab + align + tab + "8\n");
+
+         writer.write(readLabel + "\n");
+         writer.write(tab + constString + tab + evilRead + "\n");
+         writer.write(tab + align + tab + "8\n");
+      }
+      catch (java.io.IOException e) {
+         System.err.println("error writing sparc constants");
+      }
+   }
+
+   private void printSparcHeader(BufferedWriter writer, String funName) {
+      try { 
+         String section, align, global, type, functionType;
+         String proc, exeText, tab;
+
+         //general pseudo operations for preparing a function
+         tab = "\t";
+         //tells the linker what this section will contain
+         section = ".section";
+         align = ".align";
+         global = ".global";
+         type = ".type";
+         proc = ".proc";
+         //represents a section of executable text
+         exeText = "\".text\"";
+
+         functionType = "#function";
+
+
+         writer.write(tab + section + tab + exeText + "\n");
+         writer.write(tab + align + tab + "4\n");
+         writer.write(tab + global + tab + funName + "\n");
+         writer.write(tab + type + tab + funName + ", " + functionType + "\n");
+         writer.write(tab + proc + tab + "04\n");
+      }
+      catch (java.io.IOException e) {
+         System.err.println("error writing sparc header");
+         e.printStackTrace();
+      }
    }
 
    public void filePrint(BufferedWriter writer, boolean toSparc) {
       try {
          // Has this node been seen?
+         if (toSparc) {
+            for (String s: labels) {
+               if (!s.startsWith(".") && !s.startsWith("#")) {
+                   printSparcHeader(writer, s);
+               }
+            }
+         }
          if(flag && !hasLabel("#function-exit")) {
             return;
          }
          flag = !flag;
       
          for (String s: labels) {
-            writer.write(s.replace("[", " ").replace("]", "\t"));
+            writer.write(s.replace("[", " ").replace("]", "\t") + ":\n");
             //System.out.println(s.replace("[", " ").replace("]", "\t"));
          }
       
@@ -77,13 +157,13 @@ public class Block {
             for(Instruction i : instrs) {
                if (toSparc) {
                   String tmpSparc = i.toSparc().replace("[", " ").replace("]", "\t");
-                  System.out.println("sparc instr to be written: " + tmpSparc);
-                  writer.write("\t" + tmpSparc);
+                  //System.out.println("sparc instr to be written: " + tmpSparc);
+                  writer.write("\t" + tmpSparc + "\n");
                   //System.out.println("\t" + tmpSparc);
                }
                else {
                   String tmpInstr = i.toString().replace("[", " ").replace("]", "\t");
-                  writer.write("\t" + tmpInstr);
+                  writer.write("\t" + tmpInstr + "\n");
                   //System.out.println("\t" + tmpInstr);
                }
             }
@@ -162,8 +242,7 @@ public class Block {
       System.out.print(padding);
    }
 
-   public int topoPrint(Block top, int counter, LinkedList<Block> cfg, int 
-nested) {
+   public int topoPrint(Block top, int counter, LinkedList<Block> cfg, int nested) {
       if (top == null || top.entered != 0)
          return counter;
       top.entered = ++counter;

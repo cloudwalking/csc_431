@@ -89,8 +89,6 @@ instruction.
          return Operator.ADD;
       else if (op.equals("ADDI"))
          return Operator.ADDI;
-      else if (op.equals("ALIGN"))
-         return Operator.ALIGN;
       else if (op.equals("AND") || op.equals("&&"))
          return Operator.AND;
       else if (op.equals("CALL"))
@@ -119,8 +117,6 @@ instruction.
          return Operator.DEL;
       else if (op.equals("DIVIDE") || op.equals("/"))
          return Operator.DIV;
-      else if (op.equals("GLBL"))
-         return Operator.GLOBAL;
       else if (op.equals("JUMPI"))
          return Operator.JUMPI;
       else if(op.equals("LABEL"))
@@ -147,8 +143,6 @@ instruction.
          return Operator.PRINT;
       else if (op.equals("PRINTLN"))
          return Operator.PRINTLN;
-      else if (op.equals("PROC"))
-         return Operator.PROC;
       else if (op.equals("READ"))
          return Operator.READ;
       else if (op.equals("RET"))
@@ -157,8 +151,6 @@ instruction.
          return Operator.RESTOREFORMAL;
       else if (op.equals("SUBI"))
          return Operator.RSUBI;
-      else if (op.equals("SECTION"))
-         return Operator.SECTION;
       else if (op.equals("STAI"))
          return Operator.STOREAI;
       else if (op.equals("STGLBL"))
@@ -169,8 +161,6 @@ instruction.
          return Operator.STOREOUTARGUMENT;
       else if (op.equals("STRET"))
          return Operator.STORERET;
-      else if (op.equals("TYPE"))
-         return Operator.TYPE;
       else if (op.equals("MINUS") || op.equals("-"))
          return Operator.SUB;
       else if (op.equals("XORI"))
@@ -233,17 +223,10 @@ instruction.
       XORI,
       SAVE,
       RESTORE,
-      //added for pseudo instructions for function entry blocks
-      PROC,
-      ALIGN,
-      GLOBAL,
-      TYPE,
-      SECTION
    }
 
    public SparcOperator getSparc(Operator ilocOp) {
-      if (ilocOp == Operator.ADD || ilocOp == Operator.LOADI ||
-       ilocOp == Operator.ADDI)
+      if (ilocOp == Operator.ADD || ilocOp == Operator.ADDI)
          return SparcOperator.ADD;
       else if (ilocOp == Operator.AND)
          return SparcOperator.AND;
@@ -302,21 +285,23 @@ instruction.
         op == Operator.CBRGT || op == Operator.CBRLE ||
         op == Operator.CBRLT || op == Operator.CBRNE) {
          InstrField otherBranch = fields.removeLast();
-         return getSparc(op) + fields.toString() + " " + comment + "\n   " +
+         return getSparc(op) + "\t" + fields.toString() + " " + comment + "\n\t" +
           SparcOperator.BA + "\t" + otherBranch + " " + comment;
       }
       else if (op == Operator.NEW) {
          //determine address where struct will be stored;
          //n++;
          //%fp - n = address of struct;
+         //malloc
       }
       else if (op == Operator.DEL) {
          //get address of struct to be deleted
          //delete struct at address
          //flag as deleted?
+         //free
       }
       else if (op == Operator.LOADI) {
-         fields.addFirst(new Label("%g0"));
+         return "set" + "\t" + fields.toString() + " " + comment;
       }
       else if (op == Operator.LABEL) {
          return "";
@@ -327,28 +312,42 @@ instruction.
       }
       else if (op == Operator.SAVE) {
          //activation record = 88 bytes + locals
-         return getSparc(op) + " %sp, -88, %sp " + comment;
+         return getSparc(op) + "\t" + "%sp, -800, %sp " + comment;
       }
       else if (op == Operator.PRINT) {
-         return SparcOperator.MOV + fields.toString() + ", %o0" +
-          "\n   " + SparcOperator.CALL + "printf, 0";
+         String setUpper, setLower, prepCall, callScan;
+
+//get registers from allocator
+         setUpper = "sethi" + "\t" + "%hi(.EV1LPR), %g1" + "\n";
+         setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LPR), %o0" + "\n";
+         prepCall = "\t" + "mov" + "\t" + "%o5, %o1" + "\n";
+         callScan = "\t" + "call" + "\t" + "printf, 0" + "\n";
+
+         return setUpper + setLower + prepCall + callScan;
       }
-      else if (op == Operator.SECTION) {
-         return ".section " + fields.toString() + " " + comment;
+      else if (op == Operator.PRINTLN) {
+         String setUpper, setLower, prepCall, callScan;
+
+//get registers from allocator
+         setUpper = "sethi" + "\t" + "%hi(.EV1LPRL), %g1" + "\n";
+         setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LPRL), %o0" + "\n";
+         prepCall = "\t" + "mov" + "\t" + "%o5, %o1" + "\n";
+         callScan = "\t" + "call" + "\t" + "printf, 0" + "\n";
+
+         return setUpper + setLower + prepCall + callScan;
       }
-      else if (op == Operator.ALIGN) {
-         return ".align " + fields.toString() + " " + comment;
+      else if (op == Operator.READ) {
+         String setUpper, setLower, prepCall, callScan;
+
+//get registers from allocator
+         setUpper = "sethi" + "\t" + "%hi(.EV1LRD), %g1" + "\n";
+         setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LRD), %o0" + "\n";
+         prepCall = "\t" + "mov" + "\t" + "%o5, %o1" + "\n";
+         callScan = "\t" + "call" + "\t" + "scanf, 0" + "\n";
+
+         return setUpper + setLower + prepCall + callScan;
       }
-      else if (op == Operator.GLOBAL) {
-         return ".global " + fields.toString() + " " + comment;
-      }
-      else if (op == Operator.TYPE) {
-         return ".type " + fields.toString() + " " + comment;
-      }
-      else if (op == Operator.PROC) {
-         return ".proc " + fields.toString() + " " + comment;
-      }
-      return getSparc(op) + fields.toString() + " " + comment;
+      return getSparc(op) + "\t" + fields.toString() + " " + comment;
    }
 
    public enum SparcOperator {
