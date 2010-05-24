@@ -33,13 +33,53 @@ public class Block {
    public void addNext(Block childBlock) {
       successors.add(childBlock);
    }
+   
+   public void setNext(LinkedList<Block> newKids) {
+      this.successors = newKids;//on the block
+   }
 
    public void addLabel(String blockLabel) {
       labels.add(blockLabel);
    }
+
+   public void addLabels(LinkedList<String> newLabels) {
+      labels.addAll(0, newLabels);
+   }
    
    public LinkedList<Instruction> getInstructionList() {
       return this.instrs;
+   }
+   
+   public LinkedList<String> getLabelList() {
+      return this.labels;
+   }
+   
+   public LinkedList<Register> getLiveSet() {
+      LinkedList<Register> gen = new LinkedList<Register>();
+      LinkedList<Register> kill = new LinkedList<Register>();
+      LinkedList<Register> out = new LinkedList<Register>();
+      LinkedList<Instruction> backwards = new LinkedList<Instruction>();
+/* 
+     for(Instruction i : instrs) {
+         backwards.addFirst(i);
+      }
+*/
+      for(Instruction i : instrs) {
+         gen.addAll(0, i.getSourceRegisterList());
+         kill.add(i.getDestinationRegister());
+      }
+      
+      for(Register r : gen) {
+         if(!kill.contains(r) && !out.contains(r)) {
+            out.add(r);
+         }
+      }
+      
+      System.out.println("gen : " + gen);
+      System.out.println("kill: " + kill);
+      System.out.println("out: " + out);
+      
+      return gen;
    }
    
    /**
@@ -179,6 +219,23 @@ public class Block {
       }
    }
 
+   public boolean reservedBlock() {
+      for(String l : labels) {
+         if(l.charAt(0) == '#') {
+            return true;
+         }
+      }
+      return false;
+   }
+   
+   public Block getFirstChild() {
+      return successors.get(0);
+   }
+   
+   public LinkedList<Block> getNanny() {
+      return successors;
+   }
+
    public void reedPrint(int offset, boolean toSparc) {
       String tabs = "";
       
@@ -196,6 +253,8 @@ public class Block {
       
       System.out.println(tabs+"BLOCK \""+labels+"\"");
       
+getLiveSet();
+
       if(hasLabel("#exit")) {
          System.out.println("\n");
          return;
@@ -269,8 +328,7 @@ public class Block {
       System.out.println("Block " + numBlock + ":");
       System.out.println("   labels: " + curBlock.labels.toString());
       System.out.println("   successors are: " + successors(curBlock));
-      System.out.println("   contains iloc:\n" + 
-printInstrs(curBlock.instrs));
+      System.out.println("   contains iloc:\n" + printInstrs(curBlock.instrs));
       printBlockTree(++numBlock, cfg);
    }
 

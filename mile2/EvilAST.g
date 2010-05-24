@@ -8,13 +8,16 @@ options {
 }
 
 @members{
-   StructTable structTable = new StructTable();
+   StructTable structTable;
+   FunTable funTable;
    SymTable symtable = new SymTable();
-   FunTable funTable = new FunTable();
    String curFun;
+   String curStruct = null;
 }
 
-program
+program[StructTable stable, FunTable fun]
+@init { structTable = stable;
+        funTable = fun; }
    : ^(PROGRAM types declarations[symtable] functions) {
         if (!symtable.contains("main")) {
            System.err.println("main function not defined");

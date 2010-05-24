@@ -68,6 +68,16 @@ public class SymTable {
       return STRUCT + symbol;
    }
    
+   public int getOffset(String field) {
+      int offset = 0;
+      for(SymEntry symbol : table.values()) {
+         if(symbol.symbol.equals(field))
+            break;
+         offset++;
+      }
+      return offset;
+   }
+   
    public String toString() {
       return table.toString();
    }

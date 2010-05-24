@@ -31,6 +31,13 @@ public class FunTable {
       return functions != null && functions.containsKey(id);
    }
    
+   /**
+    * Gets the field's type, in the context of the given function.
+    */
+   public String getType(String function, String field) {
+      return functions.get(function).getType(field);
+   }
+   
    public void print() {
       print("");
    }

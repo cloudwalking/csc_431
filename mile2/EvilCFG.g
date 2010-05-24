@@ -16,57 +16,18 @@ options {
 
 @members{
    RegTable regTable = new RegTable();
+   FunTable funtable;
+   StructTable stable;
    int uniqueBlock = 0, uniqueStatement = 0;
    String currentFunction = "";
-   boolean debug = false;
+   String currentStruct = "";
 }
 
-program[String fileName, Boolean print, Boolean printSparc]
+program[StructTable structTable, FunTable fun] returns
+ [LinkedList<Block> returnBlockList = new LinkedList<Block>()]
+@init{ stable = structTable; funtable = fun; }
    : ^(PROGRAM types declarations cfgList=functions) {
-      if(print) {
-         BufferedWriter codeWriter = null;
-         if(!debug) {
-            /*if (fileName.indexOf(".") == -1) {
-               System.err.println("filename is: " + fileName);
-               System.exit(1);
-            }
-            fileName = fileName.substring(0, fileName.indexOf("."));*/
-            try {
-               String sourceFile = fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length());
-               if (printSparc)
-                  fileName = fileName.replace(".ev", ".s");
-               else if (!printSparc)
-                  fileName = fileName.replace(".ev", ".il");
-
-               File tmpFile = new File(fileName);
-               tmpFile.createNewFile();
-               //tmpFile.setWritable(true);
-               codeWriter = new BufferedWriter(new FileWriter(tmpFile));
-               codeWriter.write(".file\t\"" + sourceFile + "\"\n");
-               Block.printSparcConstants(codeWriter);
-            }
-            catch (java.io.IOException e) {
-               System.err.println("Error initializing file writer: ");
-               e.printStackTrace();
-            }
-         }
-         for (Block block:cfgList) {
-            if (debug) {
-               block.reedPrint(0, printSparc);
-            }
-            else if (!debug) {
-               block.filePrint(codeWriter, printSparc);
-            }
-         }
-         try {
-            codeWriter.close();
-         }
-         catch (java.io.IOException e) {
-            System.err.println("Error closing file writer: ");
-            e.printStackTrace();
-         }
-         regTable.print();
-      }
+        $returnBlockList = cfgList;
      }
    ;
 
@@ -349,29 +310,23 @@ end; })* {
      }
    ;
 
-assignment returns [LinkedList<Instruction> instructions = new 
-LinkedList<Instruction>()]
+assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister();
         int r2 = regTable.newRegister(); }
    : ^(ASSIGN exp=expression[r1] leftIloc=lvalue[r2]) {
-        //$instructions.addAll(0, $lval.instructions);
-         $instructions.addAll(0, $exp.instructions);
          $instructions.addAll(0, $leftIloc.instructions);
+         $instructions.addAll(0, $exp.instructions);
          
-         // Set immediate?
-         // In the middle of switching this up.
-/*
-         Instruction newInst = new Instruction(
-            "STAI", r1, 0, $destReg.register);
-         newInst.setComment("store: reg "+$destReg.register+" gets val in reg 
-"+r1);
+         int offset = 0;
+
+         Instruction newInst = new Instruction("STAI", r1, r2, 0);
+         newInst.setComment("store: save "+r1+" to memory ptr "+r2+" + offset "+offset);
          $instructions.add(newInst);
-*/
+
       }
    ;
 
-print returns [LinkedList<Instruction> instructions = new 
-LinkedList<Instruction>()]
+print returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister(); }
    : ^(PRINT exp=expression[r1] (ENDL)?) {
 //check to see if ENDL is present
@@ -382,16 +337,17 @@ LinkedList<Instruction>()]
      }
    ;
 
-read returns [LinkedList<Instruction> instructions = new 
-LinkedList<Instruction>()]
-// TODO fix to work with new lval
-   : ^(READ register=lvalue[0]) {
-//        $instructions.add(new Instruction("READ", register));
+read returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int reg = regTable.newRegister(); }
+   : ^(READ readStuff=lvalue[reg]) {
+         $instructions.addAll(0, $readStuff.instructions);
+         Instruction newInst = new Instruction("READ", reg);
+         newInst.setComment("read: read into address stored in reg "+reg);
+         $instructions.add(newInst);
      }
    ;
 
-delete returns [LinkedList<Instruction> instructions = new 
-LinkedList<Instruction>()]
+delete returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister(); }
    : ^(DELETE exp=expression[r1]) {
         $instructions.addAll(0, $exp.instructions);
@@ -399,8 +355,7 @@ LinkedList<Instruction>()]
      }
    ;
 
-ret returns [LinkedList<Instruction> instructions = new 
-LinkedList<Instruction>()]
+ret returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.getReturnRegister(); }
    : ^(RETURN (exp=expression[r1])?) {
         if (exp != null)
@@ -421,27 +376,46 @@ LinkedList<Instruction>()]
      }
    ;
 
-lvalue[int resultReg] returns [LinkedList<Instruction> instructions = new 
-LinkedList<Instruction>()]
-   : ^(DOT structId=subvalue fieldId=ID) {
+lvalue[int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int reg = regTable.newRegister(); }
+   : ^(DOT subIloc=subvalue[reg] fieldId=ID) {
+      $instructions.addAll(0, $subIloc.instructions);
+      int offset = stable.getOffest(funtable.getType(currentFunction, currentStruct), $fieldId.text);
+      // this offset seems to be off on line 'butterfly.a.i = 333;'
+      /*
+System.out.println("currentFunction: "+currentFunction+" currentStruct: "+currentStruct+" field: "+$fieldId.text);
+      */
       // store from mem to register
+      Instruction newInst = new Instruction("LOADAI", reg, offset, resultReg);
+      newInst.setComment("lvalue dot: load member '"+$fieldId.text+"' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
+      $instructions.add(newInst);
    }
    | id=ID {
-        int reg = regTable.lookupId(currentFunction+$id.text);
-        Instruction newInst = new Instruction("ADDI", reg, 0, resultReg);
-        newInst.setComment("lvalue: got an id stored in reg " + reg +
-         ", stuck it in reg " + resultReg);
+        int idreg = regTable.lookupId(currentFunction+$id.text);
+        Instruction newInst = new Instruction("ADDI", idreg, 0, resultReg);
+        newInst.setComment("lvalue: got id '"+currentFunction+$id.text+"' (stored in reg "+idreg+"), stuck it in reg "+resultReg);
         $instructions.add(newInst);
      }
    ;
 
-subvalue returns [int register]
-   : ^(DOT structId=subvalue fieldId=ID)
-    // loadai
-//      Instruction newInst = new Instruction("");
-//      newInst.setComment("");
+subvalue[int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int reg = regTable.newRegister(); }
+   : ^(DOT sub=subvalue[reg] fizz=ID) {
+      $instructions.addAll(0, $sub.instructions);
+System.out.println($fizz.line + " currentFunction: " + currentFunction + " currentStruct: " + currentStruct);
+      int offset = stable.getOffest(funtable.getType(currentFunction, currentStruct), $fizz.text);
+      Instruction newInst = new Instruction("LOADAI", reg, offset, resultReg);
+      newInst.setComment("subval dot: load member '"+$fizz.text+"' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
+      $instructions.add(newInst);
+     }
    | id=ID {
-        $register = regTable.lookupId(currentFunction+$id.text);
+      currentStruct = $id.text;
+      // This gets the base struct address loaded into memory
+      Instruction newInst = new Instruction("LOADAI", 
+                                 regTable.lookupId(currentFunction+$id.text), 
+                                 0, resultReg);
+      newInst.setComment("subvalue id: load pointer var '"+$id.text+"' from mem to reg "+resultReg);
+      $instructions.add(newInst);
      }
    ;
 
@@ -553,21 +527,20 @@ new LinkedList<Instruction>()]
 
    | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] fieldId=ID) {
         // Load
+
         int leftRegister = regTable.lookupId(currentFunction+$fieldId.text);
         if(-1 == leftRegister) {
              leftRegister = regTable.lookupId($fieldId.text);
         }
         int offset = 0; // set this offset somehow:
-        // lookup id of struct, find type in symtable,
-        // get offset for that field, add to
-        // offset for all other fields
+
+//        offset=
+        $instructions.addAll(0, expr);
         Instruction newInst = new Instruction("LOADAI", r1, offset, 
           resultReg);
         newInst.setComment("dot: load from pointer '" + $fieldId.text +
          "' (reg " + r1 + "), store in reg " + resultReg);
         $instructions.add(newInst);
-        
-        // Or figure out last label and loadglobal
      }
         
 
@@ -579,18 +552,18 @@ new LinkedList<Instruction>()]
      }
    | id=ID {
         int immRegister = regTable.getImmRegister();
-        
+/*
         Instruction newInst = new Instruction("LOADI", 0, immRegister);
         newInst.setComment("id: set immediate 0");
         $instructions.add(newInst);
-      
+*/
         int targetRegister = regTable.lookupId(currentFunction  + $id.text);
         if(-1 == targetRegister) {
            targetRegister = regTable.lookupId($id.text);
         }
 
-        newInst = new Instruction("LOADAI",
-         targetRegister, immRegister, resultReg);
+        Instruction newInst = new Instruction("LOADAI", targetRegister,
+         immRegister, resultReg);
         newInst.setComment("id: load '" + currentFunction + $id.text +
          "' from mem to reg " + resultReg);
         $instructions.add(newInst);

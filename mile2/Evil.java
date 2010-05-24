@@ -12,6 +12,7 @@ public class Evil
 {
    public static void main(String[] args)
    {
+      boolean debug = false;
       parseParameters(args);
 
       CommonTokenStream tokens = new CommonTokenStream(createLexer());
@@ -49,8 +50,9 @@ public class Evil
          EvilAST tparser = new EvilAST(nodes);
 
          //tree parser populates the type structures
-      
-         tparser.program();
+         StructTable stable = new StructTable();
+         FunTable funtable = new FunTable();
+         tparser.program(stable, funtable);
          
          if(_displayTypecheck) {
             System.out.println("\n** SymTable **");
@@ -66,13 +68,95 @@ public class Evil
          EvilCFG cfgParser = new EvilCFG(CFGnodes);
 
          //cfg parser populates the CFG
-      
-         cfgParser.program(_inputFile, _displayCFG, _displaySparc);
+         LinkedList<Block> blocks;
+         blocks = cfgParser.program(stable, funtable);
+         String fileName = _inputFile;
+         boolean print = _displayCFG, printSparc = _displaySparc;
+
+         if(print) {
+            BufferedWriter codeWriter = null;
+            if(!debug) {
+               /*if (fileName.indexOf(".") == -1) {
+                  System.err.println("filename is: " + fileName);
+                  System.exit(1);
+               }
+               fileName = fileName.substring(0, fileName.indexOf("."));*/
+               try {
+                  String sourceFile = fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length());
+                  if (printSparc)
+                     fileName = fileName.replace(".ev", ".s");
+                  else if (!printSparc)
+                     fileName = fileName.replace(".ev", ".il");
+
+                  File tmpFile = new File(fileName);
+                  tmpFile.createNewFile();
+                  //tmpFile.setWritable(true);
+                  codeWriter = new BufferedWriter(new FileWriter(tmpFile));
+                  codeWriter.write("\t" + ".file\t\"" + sourceFile + "\"\n");
+                  Block.printSparcConstants(codeWriter);
+               }
+               catch (java.io.IOException e) {
+                  System.err.println("Error initializing file writer: ");
+                  e.printStackTrace();
+               }
+            }
+            for (Block block : blocks) {
+               if (debug) {
+                  block.reedPrint(0, printSparc);
+               }
+               else if (!debug) {
+                  block.filePrint(codeWriter, printSparc);
+               }
+            }
+            try {
+               codeWriter.close();
+            }
+            catch (java.io.IOException e) {
+               System.err.println("Error closing file writer: ");
+               e.printStackTrace();
+            }
+         }
+         for(Block b : blocks) {
+//            cleanYourShitUp(b);
+         }
+         if(_displayCFG) {
+            for (Block block : blocks) {
+               block.reedPrint(0, printSparc);
+            }
+         }
+
       }
       catch (org.antlr.runtime.RecognitionException e)
       {
          error(e.toString());
       }
+   }
+   
+   private static void cleanYourShitUp(Block head) {
+      LinkedList<Block> family = new LinkedList<Block>();
+      LinkedList<Instruction> newIloc = new LinkedList<Instruction>();
+      LinkedList<String> newLabels = new LinkedList<String>();
+
+      Block temp = null;
+      if(head == null) {
+         System.out.println("OMG LOL");
+         return;
+      }
+      for(Block buddy : head.getNanny()) {
+         for(temp = buddy; !temp.reservedBlock(); temp = temp.getFirstChild()) {
+            newIloc.addAll(0, temp.getInstructionList());
+            newLabels.addAll(0, temp.getLabelList());
+         }
+         Block newBlock = new Block();
+         newBlock.addILoc(newIloc);
+         newBlock.addLabels(newLabels);
+         family.add(newBlock);   
+      }
+      for(Block child : family) {
+         child.addNext(temp);
+      }
+      cleanYourShitUp(temp);
+      head.setNext(family);
    }
 
    private static final String DISPLAYAST = "-displayAST";

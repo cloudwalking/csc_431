@@ -12,7 +12,7 @@ import java.util.LinkedList;
 public class Instruction {
    private Operator op;
    private LinkedList<InstrField> fields = new LinkedList<InstrField>();
-   protected String comment = "";
+   private String comment = "";
    
 /**
  * This constructor will be used for return instructions.
@@ -79,6 +79,27 @@ instruction.
    
    public void setTarget(String target) {
       fields.add(new Label(target));
+   }
+   
+   public Register getDestinationRegister() {
+      for(int i=fields.size()-1; i>=0; i--) {
+         if(fields.get(i) instanceof Register) {
+            return (Register)fields.get(i);
+         }
+      }
+      return null;
+   }
+   
+   public LinkedList<Register> getSourceRegisterList() {
+      LinkedList<Register> returns = new LinkedList<Register>();
+      for(InstrField field : fields) {
+         if(field instanceof Register) {
+            returns.add((Register)  field);
+         }
+      }
+      if(returns.size() > 0)
+         returns.removeLast();
+      return returns;
    }
    
 /**
@@ -377,9 +398,7 @@ instruction.
       RESTORE
    }
 
-private abstract class InstrField {
-   abstract Object getValue();
-}
+// InstrField now a public class.
 
 /**
  * Represents labels/IDs that will eventually evaluate
@@ -392,16 +411,7 @@ private class Label extends InstrField {
    public String toString() { return name; }
 }
 
-/**
- * Represents registers where values will be stored
- * when not in memory.
- */
-private class Register extends InstrField {
-   private Integer num;
-   public Register(Integer val) { num = val; }
-   public Integer getValue() { return num; }
-   public String toString() { return num.toString(); }
-}
+// Register now a public class.
 
 /**
  * Represents raw number values in instructions.
@@ -412,4 +422,5 @@ private class Immediate extends InstrField {
    public Integer getValue() { return val; }
    public String toString() { return val.toString(); }
 }
+
 }
