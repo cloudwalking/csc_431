@@ -148,8 +148,7 @@ statement[SymTable locals, boolean hasReturn] returns
       (relse=statement[locals, hasReturn])?) {
         $retVal = (($rthen.retVal && $relse.retVal) || $hasReturn);
      }
-   | ^(WHILE expr=expression[locals] r=statement[locals, hasReturn]
-      expr2=expression[locals]) {
+   | ^(WHILE expr=expression[locals] r=statement[locals, hasReturn]) {
         $retVal = $r.retVal;
      }
    | delete[locals] { $retVal = $hasReturn; }

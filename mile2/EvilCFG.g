@@ -79,9 +79,6 @@ list_id returns [int reg]
 
 functions returns [LinkedList<Block> cfgList = new LinkedList<Block>()]
    : ^(FUNCS (topBlock=function {
-/*        LinkedList<Instruction> main = new LinkedList<Instruction>();
-        main.add(new Instruction("CALL", "main"));
-        $topBlock.entry.addILoc(main);*/
         cfgList.add($topBlock.entry);
      })*)
    ;
@@ -98,16 +95,24 @@ function returns [Block entry = null]
         Block exit = new Block("#function-exit");
         LinkedList<Instruction> endFunc = new LinkedList<Instruction>();
         endFunc.add(new Instruction("RESTORE"));
+        exit.addILoc(endFunc);
      }
      iloc=parameters[$id.text] ^(RETTYPE return_type) declarations {
         beginFunc.addAll(iloc);
         //allocate next activation record here
         $entry.addILoc(beginFunc);
+
+        //for CFG
+        Block body = new Block("#function-body");
+
+        body.addPrevious($entry);
+        $entry.addNext(body);
+
      }
-     //for CFG
-     head = statement[new Block("#function-body"), exit] {
-        $entry.addNext(head);
-     })
+     statement[body]) {
+        body.addNext(exit);
+        exit.addPrevious(body);
+     }
    ;
 
 parameters[String functionLabel] returns [LinkedList<Instruction> 
@@ -133,52 +138,47 @@ return_type
    | VOID
    ;
 
-statement[Block head, Block exit] returns [Block top = null]
-   : ^(BLOCK ^(STMTS {
-        $top = head;
-//        $top.addLabel("Block " + (uniqueBlock++));
-        Block end = null;
-     }
-     ({ end = new Block(/*"statements"*/); } statement[head, end] { head = 
-end; })* {
-        if (end != null)
-           end.addNext(exit);
-     }))
+statement[Block head] returns [Block block = null]
+   : ^(BLOCK ^(STMTS(temp = statement[head]{ 
+        if ($temp.block == null) System.out.println("temp is null when head is " + head);
+        head = $temp.block; })*) {
+        $block = head;
+     })
 
-   | ^(STMTS {
-        $top = head;
-        //$top.addLabel("Compound Statement");
-        Block end = null;
-     }
-     ({ end = new Block(/*"statements"*/); } statement[head, end] { head = 
-end; })* {
-        if (end != null)
-           end.addNext(exit);
+   | ^(STMTS (temp = statement[head]{
+        if ($temp.block == null) System.out.println("temp is null when head is " + head);
+        head = $temp.block; })* {
+        $block = head;
      })
 
    | iloc=assignment {
-        head.addLabel(".S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
-        head.addNext(exit);
-        $top = head;
+        $block = head;
      }
 
    | iloc=print {
-        head.addLabel(".S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
-        head.addNext(exit);
-        $top = head;
+        $block = head;
      }
 
    | iloc=read {
-        head.addLabel(".S" + (uniqueStatement++));
         head.addILoc($iloc.instructions);
-        head.addNext(exit);
-        $top = head;
+        $block = head;
      }
 
    | ^(IF {
          int guardBooleanReg = regTable.newRegister();
+
+         Block ifGuard = new Block();
+         Block ifThen = new Block();
+         Block ifElse = new Block();
+         Block ifEnd = null;
+
+         head.addNext(ifGuard);
+         ifGuard.addPrevious(head);
+
+         ifGuard.addNext(ifThen);
+         ifThen.addPrevious(ifGuard);
       }
       iloc=expression[guardBooleanReg] {
         String thenLabel = ".S" + uniqueStatement++;
@@ -189,8 +189,8 @@ end; })* {
         Instruction newInst;
 
         // Add guard instructions
-        head.addLabel("#if-guard");
-        head.addILoc($iloc.instructions);
+        ifGuard.addLabel("#if-guard");
+        ifGuard.addILoc($iloc.instructions);
         
         // If guard evaluates to false, bail out
         newInst = new Instruction("COMPI", guardBooleanReg, 1);
@@ -203,38 +203,70 @@ end; })* {
          elseLabel + "'");
         instructions.add(newInst);
         
-        head.addILoc(instructions);
+        ifGuard.addILoc(instructions);
 
-        Block end = new Block("#end-if");
-        end.addLabel(endLabel);
-        end.addNext(exit);
      }
-     thenHead = statement[new Block("#then-branch"), end] {
-        $thenHead.top.addLabel(thenLabel);
-        head.addNext($thenHead.top);
+     thenNext = statement[ifThen] {
+        ifThen.addLabel(thenLabel);
         
         // Jump to exit block
         instructions = new LinkedList<Instruction>();
         newInst = new Instruction("JUMPI", endLabel);
         newInst.setComment("then: jump to #end-if '" + endLabel + "'");
         instructions.add(newInst);
-        $thenHead.top.addILoc(instructions);
+        $thenNext.block.addILoc(instructions);
      }
-     (elseHead = statement[new Block("#else Branch"), end] {
-        $elseHead.top.addLabel(elseLabel);
-        head.addNext($elseHead.top);
+     (elseNext = statement[ifElse] {
+        ifElse.addPrevious(ifGuard);
+        ifElse.addLabel(elseLabel);
         
         // Jump to exit block
         instructions = new LinkedList<Instruction>();
         newInst = new Instruction("JUMPI", endLabel);
         newInst.setComment("if: jump to #end-if '" + endLabel + "'");
         instructions.add(newInst);
-        $elseHead.top.addILoc(instructions);
-        
-        $top = head;
-     })?)
+        $elseNext.block.addILoc(instructions);
 
-   | ^(WHILE {int guardBooleanReg = regTable.newRegister();}
+     })?{
+        ifEnd = new Block();
+
+        $thenNext.block.addNext(ifEnd);
+        ifEnd.addPrevious($thenNext.block);
+        ifEnd.addLabel(endLabel);
+
+        if (ifElse.getLabelList().isEmpty()) {
+           ifEnd.addLabel(elseLabel);
+           ifGuard.addNext(ifEnd);
+           ifEnd.addPrevious(ifGuard);
+        }
+        else if (!ifElse.getLabelList().isEmpty()) {
+           ifGuard.addNext(ifElse);
+           $elseNext.block.addNext(ifEnd);
+           ifEnd.addPrevious($elseNext.block);
+        }
+
+        $block = ifEnd;
+     })
+
+   | ^(WHILE {
+        int guardBooleanReg = regTable.newRegister();
+
+        Block whileGuard = new Block();
+        Block whileBody = new Block();
+        Block whileEnd = new Block();
+
+        head.addNext(whileGuard);
+
+        whileGuard.addPrevious(head);
+
+        whileGuard.addNext(whileBody);
+        whileGuard.addNext(whileEnd);
+
+        whileBody.addPrevious(whileGuard);
+        whileBody.addNext(whileGuard);
+
+        whileEnd.addPrevious(whileGuard);
+     }
      iloc=expression[guardBooleanReg] {
         String guardLabel = ".S" + uniqueStatement++;
         String bodyLabel = ".S" + uniqueStatement++;
@@ -242,10 +274,10 @@ end; })* {
         LinkedList<Instruction> instructions;
         Instruction newInst;
         
-        head.addLabel("#while-guard");
-        head.addLabel(guardLabel);
+        whileGuard.addLabel("#while-guard");
+        whileGuard.addLabel(guardLabel);
         // Add guard instructions
-        head.addILoc($iloc.instructions);
+        whileGuard.addILoc($iloc.instructions);
         
         // If guard evaluates to false, bail out
         instructions = new LinkedList<Instruction>();
@@ -263,15 +295,13 @@ end; })* {
          "' false: '" + endLabel + "'");
         instructions.add(newInst);
 
-        head.addILoc(instructions);
+        whileGuard.addILoc(instructions);
         
-        Block end = new Block("#end-while");
-        end.addLabel(endLabel);
-        end.addNext(exit);
+        whileEnd.addLabel(endLabel);
      }
-     body = statement[new Block("#while-body"), head] {
-        $body.top.addLabel(bodyLabel);
-        
+     body = statement[whileBody] {
+        whileBody.addLabel(bodyLabel);
+
         // Jump back to the guard, to loop
         instructions = new LinkedList<Instruction>();
         newInst = new Instruction("LOADI", 0, regTable.getImmRegister());
@@ -280,33 +310,25 @@ end; })* {
         newInst = new Instruction("JUMPI", guardLabel);
         newInst.setComment("while: jump back to guard");
         instructions.add(newInst);
-        
-        $body.top.addILoc(instructions);
-        
-        head.addNext($body.top);
-        head.addNext(end);
-        $top = head;
-     } iloc=expression[regTable.newRegister()])
+
+        $body.block.addILoc(instructions);
+
+        $block = whileEnd;
+     } )
 
    | iloc=delete {
         head.addILoc($iloc.instructions);
-        head.addLabel(".S" + (uniqueStatement++));
-        head.addNext(exit);
-        $top = head;
+        $block = head;
      }
 
    | iloc=ret {
         head.addILoc($iloc.instructions);
-        head.addLabel(".S" + (uniqueStatement++));
-        head.addNext(exit);
-        $top = head;
+        $block = head;
      }
 
    | iloc=invocation {
         head.addILoc($iloc.instructions);
-        head.addLabel(".S" + (uniqueStatement++));
-        head.addNext(exit);
-        $top = head;
+        $block = head;
      }
    ;
 

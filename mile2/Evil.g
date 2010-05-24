@@ -182,7 +182,7 @@ conditional
    ;
 loop
    :  WHILE LPAREN e=expression RPAREN b=block
-      -> ^(WHILE $e $b $e)
+      -> ^(WHILE $e $b)
    ;
 delete
    :  DELETE^ expression SEMI!

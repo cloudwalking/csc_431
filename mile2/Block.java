@@ -3,6 +3,7 @@ import java.io.BufferedWriter;
 
 public class Block {
    private LinkedList<Block> successors;
+   private LinkedList<Block> predecessors;
    private LinkedList<Instruction> instrs;
    private LinkedList<String> labels;
    private int entered, exited;
@@ -12,6 +13,7 @@ public class Block {
 
    public Block() {
       successors = new LinkedList<Block>();
+      predecessors = new LinkedList<Block>();
       instrs = new LinkedList<Instruction>();
       labels = new LinkedList<String>();
       entered = 0;
@@ -19,6 +21,10 @@ public class Block {
       
       depth = 0;
       flag = false;
+   }
+
+   public String toString() {
+      return instrs.toString();
    }
 
    public Block(String label) {
@@ -32,6 +38,10 @@ public class Block {
 
    public void addNext(Block childBlock) {
       successors.add(childBlock);
+   }
+
+   public void addPrevious(Block parentBlock) {
+      predecessors.add(parentBlock);
    }
    
    public void setNext(LinkedList<Block> newKids) {
@@ -59,11 +69,7 @@ public class Block {
       LinkedList<Register> kill = new LinkedList<Register>();
       LinkedList<Register> out = new LinkedList<Register>();
       LinkedList<Instruction> backwards = new LinkedList<Instruction>();
-/* 
-     for(Instruction i : instrs) {
-         backwards.addFirst(i);
-      }
-*/
+
       for(Instruction i : instrs) {
          gen.addAll(0, i.getSourceRegisterList());
          kill.add(i.getDestinationRegister());
@@ -253,7 +259,7 @@ public class Block {
       
       System.out.println(tabs+"BLOCK \""+labels+"\"");
       
-getLiveSet();
+      getLiveSet();
 
       if(hasLabel("#exit")) {
          System.out.println("\n");

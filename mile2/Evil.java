@@ -12,7 +12,7 @@ public class Evil
 {
    public static void main(String[] args)
    {
-      boolean debug = false;
+      boolean debug = true;
       parseParameters(args);
 
       CommonTokenStream tokens = new CommonTokenStream(createLexer());
@@ -70,17 +70,13 @@ public class Evil
          //cfg parser populates the CFG
          LinkedList<Block> blocks;
          blocks = cfgParser.program(stable, funtable);
+
          String fileName = _inputFile;
          boolean print = _displayCFG, printSparc = _displaySparc;
 
          if(print) {
             BufferedWriter codeWriter = null;
             if(!debug) {
-               /*if (fileName.indexOf(".") == -1) {
-                  System.err.println("filename is: " + fileName);
-                  System.exit(1);
-               }
-               fileName = fileName.substring(0, fileName.indexOf("."));*/
                try {
                   String sourceFile = fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length());
                   if (printSparc)
@@ -92,8 +88,10 @@ public class Evil
                   tmpFile.createNewFile();
                   //tmpFile.setWritable(true);
                   codeWriter = new BufferedWriter(new FileWriter(tmpFile));
-                  codeWriter.write("\t" + ".file\t\"" + sourceFile + "\"\n");
-                  Block.printSparcConstants(codeWriter);
+                  if (printSparc) {
+                     codeWriter.write("\t" + ".file\t\"" + sourceFile + "\"\n");
+                     Block.printSparcConstants(codeWriter);
+                  }
                }
                catch (java.io.IOException e) {
                   System.err.println("Error initializing file writer: ");
@@ -161,7 +159,7 @@ public class Evil
 
    private static final String DISPLAYAST = "-displayAST";
    private static final String DISPLAYTYPECHECK = "-displayTypecheck";
-   private static final String DISPLAYCFG = "-displayCFG";
+   private static final String DISPLAYCFG = "-dumpIL";
    private static final String DISPLAYSPARC = "-displaySparc";
 
    private static String _inputFile = null;
