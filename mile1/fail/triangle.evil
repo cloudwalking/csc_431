@@ -1,0 +1,84 @@
+#types
+struct ArrayList
+{
+   int size;
+   struct ArrayList prev, node, next;
+};
+
+struct pascalTriangle
+{
+   struct ArrayList row;
+};
+#end types
+
+#declarations
+struct pascalTriangle triangle;
+#end declarations
+
+#functions
+fun getRow(int numRow) struct ArrayList
+{
+   int currentRow;
+   struct ArrayList triangleRow;
+
+   currentRow = 0;
+   triangleRow = triangle.row;
+   while (currentRow < numRow)
+   {
+      if (
+   }
+}
+
+fun initializeTriangle() bool
+{
+   struct pascalTriangle initTriangle;
+   struct ArrayList column;
+
+   column.size = 0;
+   column.val = 1;
+   column.prev = null;
+   column.next = null;
+
+   triangle.row.size = 0;
+   triangle.row.node = column;
+   triangle.row.prev = null;
+   triangle.row.next = null;
+
+   return true;
+}
+
+fun addTriangleRow() bool
+{
+   int lastRow, newRow;
+   struct ArrayList triangleBottom, newBottom;
+
+   lastRow = triangle.row.size;
+   newRow = lastRow + 1;
+
+   triangleBottom = getRow(lastRow);
+}
+
+fun constructTriangle(int n) bool
+{
+   int row;
+
+   row = 0;
+   initializeTriangle();
+
+   while (row < n)
+   {
+      addTriangleRow();
+   }
+}
+
+fun main() int
+{
+   int lOperand, rOperand, exponent;
+
+   read lOperand;
+   read rOperand;
+   read exponent;
+
+   constructTriangle(exponent);
+   #solvePolynomial(pascalTriangle);
+}
