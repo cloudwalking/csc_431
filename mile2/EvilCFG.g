@@ -402,7 +402,9 @@ lvalue[int resultReg] returns [LinkedList<Instruction> instructions = new Linked
 @init { int reg = regTable.newRegister(); }
    : ^(DOT subIloc=subvalue[reg] fieldId=ID) {
       $instructions.addAll(0, $subIloc.instructions);
-      int offset = stable.getOffest(funtable.getType(currentFunction, currentStruct), $fieldId.text);
+
+//int offset = stable.getOffset(funtable.getType(currentFunction, currentStruct), $fieldId.text);
+int offset = 0;
       // this offset seems to be off on line 'butterfly.a.i = 333;'
       /*
 System.out.println("currentFunction: "+currentFunction+" currentStruct: "+currentStruct+" field: "+$fieldId.text);
@@ -420,22 +422,27 @@ System.out.println("currentFunction: "+currentFunction+" currentStruct: "+curren
      }
    ;
 
-subvalue[int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+subvalue[int resultReg] returns [LinkedList<Instruction> instructions =
+ new LinkedList<Instruction>()]
 @init { int reg = regTable.newRegister(); }
    : ^(DOT sub=subvalue[reg] fizz=ID) {
       $instructions.addAll(0, $sub.instructions);
-System.out.println($fizz.line + " currentFunction: " + currentFunction + " currentStruct: " + currentStruct);
-      int offset = stable.getOffest(funtable.getType(currentFunction, currentStruct), $fizz.text);
+      System.out.println($fizz.line + " currentFunction: " + currentFunction +
+       " currentStruct: " + currentStruct);
+      
+//int offset = stable.getOffset(funtable.getType(currentFunction, currentStruct), $fizz.text);
+int offset = 0;
+
       Instruction newInst = new Instruction("LOADAI", reg, offset, resultReg);
-      newInst.setComment("subval dot: load member '"+$fizz.text+"' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
+      newInst.setComment("subval dot: load member '" + $fizz.text +
+       "' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
       $instructions.add(newInst);
      }
    | id=ID {
       currentStruct = $id.text;
       // This gets the base struct address loaded into memory
       Instruction newInst = new Instruction("LOADAI", 
-                                 regTable.lookupId(currentFunction+$id.text), 
-                                 0, resultReg);
+       regTable.lookupId(currentFunction+$id.text), 0, resultReg);
       newInst.setComment("subvalue id: load pointer var '"+$id.text+"' from mem to reg "+resultReg);
       $instructions.add(newInst);
      }

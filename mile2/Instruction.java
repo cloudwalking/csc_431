@@ -82,11 +82,15 @@ instruction.
    }
    
    public Register getDestinationRegister() {
-      for(int i=fields.size()-1; i>=0; i--) {
+/*
+      for(int i = fields.size() - 1; i >= 0; i--) {
          if(fields.get(i) instanceof Register) {
             return (Register)fields.get(i);
          }
       }
+*/
+      if(fields.size() > 0 && fields.getLast() instanceof Register)
+         return (Register)fields.getLast();
       return null;
    }
    

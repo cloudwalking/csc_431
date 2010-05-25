@@ -107,7 +107,8 @@ public class Evil
                }
             }
             try {
-               codeWriter.close();
+               if (codeWriter != null)
+                  codeWriter.close();
             }
             catch (java.io.IOException e) {
                System.err.println("Error closing file writer: ");
@@ -115,8 +116,14 @@ public class Evil
             }
          }
          for(Block b : blocks) {
-//            cleanYourShitUp(b);
+            LinkedList<Block> revCFG = b.getTopo();
+            /*for (Block h : revCFG) {
+               System.out.println(h);
+            }*/
+           LinkedList<LiveEntry> liveSet = revCFG.getFirst().getLiveSet(new LinkedList<LiveEntry>());
+           System.out.println("\n"+liveSet);
          }
+         
          if(_displayCFG) {
             for (Block block : blocks) {
                block.reedPrint(0, printSparc);

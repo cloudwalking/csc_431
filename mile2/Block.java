@@ -63,29 +63,78 @@ public class Block {
    public LinkedList<String> getLabelList() {
       return this.labels;
    }
-   
-   public LinkedList<Register> getLiveSet() {
-      LinkedList<Register> gen = new LinkedList<Register>();
-      LinkedList<Register> kill = new LinkedList<Register>();
-      LinkedList<Register> out = new LinkedList<Register>();
+/*
+   private class LiveEntry {
+      public Register reg;
+      public Instruction instr;
+
+      public int hashCode() {
+         // 31 is prime
+         return 31 + reg.hashCode();
+      }
+
+      public String toString() {
+         return reg + "";
+      }
+   }
+  */ 
+   public LinkedList<LiveEntry> getLiveSet(LinkedList<LiveEntry> parentOut) {
+      LinkedList<LiveEntry> gen = new LinkedList<LiveEntry>();
+      LinkedList<LiveEntry> kill = new LinkedList<LiveEntry>();
+      LinkedList<LiveEntry> out = new LinkedList<LiveEntry>();
       LinkedList<Instruction> backwards = new LinkedList<Instruction>();
 
-      for(Instruction i : instrs) {
-         gen.addAll(0, i.getSourceRegisterList());
-         kill.add(i.getDestinationRegister());
-      }
-      
-      for(Register r : gen) {
-         if(!kill.contains(r) && !out.contains(r)) {
-            out.add(r);
+
+      for(Block b : predecessors) {
+         for(LiveEntry e : b.getLiveSet(new LinkedList<LiveEntry>())) {
+            if(!parentOut.contains(e)) {
+               parentOut.add(e);
+            }
          }
       }
+
+      for(Instruction i : instrs) {
+//         backwards.addFirst(i);
+           backwards.add(i); // Not actually backwards
+      }
+
+      for(Instruction i : backwards) {
+         if(i.getSourceRegisterList().size() != 0) {
+            for(Register r : i.getSourceRegisterList()) {
+               LiveEntry tmpEntry = new LiveEntry();
+               tmpEntry.instr = i;
+               tmpEntry.reg = r;
+               if(!kill.contains(tmpEntry) && !gen.contains(tmpEntry)) {
+                  gen.add(tmpEntry);
+               }
+            }
+         }
+         
+         LiveEntry tmpEntry= new LiveEntry();
+         tmpEntry.instr = i;
+         tmpEntry.reg = i.getDestinationRegister();
+         if(null != i.getDestinationRegister() && !kill.contains(tmpEntry)) {
+            //gen.add(tmpEntry);
+            kill.add(tmpEntry);
+         }
+      }
+
+      for(LiveEntry l : parentOut) {
+         if(!kill.contains(l)) {
+            out.add(l);
+         }
+      }
+
+      for(LiveEntry l : gen) {
+         out.add(l);
+      }
+      
       
       System.out.println("gen : " + gen);
       System.out.println("kill: " + kill);
-      System.out.println("out: " + out);
       
-      return gen;
+       
+      return out;
    }
    
    /**
@@ -93,7 +142,7 @@ public class Block {
     */
    public boolean hasLabel(String blockLabel) {
       for(String l : labels) {
-         if(l.equals(blockLabel)) {
+        if(l.equals(blockLabel)) {
             return true;
          }
       }
@@ -258,8 +307,6 @@ public class Block {
       }
       
       System.out.println(tabs+"BLOCK \""+labels+"\"");
-      
-      getLiveSet();
 
       if(hasLabel("#exit")) {
          System.out.println("\n");
@@ -293,11 +340,18 @@ public class Block {
       return myInstrs;
    }
 
-   public void printBlock() {
+   public LinkedList<Block> getTopo() {
       LinkedList<Block> cfg = new LinkedList<Block>();
-      topoPrint(this, 0, cfg, 0);
-      printBlockTree(0, cfg);
+      topo(this, 0, cfg);
       cleanTracks(this);
+      return cfg;
+   }
+
+   public LinkedList<Block> getReverseTopo() {
+      LinkedList<Block> cfg = new LinkedList<Block>();
+      reverseTopoPrint(this, 0, cfg);
+      cleanTracks(this);
+      return cfg;
    }
 
    public void printPadding(int paddingAmt) {
@@ -307,15 +361,27 @@ public class Block {
       System.out.print(padding);
    }
 
-   public int topoPrint(Block top, int counter, LinkedList<Block> cfg, int nested) {
+   public int topo(Block top, int counter, LinkedList<Block> cfg) {
       if (top == null || top.entered != 0)
          return counter;
       top.entered = ++counter;
       for (Block b: top.successors) {
-         counter = topoPrint(b, counter, cfg, ++nested);
+         counter = topo(b, counter, cfg);
       }
       top.exited = ++counter;
-      cfg.addFirst(top);
+      cfg.addLast(top);
+      return counter;
+   }
+
+   public int reverseTopoPrint(Block bottom, int counter, LinkedList<Block> cfg) {
+      if (bottom == null || bottom.entered != 0)
+         return counter;
+      bottom.entered = ++counter;
+      for (Block b: bottom.predecessors) {
+         counter = reverseTopoPrint(b, counter, cfg);
+      }
+      bottom.exited = ++counter;
+      cfg.addFirst(bottom);
       return counter;
    }
 

@@ -51,11 +51,14 @@ public class StructTable {
       return ((SymTable)structs.get(struct)).getType(field);
    }
    
-   public int getOffest(String struct, String field) {
+   public int getOffset(String struct, String field) {
       // Hack: take 'struct' off the front to get the raw type.
       // struct and one space = 7 chars
+      /*
       struct = struct.substring(7);
       return INT_SIZE * structs.get(struct).getOffset(field);
+      */
+      return 0;
    }
    
    public void print() {
