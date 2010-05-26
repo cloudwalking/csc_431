@@ -421,7 +421,7 @@ public class Block {
 
 
    public void createGenKill() {
-      LinkedList<Instructions> backwards = new LinkedList<Instruction>();
+      LinkedList<Instruction> backwards = new LinkedList<Instruction>();
       
       for(Instruction i : instrs) {
          //backwards.addFirst(i);

@@ -1,6 +1,8 @@
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Stack;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 public class CFG {
    private Block head;
@@ -22,9 +24,9 @@ public class CFG {
       size = regTable.size();
       interference = new ArrayList<ArrayList<Edge>>(size);
       for(int i=0; i<size; i++) {
-         interference.get(i) = new ArrayList<Edge>(size);
+         interference.set(i, new ArrayList<Edge>(size));
          for(int n=0; n<size; n++) {
-            interference.get(i).get(n) = NO_EDGE;
+            interference.get(i).set(n, Edge.NO_EDGE);
          }
       }
       degrees = new ArrayList<Integer>(size);
@@ -55,7 +57,7 @@ public class CFG {
             for(Block child : currentBlock.getNanny()) {
                LinkedList<Register> tmpLiveout;
                tmpLiveout = union(child.getGen(),
-                                  subtract(child.getLiveOut, child.getKill));
+                                  subtract(child.getLiveOut(), child.getKill()));
                liveout = union(liveout, tmpLiveout);
             }
             loop = loop || !compareLists(liveout, currentBlock.getLiveOut());
@@ -120,18 +122,20 @@ public class CFG {
       
       for(Block currentBlock : head.getTopo()) {
          LinkedList<Instruction> instrs = currentBlock.getInstructionList();
-         for(Instruction i : instrs.descendingIterator()) {
-            for(Register r : i.getLiveOut()) {
+         for(Iterator<Instruction> iter = instrs.descendingIterator(); iter.hasNext(); ) {
+            Instruction i = iter.next();
+         //for(Instruction i : instrs.descendingIterator()) {
+            for(Register r : currentBlock.getLiveOut()) {
                if(i.getDestinationRegister().equals(r)) {
-                  int dest = i.getDestinationRegister().intValue();
-                  interference.get(dest).get(r.intValue()) = WHOLE_EDGE;
-                  if(degrees.get(dest) == null) degrees.get(dest) = 0;
-                  degrees.set(dest, ++degrees.get(dest));
+                  int dest = i.getDestinationRegister().getValue().intValue();
+                  interference.get(dest).set(r.getValue().intValue(), Edge.WHOLE_EDGE);
+                  if(degrees.get(dest) == null) degrees.set(dest, 0);
+                  degrees.set(dest, degrees.get(dest)+1);
                }
             }
             currentBlock.getLiveOut().remove(i.getDestinationRegister());
             for(Register r : i.getSourceRegisterList()) {
-               currentBlock.getLiveOut.add(r);
+               currentBlock.getLiveOut().add(r);
             }
          }
       }
@@ -162,10 +166,8 @@ public class CFG {
          }
          pushOrder.add(location);
          constrained.set(location, -1);
-         for(ArrayList<Edge> row : interference.get(location)) {
-            for(Edge e : row) {
-               if(e == WHOLE_EDGE) e = HALF_EDGE;
-            }
+         for(Edge e : interference.get(location)) {
+            if(e == Edge.WHOLE_EDGE) e = Edge.HALF_EDGE;
          }
       }
       
@@ -198,7 +200,7 @@ public class CFG {
          while(tries++ < crayons.count() && bad) {
             bad = false;
             for(int i=0; i<size; i++) { // for each adjacent node
-               if(interference.get(register).get(i) == WHOLE_EDGE &&
+               if(interference.get(register).get(i) == Edge.WHOLE_EDGE &&
                      i != register && // just to be sane
                      key.get(i).equals(peakedColor)) {
                   bad = true;
@@ -210,14 +212,14 @@ public class CFG {
                key.put(register, crayons.nextColor());
                for(int i=0; i<size; i++) {
                   // Connect the nodes now that it's colored and back in
-                  if(interference.get(register).get(i) == HALF_EDGE)
-                     interference.get(register).get(i) = WHOLE_EDGE;
+                  if(interference.get(register).get(i) == Edge.HALF_EDGE)
+                     interference.get(register).set(i, Edge.WHOLE_EDGE);
                }
             }
          }
       }
 
-      return key;
+      //return key;
    }
    
    private class Crayons {
@@ -236,10 +238,10 @@ public class CFG {
          return colors[next];
       }
       public int count() {
-         return colors.size();
+         return colors.length;
       }
       private void bound() {
-         if(next >= colors.size()) next = 0;
+         if(next >= colors.length) next = 0;
       }
    }
 }
