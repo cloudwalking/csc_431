@@ -4,6 +4,7 @@
  * */
 public class Register extends InstrField {
    private Integer num;
+   private String color;
    public Register(Integer val) { num = val; }
    public Integer getValue() { return num; }
    public String toString() { return num.toString(); }

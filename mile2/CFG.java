@@ -5,8 +5,9 @@ import java.util.Stack;
 public class CFG {
    private Block head;
    private ArrayList<ArrayList<Edge>> interference;
+   private Hashtable key;
    private ArrayList<Integer> degrees;
-   private Stack<Register> regStack;
+   private Stack<Integer> regStack;
    private RegTable regTable;
    int size;
 
@@ -27,7 +28,8 @@ public class CFG {
          }
       }
       degrees = new ArrayList<Integer>(size);
-      regStack = new Stack<Register>();
+      regStack = new Stack<Integer>();
+      key = new Hashtable();
    }
 
    /**
@@ -89,7 +91,11 @@ public class CFG {
 
       return returns;
    }
-
+   
+   /**
+    * Returns true if the two lists contain the same registers.
+    * Order is irrelevant.
+    */
    private boolean compareLists(LinkedList<Register> left,
                                 LinkedList<Register> right) {
      boolean returns = true;
@@ -102,9 +108,6 @@ public class CFG {
      return left.size() == right.size() && returns;
    }
 
-   /**
-    * will return matrix
-    */
    public void calculateInterference() {
       // 1. start at top block
       // 2. start at last instruction
@@ -135,22 +138,23 @@ public class CFG {
    }
    
    /**
-    * will return matrix
+    * Returns a hashmap associating register # to color.
     */
    public void color() {
       // get most constrained
+      Crayons crayons = new Crayons();
       LinkedList<Integer> constrained = new LinkedList<Integer>(degrees);
       LinkedList<Integer> pushOrder = new LinkedList<Integer>();
       int largest;
       int location;
       int val;
       
-      // push gets registers in order of degree, desc
+      // pushOrder gets registers in order of degree, desc
       for(int i=0; i<size; i++) {
          largest = -1;
          location = -1;
          for(int n=0; n<size; n++) {
-            val = constrained.get(n);
+            val = constrained.get(n).intValue();
             if(val > largest) {
                largest = val;
                location = n;
@@ -158,12 +162,84 @@ public class CFG {
          }
          pushOrder.add(location);
          constrained.set(location, -1);
+         for(ArrayList<Edge> row : interference.get(location)) {
+            for(Edge e : row) {
+               if(e == WHOLE_EDGE) e = HALF_EDGE;
+            }
+         }
       }
       
+      // I don't know why I'm pushing to a stack and then immediately
+      // poping off, but it's late and I don't care. Get off my lawn.
       for(Integer x : pushOrder) {
          int i = x.intValue();
-         regStack.push(
+         regStack.push(i);
+      }
+      
+      int register;
+      boolean bad;
+      int tries;
+      while(!regStack.empty()) {
+         bad = true;
+         tries = 0;
+
+         // get the register from the stack
+         register = regStack.pop().intValue();
+
+         // insert it back into the graph...
+
+         // preview the next color
+         String peakedColor = crayons.peak();
+         
+         // see if the preview color is valid:
+         // loop through all the nodes this one touches
+         // if one has the same color, get a new color and start over
+         // only try (# colors) times
+         while(tries++ < crayons.count() && bad) {
+            bad = false;
+            for(int i=0; i<size; i++) { // for each adjacent node
+               if(interference.get(register).get(i) == WHOLE_EDGE &&
+                     i != register && // just to be sane
+                     key.get(i).equals(peakedColor)) {
+                  bad = true;
+                  crayons.nextColor();
+                  break;
+               }
+            }
+            if(!bad) { // put it in! stick it in! insert it! do it!
+               key.put(register, crayons.nextColor());
+               for(int i=0; i<size; i++) {
+                  // Connect the nodes now that it's colored and back in
+                  if(interference.get(register).get(i) == HALF_EDGE)
+                     interference.get(register).get(i) = WHOLE_EDGE;
+               }
+            }
+         }
+      }
+
+      return key;
+   }
+   
+   private class Crayons {
+      String[] colors = {"elephant", "whale", "octopus", "dog", 
+                         "lizard", "bird", "seal", "bear" };
+      int next;
+      public Crayons() {
+         next = 0;
+      }
+      public String nextColor() {
+         bound();
+         return colors[next++];
+      }
+      public String peak() {
+         bound();
+         return colors[next];
+      }
+      public int count() {
+         return colors.size();
+      }
+      private void bound() {
+         if(next >= colors.size()) next = 0;
       }
    }
-
 }
