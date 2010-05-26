@@ -55,4 +55,8 @@ public class RegTable {
    public void print() {
       System.out.println(table);
    }
+
+   public int size() {
+      return table.size();
+   }
 }

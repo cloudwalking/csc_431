@@ -6,8 +6,11 @@ public class Block {
    private LinkedList<Block> predecessors;
    private LinkedList<Instruction> instrs;
    private LinkedList<String> labels;
+   private LinkedList<Register> gen;
+   private LinkedList<Register> kill;
+   private LinkedList<Register> liveout;
    private int entered, exited;
-   
+  
    private boolean flag;
    private int depth;
 
@@ -412,5 +415,45 @@ public class Block {
          cleanTracks(b);
       }
       top.exited = 0;
+   }
+
+
+
+
+   public void createGenKill() {
+      LinkedList<Instructions> backwards = new LinkedList<Instruction>();
+      
+      for(Instruction i : instrs) {
+         //backwards.addFirst(i);
+         backwards.add(i);
+      }
+
+      for(Instruction i : backwards) {
+	      for(Register r : i.getSourceRegisterList()) {
+		      if(!kill.contains(r) && !gen.contains(r)) {
+			      gen.add(r);
+		      }
+	      }
+
+         Register target = i.getDestinationRegister();
+         if(!kill.contains(target))
+            kill.add(target);
+      }
+   }
+
+   public LinkedList<Register> getGen() {
+      return gen;
+   }
+
+   public LinkedList<Register> getKill() {
+      return kill;
+   }
+
+   public LinkedList<Register> getLiveOut() {
+      return liveout;
+   }
+
+   public void setLiveOut(LinkedList<Register> newLiveOut) {
+      this.liveout = newLiveOut;
    }
 }
