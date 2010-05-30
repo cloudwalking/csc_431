@@ -1,5 +1,6 @@
 import java.util.LinkedList;
 import java.io.BufferedWriter;
+import java.util.Hashtable;
 
 public class Block {
    private LinkedList<Block> successors;
@@ -19,6 +20,10 @@ public class Block {
       predecessors = new LinkedList<Block>();
       instrs = new LinkedList<Instruction>();
       labels = new LinkedList<String>();
+      gen = new LinkedList<Register>();
+      kill = new LinkedList<Register>();
+      liveout = new LinkedList<Register>();
+      
       entered = 0;
       exited = 0;
       
@@ -66,70 +71,40 @@ public class Block {
    public LinkedList<String> getLabelList() {
       return this.labels;
    }
-/*
-   private class LiveEntry {
-      public Register reg;
-      public Instruction instr;
 
-      public int hashCode() {
-         // 31 is prime
-         return 31 + reg.hashCode();
-      }
-
-      public String toString() {
-         return reg + "";
-      }
-   }
-  */ 
-   public LinkedList<LiveEntry> getLiveSet(LinkedList<LiveEntry> parentOut) {
-      LinkedList<LiveEntry> gen = new LinkedList<LiveEntry>();
-      LinkedList<LiveEntry> kill = new LinkedList<LiveEntry>();
-      LinkedList<LiveEntry> out = new LinkedList<LiveEntry>();
-      LinkedList<Instruction> backwards = new LinkedList<Instruction>();
-
-
-      for(Block b : predecessors) {
-         for(LiveEntry e : b.getLiveSet(new LinkedList<LiveEntry>())) {
-            if(!parentOut.contains(e)) {
-               parentOut.add(e);
+   // This isn't being used right now.
+   public LinkedList<Register> getLiveSet(LinkedList<Register> parentOut) {
+      for(Block parent : predecessors) {
+         for(Register r : parent.getLiveSet(new LinkedList<Register>())) {
+            if(!parentOut.contains(r)) {
+               parentOut.add(r);
             }
          }
       }
 
       for(Instruction i : instrs) {
-//         backwards.addFirst(i);
-           backwards.add(i); // Not actually backwards
-      }
-
-      for(Instruction i : backwards) {
          if(i.getSourceRegisterList().size() != 0) {
             for(Register r : i.getSourceRegisterList()) {
-               LiveEntry tmpEntry = new LiveEntry();
-               tmpEntry.instr = i;
-               tmpEntry.reg = r;
-               if(!kill.contains(tmpEntry) && !gen.contains(tmpEntry)) {
-                  gen.add(tmpEntry);
+               if(!kill.contains(r) && !gen.contains(r)) {
+                  gen.add(r);
                }
             }
          }
          
-         LiveEntry tmpEntry= new LiveEntry();
-         tmpEntry.instr = i;
-         tmpEntry.reg = i.getDestinationRegister();
-         if(null != i.getDestinationRegister() && !kill.contains(tmpEntry)) {
-            //gen.add(tmpEntry);
-            kill.add(tmpEntry);
+         Register r = i.getDestinationRegister();
+         if(null != r && !kill.contains(r)) {
+            kill.add(r);
          }
       }
 
-      for(LiveEntry l : parentOut) {
-         if(!kill.contains(l)) {
-            out.add(l);
+      for(Register r : parentOut) {
+         if(!kill.contains(r)) {
+            liveout.add(r);
          }
       }
 
-      for(LiveEntry l : gen) {
-         out.add(l);
+      for(Register r : gen) {
+         liveout.add(r);
       }
       
       
@@ -137,7 +112,7 @@ public class Block {
       System.out.println("kill: " + kill);
       
        
-      return out;
+      return liveout;
    }
    
    /**
@@ -418,7 +393,22 @@ public class Block {
    }
 
 
-
+   // This will get stuck on loops
+   public void finish() {
+      this.createGenKill();
+      for(Block b : predecessors) {
+         b.finish();
+      }
+   }
+   
+   public void reregister(Hashtable key) {
+      for(Instruction i : instrs) {
+         i.reregister(key);
+      }
+      for(Block b : successors) {
+         b.reregister(key);
+      }
+   }
 
    public void createGenKill() {
       LinkedList<Instruction> backwards = new LinkedList<Instruction>();

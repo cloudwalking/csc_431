@@ -15,7 +15,7 @@ options {
 }
 
 @members{
-   RegTable regTable = new RegTable();
+   RegTable regTable;
    FunTable funtable;
    StructTable stable;
    int uniqueBlock = 0, uniqueStatement = 0;
@@ -23,9 +23,9 @@ options {
    String currentStruct = "";
 }
 
-program[StructTable structTable, FunTable fun] returns
+program[StructTable structTable, FunTable fun, RegTable regs] returns
  [LinkedList<Block> returnBlockList = new LinkedList<Block>()]
-@init{ stable = structTable; funtable = fun; }
+@init{ stable = structTable; funtable = fun; regTable = regs; }
    : ^(PROGRAM types declarations cfgList=functions) {
         $returnBlockList = cfgList;
      }

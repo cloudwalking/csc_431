@@ -57,6 +57,6 @@ public class RegTable {
    }
 
    public int size() {
-      return table.size();
+      return next;
    }
 }
