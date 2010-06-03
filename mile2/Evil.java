@@ -63,17 +63,33 @@ public class Evil
             tparser.funTable.print();
          }
 
-         CommonTreeNodeStream CFGnodes = new CommonTreeNodeStream(parserRet);
+         CommonTreeNodeStream CFGnodes = new
+            CommonTreeNodeStream(parserRet);
          CFGnodes.setTokenStream(tokens);
          EvilCFG cfgParser = new EvilCFG(CFGnodes);
 
          //cfg parser populates the CFG
          LinkedList<Block> blocks;
-         blocks = cfgParser.program(stable, funtable);
+         RegTable regtable = new RegTable();
+         blocks = cfgParser.program(stable, funtable, regtable);
+         
+         System.out.println("regtable size: "+regtable.size());
+         
+         LinkedList<CFG> functions = new LinkedList<CFG>();
+         for(Block functionHead : blocks) {
+            functionHead.finish(); // tells blocks to make gen/kill sets
+            functions.add(new CFG(functionHead, regtable));
+         }
+         for(CFG func : functions) {
+            func.calculateLiveOut();
+            func.calculateInterference();
+            func.color();
+            System.out.println(func.getKey());
+         }
 
          String fileName = _inputFile;
          boolean print = _displayCFG, printSparc = _displaySparc;
-
+         // Not printing? Turn debug off.
          if(print) {
             BufferedWriter codeWriter = null;
             if(!debug) {
@@ -115,15 +131,13 @@ public class Evil
                e.printStackTrace();
             }
          }
+         /*
          for(Block b : blocks) {
             LinkedList<Block> revCFG = b.getTopo();
-            /*for (Block h : revCFG) {
-               System.out.println(h);
-            }*/
-           LinkedList<LiveEntry> liveSet = revCFG.getFirst().getLiveSet(new LinkedList<LiveEntry>());
+            LinkedList<LiveEntry> liveSet = revCFG.getFirst().getLiveSet(new LinkedList<LiveEntry>());
            System.out.println("\n"+liveSet);
          }
-         
+         */
          if(_displayCFG) {
             for (Block block : blocks) {
                block.reedPrint(0, printSparc);
@@ -135,33 +149,6 @@ public class Evil
       {
          error(e.toString());
       }
-   }
-   
-   private static void cleanYourShitUp(Block head) {
-      LinkedList<Block> family = new LinkedList<Block>();
-      LinkedList<Instruction> newIloc = new LinkedList<Instruction>();
-      LinkedList<String> newLabels = new LinkedList<String>();
-
-      Block temp = null;
-      if(head == null) {
-         System.out.println("OMG LOL");
-         return;
-      }
-      for(Block buddy : head.getNanny()) {
-         for(temp = buddy; !temp.reservedBlock(); temp = temp.getFirstChild()) {
-            newIloc.addAll(0, temp.getInstructionList());
-            newLabels.addAll(0, temp.getLabelList());
-         }
-         Block newBlock = new Block();
-         newBlock.addILoc(newIloc);
-         newBlock.addLabels(newLabels);
-         family.add(newBlock);   
-      }
-      for(Block child : family) {
-         child.addNext(temp);
-      }
-      cleanYourShitUp(temp);
-      head.setNext(family);
    }
 
    private static final String DISPLAYAST = "-displayAST";

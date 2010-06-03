@@ -5,9 +5,9 @@
 public class Register extends InstrField {
    private Integer num;
    private String color;
-   public Register(Integer val) { num = val; }
+   public Register(Integer val) { num = val; color = null; }
    public Integer getValue() { return num; }
-   public String toString() { return num.toString(); }
+   public String toString() { return (color != null) ? color : num.toString(); }
    public boolean equals(Object obj) {
       return (obj instanceof Register) && this.getValue().equals(((Register)obj).getValue());
    }
@@ -15,4 +15,6 @@ public class Register extends InstrField {
       // 31 is prime
       return 31 + num.hashCode();
    }
+   public void setColor(String color) { this.color = color; }
+   public String getColor() { return this.color; }
 }

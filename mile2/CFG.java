@@ -19,26 +19,29 @@ public class CFG {
       NO_EDGE
    }
 
-   public CFG(RegTable regTable) {
+   public CFG(Block cfg, RegTable regTable) {
+      this.head = cfg;
       this.regTable = regTable;
-      size = regTable.size();
-      interference = new ArrayList<ArrayList<Edge>>(size);
+      this.size = regTable.size();
+      this.interference = new ArrayList<ArrayList<Edge>>(size);
+      this.degrees = new ArrayList<Integer>(size);
+      this.regStack = new Stack<Integer>();
+      this.key = new Hashtable();
+      
       for(int i=0; i<size; i++) {
-         interference.set(i, new ArrayList<Edge>(size));
+         interference.add(new ArrayList<Edge>(size));
+         degrees.add(0);
          for(int n=0; n<size; n++) {
-            interference.get(i).set(n, Edge.NO_EDGE);
+            interference.get(i).add(Edge.NO_EDGE);
          }
       }
-      degrees = new ArrayList<Integer>(size);
-      regStack = new Stack<Integer>();
-      key = new Hashtable();
    }
 
    /**
     * Gen's blocks' liveout set
     */
    public void calculateLiveOut() {
-      // 1. reverse topological <--
+      // 1. reverse topological
       // 2. this block's temp-liveout = union 
       // 3. for each kid
       //    union gen with (liveout - kill)
@@ -122,14 +125,14 @@ public class CFG {
       
       for(Block currentBlock : head.getTopo()) {
          LinkedList<Instruction> instrs = currentBlock.getInstructionList();
-         for(Iterator<Instruction> iter = instrs.descendingIterator(); iter.hasNext(); ) {
+         for(Iterator<Instruction>iter=instrs.descendingIterator(); iter.hasNext();){
             Instruction i = iter.next();
          //for(Instruction i : instrs.descendingIterator()) {
             for(Register r : currentBlock.getLiveOut()) {
                if(i.getDestinationRegister().equals(r)) {
                   int dest = i.getDestinationRegister().getValue().intValue();
-                  interference.get(dest).set(r.getValue().intValue(), Edge.WHOLE_EDGE);
-                  if(degrees.get(dest) == null) degrees.set(dest, 0);
+                  interference.get(dest).set(
+                     r.getValue().intValue(), Edge.WHOLE_EDGE);
                   degrees.set(dest, degrees.get(dest)+1);
                }
             }
@@ -171,8 +174,7 @@ public class CFG {
          }
       }
       
-      // I don't know why I'm pushing to a stack and then immediately
-      // poping off, but it's late and I don't care. Get off my lawn.
+      // Get off my lawn.
       for(Integer x : pushOrder) {
          int i = x.intValue();
          regStack.push(i);
@@ -208,7 +210,7 @@ public class CFG {
                   break;
                }
             }
-            if(!bad) { // put it in! stick it in! insert it! do it!
+            if(!bad) {
                key.put(register, crayons.nextColor());
                for(int i=0; i<size; i++) {
                   // Connect the nodes now that it's colored and back in
@@ -217,9 +219,18 @@ public class CFG {
                }
             }
          }
+         if(tries == crayons.count() && bad) {
+            // Spill
+         }
       }
+      
+      head.reregister(key);
 
       //return key;
+   }
+   
+   public Hashtable getKey() {
+      return this.key;
    }
    
    private class Crayons {

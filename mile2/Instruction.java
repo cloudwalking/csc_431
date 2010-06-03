@@ -1,4 +1,5 @@
 import java.util.LinkedList;
+import java.util.Hashtable;
 
 /**
  * Intermediate code, 4-tuple
@@ -104,6 +105,16 @@ instruction.
       if(returns.size() > 0)
          returns.removeLast();
       return returns;
+   }
+   
+   public void reregister(Hashtable key) {
+      for(InstrField field : fields) {
+         if(field instanceof Register) {
+            int r = ((Register)field).getValue().intValue();
+            String color = (String)key.get(r);
+            ((Register)field).setColor(color);
+         }
+      }
    }
    
 /**
