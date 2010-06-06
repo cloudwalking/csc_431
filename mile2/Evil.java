@@ -81,11 +81,17 @@ public class Evil
             functions.add(new CFG(functionHead, regtable));
          }
          for(CFG func : functions) {
-            func.finish(); // tells blocks to make gen/kill sets
+               System.out.println("calculating liveout");
             func.calculateLiveOut();
+               System.out.println("calculating interference");
             func.calculateInterference();
+            func.printInterference();
+               System.out.println("calculating color");
+            func.makeKey();
+               System.out.println("key size: "+func.getKey().size());
+               System.out.println(func.getKey());
+               System.out.println("coloring");
             func.color();
-            //System.out.println(func.getKey());
          }
 
          String fileName = _inputFile;
