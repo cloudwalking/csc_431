@@ -114,7 +114,7 @@ instruction.
       for(InstrField field : fields) {
          if(field instanceof Register) {
             int r = ((Register)field).getValue().intValue();
-            if (key.get(r) == null) System.out.println("SPILLL: " + r);
+            //if (key.get(r) == null) System.out.println("SPILLL: " + r);
             String color = (String)key.get(r);
             ((Register)field).setColor(color);
          }

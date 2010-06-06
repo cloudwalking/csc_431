@@ -53,8 +53,8 @@ public class CFG {
     
       boolean loop = true;
 
-      System.out.println("\ttree forward size: "+head.getTopo().size());
-      System.out.println("\ttree reverse size: "+head.getReverseTopo().size());
+      //System.out.println("\ttree forward size: "+head.getTopo().size());
+      //System.out.println("\ttree reverse size: "+head.getReverseTopo().size());
       
       while(loop) {
          loop = false;
@@ -62,7 +62,7 @@ public class CFG {
          for (Block currentBlock : head.getReverseTopo()) {
             LinkedList<Register> liveout = new LinkedList<Register>();
             
-            System.out.println("\tblock "+currentBlock.getLabelList());
+            //System.out.println("\tblock "+currentBlock.getLabelList());
             
             for(Block child : currentBlock.getNanny()) {
                LinkedList<Register> tmpLiveout;
@@ -130,14 +130,14 @@ public class CFG {
       
       
       for(Block currentBlock : head.getTopo()) {
-         System.out.print("\tblock "+currentBlock.getLabelList());
+         //System.out.print("\tblock "+currentBlock.getLabelList());
          LinkedList<Instruction> instrs = currentBlock.getInstructionList();
-         System.out.println(" "+instrs.size()+" instructions");
-         System.out.println("liveout: "+currentBlock.getLiveOut());
+         //System.out.println(" "+instrs.size()+" instructions");
+         //System.out.println("liveout: "+currentBlock.getLiveOut());
          for(Iterator<Instruction>iter=instrs.descendingIterator(); iter.hasNext();){
             Instruction i = iter.next();
             
-            System.out.println("\t\t"+i);
+            //System.out.println("\t\t"+i);
 
             for(Register r : currentBlock.getLiveOut()) {
                if(i.getDestinationRegister() != null) {
@@ -153,6 +153,13 @@ public class CFG {
                if(!currentBlock.getLiveOut().contains(r))
                   currentBlock.getLiveOut().add(r);
             }
+         }
+      }
+
+      //Ignore the special registers
+      for (Integer i : regTable.getSpecialRegisters()) {
+         for (Edge e : interference.get(i.intValue())) {
+            e = Edge.NO_EDGE;
          }
       }
    }
@@ -218,9 +225,9 @@ public class CFG {
          regStack.push(i);
       }
       
-      System.out.println("register order: " + regStack);
+      //System.out.println("register order: " + regStack);
       for(int i : regStack) {
-         System.out.print(i+":"+degrees.get(i)+" ");
+         //System.out.print(i+":"+degrees.get(i)+" ");
       }
       System.out.print("\n");
       

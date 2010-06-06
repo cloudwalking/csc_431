@@ -1,5 +1,6 @@
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.LinkedList;
 
 public class RegTable {
    private Hashtable<String, Integer> table;
@@ -18,6 +19,15 @@ public class RegTable {
       
       // Next register to be given out
       next = 4;
+   }
+
+   public LinkedList<Integer> getSpecialRegisters() {
+      LinkedList<Integer> returns = new LinkedList<Integer>();
+      returns.add(0);
+      returns.add(1);
+      returns.add(2);
+      returns.add(3);
+      return returns;
    }
    
    public int newRegister() {

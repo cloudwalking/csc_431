@@ -287,16 +287,16 @@ public class Block {
          offset++;
       }
       
-      System.out.println(tabs+"BLOCK \""+labels+"\"");
+      //System.out.println(tabs+"BLOCK \""+labels+"\"");
 
       if(hasLabel("#exit")) {
          System.out.println("\n");
          return;
       }
       
-      System.out.println(tabs+"gen : " + gen);
-      System.out.println(tabs+"kill: " + kill);
-      System.out.println(tabs+"live: " + liveout);
+      //System.out.println(tabs+"gen : " + gen);
+      //System.out.println(tabs+"kill: " + kill);
+      //System.out.println(tabs+"live: " + liveout);
       
       // Print instructions, if we have them
       if(instrs.size() > 0) {

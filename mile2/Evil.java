@@ -33,7 +33,7 @@ public class Evil
       {
          DOTTreeGenerator gen = new DOTTreeGenerator();
          StringTemplate st = gen.toDOT(parserRet);
-         System.out.println(st);
+         //System.out.println(st);
       }
 
       /*
@@ -81,16 +81,16 @@ public class Evil
             functions.add(new CFG(functionHead, regtable));
          }
          for(CFG func : functions) {
-               System.out.println("calculating liveout");
+               //System.out.println("calculating liveout");
             func.calculateLiveOut();
-               System.out.println("calculating interference");
+               //System.out.println("calculating interference");
             func.calculateInterference();
-            func.printInterference();
-               System.out.println("calculating color");
+            //func.printInterference();
+               //System.out.println("calculating color");
             func.makeKey();
-               System.out.println("key size: "+func.getKey().size());
-               System.out.println(func.getKey());
-               System.out.println("coloring");
+               //System.out.println("key size: "+func.getKey().size());
+               //System.out.println(func.getKey());
+               //System.out.println("coloring");
             func.color();
          }
 

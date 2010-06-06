@@ -288,6 +288,7 @@ statement[Block head] returns [Block block = null]
         newInst = new Instruction("LOADI", 1, regTable.getImmRegister());
         newInst.setComment("while: set immediate 1 (true)");
         instructions.add(newInst);
+
         newInst = new Instruction("COMP", guardBooleanReg, 
          regTable.getImmRegister(), regTable.getCCRegister());
         newInst.setComment("while: compare guard result (reg " +
