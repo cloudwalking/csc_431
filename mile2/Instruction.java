@@ -55,7 +55,10 @@ falseTarget) {
  */
    public Instruction(String opString, int imm, int destReg) {
       this.op = getOperator(opString);
-      fields.add(new Immediate(imm));
+      if (opString.endsWith("I") || opString.endsWith("i")) {
+         fields.add(new Immediate(imm));
+      }
+      else fields.add(new Register(imm));
       fields.add(new Register(destReg));
    }
    
@@ -75,7 +78,7 @@ instruction.
    }
    
    public void setComment(String comment) {
-      this.comment = "\t"+comment;
+      this.comment = "\t!"+comment;
    }
    
    public void setTarget(String target) {
@@ -111,6 +114,7 @@ instruction.
       for(InstrField field : fields) {
          if(field instanceof Register) {
             int r = ((Register)field).getValue().intValue();
+            if (key.get(r) == null) System.out.println("SPILLL: " + r);
             String color = (String)key.get(r);
             ((Register)field).setColor(color);
          }
@@ -206,6 +210,20 @@ instruction.
          return Operator.SAVE;
       else if (op.equals("RESTORE"))
          return Operator.RESTORE;
+      else if (op.equals("MOV"))
+         return Operator.MOV;
+      else if (op.equals("MOVEQ"))
+         return Operator.MOVEQ;
+      else if (op.equals("MOVLT"))
+         return Operator.MOVLT;
+      else if (op.equals("MOVGT"))
+         return Operator.MOVGT;
+      else if (op.equals("MOVNE"))
+         return Operator.MOVNE;
+      else if (op.equals("MOVLE"))
+         return Operator.MOVLE;
+      else if (op.equals("MOVGE"))
+         return Operator.MOVGE;
       else {
          System.err.println("Invalid Instruction OPCode: " + op);
          return null;
@@ -241,6 +259,13 @@ instruction.
       LOADINARGUMENT,
       LOADRET,
       MULT,
+      MOV,
+      MOVEQ,
+      MOVLT,
+      MOVGT,
+      MOVNE,
+      MOVLE,
+      MOVGE,
       NEW,
       NOP,
       OR,
@@ -263,50 +288,62 @@ instruction.
 
    public SparcOperator getSparc(Operator ilocOp) {
       if (ilocOp == Operator.ADD || ilocOp == Operator.ADDI)
-         return SparcOperator.ADD;
+         return SparcOperator.add;
       else if (ilocOp == Operator.AND)
-         return SparcOperator.AND;
+         return SparcOperator.and;
       else if (ilocOp == Operator.CBREQ)
-         return SparcOperator.BE;
+         return SparcOperator.be;
       else if (ilocOp == Operator.CBRGT)
-         return SparcOperator.BG;
+         return SparcOperator.bg;
       else if (ilocOp == Operator.CBRGE)
-         return SparcOperator.BGE;
+         return SparcOperator.bge;
       else if (ilocOp == Operator.CBRLT)
-         return SparcOperator.BL;
+         return SparcOperator.bl;
       else if (ilocOp == Operator.CBRLE)
-         return SparcOperator.BLE;
+         return SparcOperator.ble;
       else if (ilocOp == Operator.CBRNE)
-         return SparcOperator.BNE;
+         return SparcOperator.bne;
       else if (ilocOp == Operator.CALL)
-         return SparcOperator.CALL;
+         return SparcOperator.call;
       else if (ilocOp == Operator.COMP || ilocOp == Operator.COMPI)
-         return SparcOperator.CMP;
+         return SparcOperator.cmp;
       else if (ilocOp == Operator.JUMPI)
-         return SparcOperator.BA;
+         return SparcOperator.ba;
       else if (ilocOp == Operator.LOADAI || ilocOp == Operator.LOADI)
-         return SparcOperator.LDX;
+         return SparcOperator.ld;
       else if (ilocOp == Operator.OR)
-         return SparcOperator.OR;
+         return SparcOperator.or;
       else if (ilocOp == Operator.DIV)
-         return SparcOperator.SDIV;
+         return SparcOperator.sdiv;
       else if (ilocOp == Operator.MULT)
-         return SparcOperator.SMUL;
+         return SparcOperator.smul;
       else if (ilocOp == Operator.SAVE)
-         return SparcOperator.SAVE;
+         return SparcOperator.save;
       else if (ilocOp == Operator.STOREAI)
-         return SparcOperator.STX;
+         return SparcOperator.st;
       else if (ilocOp == Operator.SUB)
-         return SparcOperator.SUB;
+         return SparcOperator.sub;
       else if (ilocOp == Operator.RET)
-         return SparcOperator.RET;
+         return SparcOperator.ret;
       else if (ilocOp == Operator.RESTORE)
-         return SparcOperator.RESTORE;
+         return SparcOperator.restore;
       else if (ilocOp == Operator.XORI)
-         return SparcOperator.XOR;
+         return SparcOperator.xor;
 //anything to be stored in out, move to an out register o0 - o5
-      else if (ilocOp == Operator.STOREOUTARGUMENT)
-         return SparcOperator.MOV;
+      else if (ilocOp == Operator.STOREOUTARGUMENT || ilocOp == Operator.MOV)
+         return SparcOperator.mov;
+      else if (ilocOp == Operator.MOVEQ)
+         return SparcOperator.move;
+      else if (ilocOp == Operator.MOVLT)
+         return SparcOperator.movl;
+      else if (ilocOp == Operator.MOVGT)
+         return SparcOperator.movg;
+      else if (ilocOp == Operator.MOVNE)
+         return SparcOperator.movne;
+      else if (ilocOp == Operator.MOVLE)
+         return SparcOperator.movle;
+      else if (ilocOp == Operator.MOVGE)
+         return SparcOperator.movge;
       else {
          System.err.println("Invalid Sparc Operator requested: " + ilocOp);
          return null;
@@ -317,12 +354,22 @@ instruction.
       if (op == Operator.COMP) {
          fields.removeLast();
       }
+      else if (op == Operator.MOVEQ || op == Operator.MOVLT ||
+       op == Operator.MOVGT || op == Operator.MOVNE || op == Operator.MOVLE ||
+       op == Operator.MOVGE) {
+         fields.removeFirst();
+         return getSparc(op) + "\t" + "%icc, " + fields.toString() + " " +
+          comment;
+       }
       else if (op == Operator.CBREQ || op == Operator.CBRGE ||
         op == Operator.CBRGT || op == Operator.CBRLE ||
         op == Operator.CBRLT || op == Operator.CBRNE) {
          InstrField otherBranch = fields.removeLast();
+         fields.removeFirst();
          return getSparc(op) + "\t" + fields.toString() + " " + comment + "\n\t" +
-          SparcOperator.BA + "\t" + otherBranch + " " + comment;
+          SparcOperator.nop + "\n\t" +
+          SparcOperator.ba + "\t" + otherBranch + " " + comment + "\n\t" +
+          SparcOperator.nop;
       }
       else if (op == Operator.NEW) {
          //determine address where struct will be stored;
@@ -356,7 +403,9 @@ instruction.
 //get registers from allocator
          setUpper = "sethi" + "\t" + "%hi(.EV1LPR), %g1" + "\n";
          setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LPR), %o0" + "\n";
-         prepCall = "\t" + "mov" + "\t" + "%o5, %o1" + "\n";
+         //replace %o5 with variable
+         prepCall = "\t" + "mov" + "\t" + getDestinationRegister() +
+          ", %o1" + "\n";
          callScan = "\t" + "call" + "\t" + "printf, 0" + "\n";
 
          return setUpper + setLower + prepCall + callScan;
@@ -367,7 +416,8 @@ instruction.
 //get registers from allocator
          setUpper = "sethi" + "\t" + "%hi(.EV1LPRL), %g1" + "\n";
          setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LPRL), %o0" + "\n";
-         prepCall = "\t" + "mov" + "\t" + "%o5, %o1" + "\n";
+         prepCall = "\t" + "mov" + "\t" + getDestinationRegister() +
+          ", %o1" + "\n";
          callScan = "\t" + "call" + "\t" + "printf, 0" + "\n";
 
          return setUpper + setLower + prepCall + callScan;
@@ -387,30 +437,36 @@ instruction.
    }
 
    public enum SparcOperator {
-      ADD,
-      SDIV,
-      SMUL,
-      SUB,
-      AND,
-      OR,
-      XOR,
-      CMP,
-      BE,
-      BNE,
-      BGE,
-      BL,
-      BG,
-      BLE,
-      BA,
-      JMPL,
-      LDX,
-      MOV,
-      NOP,
-      STX,
-      CALL,
-      RET,
-      SAVE,
-      RESTORE
+      add,
+      sdiv,
+      smul,
+      sub,
+      and,
+      or,
+      xor,
+      cmp,
+      be,
+      bne,
+      bge,
+      bl,
+      bg,
+      ble,
+      ba,
+      jmpl,
+      ld,
+      mov,
+      move,
+      movl,
+      movg,
+      movne,
+      movle,
+      movge,
+      nop,
+      st,
+      call,
+      ret,
+      save,
+      restore
    }
 
 // InstrField now a public class.

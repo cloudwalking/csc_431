@@ -12,7 +12,7 @@ public class Evil
 {
    public static void main(String[] args)
    {
-      boolean debug = true;
+      boolean debug = false;
       parseParameters(args);
 
       CommonTokenStream tokens = new CommonTokenStream(createLexer());
@@ -73,18 +73,19 @@ public class Evil
          RegTable regtable = new RegTable();
          blocks = cfgParser.program(stable, funtable, regtable);
          
-         System.out.println("regtable size: "+regtable.size());
+         //System.out.println("regtable size: "+regtable.size());
          
          LinkedList<CFG> functions = new LinkedList<CFG>();
+
          for(Block functionHead : blocks) {
-            functionHead.finish(); // tells blocks to make gen/kill sets
             functions.add(new CFG(functionHead, regtable));
          }
          for(CFG func : functions) {
+            func.finish(); // tells blocks to make gen/kill sets
             func.calculateLiveOut();
             func.calculateInterference();
             func.color();
-            System.out.println(func.getKey());
+            //System.out.println(func.getKey());
          }
 
          String fileName = _inputFile;

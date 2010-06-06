@@ -1,3 +1,4 @@
+import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -24,6 +25,10 @@ public class SymTable {
    public int setValue(String symbol, int value) {
       return ((SymEntry)table.get(symbol)).setValue(value);
    }
+
+   public int getNumSymbols() {
+      return table.size();
+   }
    
    public String getType(String symbol) {
       return ((SymEntry)table.get(symbol)).getType();
@@ -31,6 +36,10 @@ public class SymTable {
    
    public int getValue(String symbol) {
       return ((SymEntry)table.get(symbol)).getValue();
+   }
+
+   public Set<String> keySet() {
+      return table.keySet();
    }
    
    public Map getMap() {

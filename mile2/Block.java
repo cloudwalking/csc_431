@@ -32,7 +32,8 @@ public class Block {
    }
 
    public String toString() {
-      return instrs.toString();
+      //return instrs.toString();
+      return labels.toString();
    }
 
    public Block(String label) {
@@ -145,9 +146,9 @@ public class Block {
          evilPrintln = "\"%d\\n\"";
          evilRead = "\"%d\"";
 
-         printLabel = ".EV1LPR";
-         printLnLabel = ".EV1LPRL";
-         readLabel = ".EV1LRD";
+         printLabel = ".EV1LPR:";
+         printLnLabel = ".EV1LPRL:";
+         readLabel = ".EV1LRD:";
 
          writer.write(tab + section + tab + readOnly + "\n");
          writer.write(tab + align + tab + "8\n");
@@ -216,6 +217,9 @@ public class Block {
          flag = !flag;
       
          for (String s: labels) {
+            if (s.startsWith("#")) {
+               s = "!" + s;
+            }
             writer.write(s.replace("[", " ").replace("]", "\t") + ":\n");
             //System.out.println(s.replace("[", " ").replace("]", "\t"));
          }
@@ -390,24 +394,6 @@ public class Block {
          cleanTracks(b);
       }
       top.exited = 0;
-   }
-
-
-   // This will get stuck on loops
-   public void finish() {
-      this.createGenKill();
-      for(Block b : predecessors) {
-         b.finish();
-      }
-   }
-   
-   public void reregister(Hashtable key) {
-      for(Instruction i : instrs) {
-         i.reregister(key);
-      }
-      for(Block b : successors) {
-         b.reregister(key);
-      }
    }
 
    public void createGenKill() {

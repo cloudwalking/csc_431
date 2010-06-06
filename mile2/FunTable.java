@@ -37,7 +37,16 @@ public class FunTable {
    public String getType(String function, String field) {
       return functions.get(function).getType(field);
    }
-   
+
+   public int getOffset(String function, String field) {
+      int ndx = 0;
+      for (String s : functions.get(function).keySet()) {
+         if (s == field) return ndx * 4;
+         else ndx++;
+      }
+      return -1;
+   }
+
    public void print() {
       print("");
    }

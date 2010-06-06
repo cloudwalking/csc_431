@@ -125,11 +125,13 @@ public class CFG {
       
       for(Block currentBlock : head.getTopo()) {
          LinkedList<Instruction> instrs = currentBlock.getInstructionList();
-         for(Iterator<Instruction>iter=instrs.descendingIterator(); iter.hasNext();){
+         for(Iterator<Instruction>iter=instrs.descendingIterator();
+          iter.hasNext();){
             Instruction i = iter.next();
          //for(Instruction i : instrs.descendingIterator()) {
             for(Register r : currentBlock.getLiveOut()) {
-               if(i.getDestinationRegister().equals(r)) {
+               if(i.getDestinationRegister() != null &&
+                i.getDestinationRegister().equals(r)) {
                   int dest = i.getDestinationRegister().getValue().intValue();
                   interference.get(dest).set(
                      r.getValue().intValue(), Edge.WHOLE_EDGE);
@@ -220,13 +222,30 @@ public class CFG {
             }
          }
          if(tries == crayons.count() && bad) {
+            key.put(register, crayons.getSpill());
             // Spill
          }
       }
       
-      head.reregister(key);
+      this.reregister(key);
 
       //return key;
+   }
+
+
+   // This will get stuck on loops
+   public void finish() {
+      for(Block b : this.head.getTopo()) {
+         b.createGenKill();
+      }
+   }
+   
+   public void reregister(Hashtable key) {
+      for(Block b : this.head.getTopo()) {
+         for(Instruction i : b.getInstructionList()) {
+            i.reregister(key);
+         }
+      }
    }
    
    public Hashtable getKey() {
@@ -234,8 +253,8 @@ public class CFG {
    }
    
    private class Crayons {
-      String[] colors = {"elephant", "whale", "octopus", "dog", 
-                         "lizard", "bird", "seal", "bear" };
+      String[] colors = {"%l0", "%l1", "%l2", "%l3", 
+                         "%l4", "%l5", "%l6", "%l7" };
       int next;
       public Crayons() {
          next = 0;
@@ -247,6 +266,9 @@ public class CFG {
       public String peak() {
          bound();
          return colors[next];
+      }
+      public String getSpill() {
+         return "SPILL";
       }
       public int count() {
          return colors.length;

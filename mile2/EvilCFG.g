@@ -79,7 +79,7 @@ list_id returns [int reg]
 
 functions returns [LinkedList<Block> cfgList = new LinkedList<Block>()]
    : ^(FUNCS (topBlock=function {
-        cfgList.add($topBlock.entry);
+        cfgList.addFirst($topBlock.entry);
      })*)
    ;
 
@@ -193,7 +193,11 @@ statement[Block head] returns [Block block = null]
         ifGuard.addILoc($iloc.instructions);
         
         // If guard evaluates to false, bail out
-        newInst = new Instruction("COMPI", guardBooleanReg, 1);
+        newInst = new Instruction("LOADI", 1, regTable.getImmRegister());
+        instructions.add(newInst);
+
+        newInst = new Instruction("COMP", guardBooleanReg,
+         regTable.getImmRegister(), regTable.getCCRegister());
         newInst.setComment("if: compare guard result (reg " + guardBooleanReg +
          ") to true");
         instructions.add(newInst);
@@ -284,8 +288,8 @@ statement[Block head] returns [Block block = null]
         newInst = new Instruction("LOADI", 1, regTable.getImmRegister());
         newInst.setComment("while: set immediate 1 (true)");
         instructions.add(newInst);
-        newInst = new Instruction("COMPI", guardBooleanReg, 
-         regTable.getImmRegister());
+        newInst = new Instruction("COMP", guardBooleanReg, 
+         regTable.getImmRegister(), regTable.getCCRegister());
         newInst.setComment("while: compare guard result (reg " +
          guardBooleanReg + ") to true");
         instructions.add(newInst);
@@ -304,9 +308,9 @@ statement[Block head] returns [Block block = null]
 
         // Jump back to the guard, to loop
         instructions = new LinkedList<Instruction>();
-        newInst = new Instruction("LOADI", 0, regTable.getImmRegister());
+        /*newInst = new Instruction("LOADI", 0, regTable.getImmRegister());
         newInst.setComment("while: set immediate 0 (no offset)");
-        instructions.add(newInst);
+        instructions.add(newInst);*/
         newInst = new Instruction("JUMPI", guardLabel);
         newInst.setComment("while: jump back to guard");
         instructions.add(newInst);
@@ -338,11 +342,12 @@ assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instru
    : ^(ASSIGN exp=expression[r1] leftIloc=lvalue[r2]) {
          $instructions.addAll(0, $leftIloc.instructions);
          $instructions.addAll(0, $exp.instructions);
-         
+
          int offset = 0;
 
-         Instruction newInst = new Instruction("STAI", r1, r2, 0);
-         newInst.setComment("store: save "+r1+" to memory ptr "+r2+" + offset "+offset);
+         Instruction newInst = new Instruction("MOV", r1, r2);
+         //Instruction newInst = new Instruction("STAI", r1, r2, 0);
+         //newInst.setComment("store: save "+r1+" to memory ptr "+r2+" + offset "+offset);
          $instructions.add(newInst);
 
       }
@@ -415,10 +420,9 @@ System.out.println("currentFunction: "+currentFunction+" currentStruct: "+curren
       $instructions.add(newInst);
    }
    | id=ID {
-        int idreg = regTable.lookupId(currentFunction+$id.text);
-        Instruction newInst = new Instruction("ADDI", idreg, 0, resultReg);
-        newInst.setComment("lvalue: got id '"+currentFunction+$id.text+"' (stored in reg "+idreg+"), stuck it in reg "+resultReg);
-        $instructions.add(newInst);
+        if (regTable.containsId(currentFunction + $id.text))
+           regTable.updateRegister(currentFunction + $id.text, resultReg);
+        else regTable.updateRegister($id.text, resultReg);
      }
    ;
 
@@ -477,26 +481,37 @@ new LinkedList<Instruction>()]
         $instructions.addAll(0, $lexpr.instructions);
         $instructions.addAll(0, $rexpr.instructions);
 
+        $instructions.add(new Instruction(
+         "LOADI", 1, regTable.getImmRegister()));
+        $instructions.add(new Instruction(
+         "LOADI", 0, resultReg));
+
         // Do the comparison, set cc
         Instruction newInst = new Instruction(
             "COMP", lexprReg, rexprReg, regTable.getCCRegister());
         newInst.setComment("expression: compare: reg " + lexprReg +
          " to " + rexprReg + ", store in cc-reg");
         $instructions.add(newInst);
-        
-        // Here we set the return register to true or false
-        String trueLabel = ".S" + uniqueStatement++;
-        String falseLabel = ".S" + uniqueStatement++;
-        String doneLabel = ".S" + uniqueStatement++;
-        
-        // Do the comparison
+
+        String movOp = $op.text.equals("==") ? "EQ" :
+           $op.text.equals("<") ? "LT" :
+           $op.text.equals(">") ? "GT" :
+           $op.text.equals("!=") ? "NE" :
+           $op.text.equals("<=") ? "LE" :
+           $op.text.equals(">=") ? "GE" : null;
+        //conditional move
+        $instructions.add(new Instruction(
+         "MOV" + movOp, regTable.getCCRegister(), regTable.getImmRegister(),
+         resultReg));
+
+        /*// Do the comparison
         newInst = new Instruction($op.text, regTable.getCCRegister(), 
          trueLabel, falseLabel);
         newInst.setComment("expression: branch true: '" + trueLabel +
          "' false: '" + falseLabel + "'");
-        $instructions.add(newInst);
-        
-        // If comparison is true
+        $instructions.add(newInst);*/
+
+        /*// If comparison is true
         newInst = new Instruction("LABEL", trueLabel);
         newInst.setComment("expression: TRUE branch label '"+trueLabel+"'");
         $instructions.add(newInst);
@@ -509,7 +524,7 @@ new LinkedList<Instruction>()]
         newInst = new Instruction("JUMPI", doneLabel);
         newInst.setComment("expression: done, move on '"+doneLabel+"'");
         $instructions.add(newInst);
-        
+
         // Comparison was false
         newInst = new Instruction("LABEL", falseLabel);
         newInst.setComment("expression: FALSE branch label '" + falseLabel + "'");
@@ -523,7 +538,7 @@ new LinkedList<Instruction>()]
         // Finish
         newInst = new Instruction("LABEL", doneLabel);
         newInst.setComment("expression: done with comparison");
-        $instructions.add(newInst);
+        $instructions.add(newInst);*/
      }
 
    | ^(NEG {
@@ -578,31 +593,29 @@ new LinkedList<Instruction>()]
         Instruction newInst = new Instruction("CALL", $id.text);
         newInst.setComment("invocation: call function " + $id.text);
         $instructions.add(newInst);
+        //move the return value to the result reg so that the value may get used
+        $instructions.add(new Instruction("MOV", regTable.getReturnRegister(),
+         resultReg));
      }
    | id=ID {
-        int immRegister = regTable.getImmRegister();
-/*
-        Instruction newInst = new Instruction("LOADI", 0, immRegister);
-        newInst.setComment("id: set immediate 0");
-        $instructions.add(newInst);
-*/
-        int targetRegister = regTable.lookupId(currentFunction  + $id.text);
-        if(-1 == targetRegister) {
-           targetRegister = regTable.lookupId($id.text);
+         //may be a problem with recursion?
+        int srcRegister = regTable.lookupId(currentFunction + $id.text);
+        if(-1 == srcRegister) {
+           srcRegister = regTable.lookupId($id.text);
         }
 
-        Instruction newInst = new Instruction("LOADAI", targetRegister,
-         immRegister, resultReg);
-        newInst.setComment("id: load '" + currentFunction + $id.text +
-         "' from mem to reg " + resultReg);
+        Instruction newInst = new Instruction("MOV", srcRegister, resultReg);
+        //Instruction newInst = new Instruction("LOADAI", targetRegister,
+         //regTable.getZeroRegister(), resultReg);
+        //newInst.setComment("id: load '" + currentFunction + $id.text +
+         //"' from mem to reg " + resultReg);
         $instructions.add(newInst);
      }
 
    | i=INTEGER {
 //        int immRegister = regTable.newRegister();
-        Instruction newInst = new Instruction("LOADI", 
-                                    Integer.parseInt($i.text),
-                                    resultReg);
+        Instruction newInst = new Instruction("LOADI",
+         Integer.parseInt($i.text), resultReg);
         newInst.setComment("int: reg "+resultReg+" gets val "+ 
          Integer.parseInt($i.text));
         $instructions.add(newInst);

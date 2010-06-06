@@ -4,18 +4,20 @@ import java.util.Enumeration;
 public class RegTable {
    private Hashtable<String, Integer> table;
    private int next;
+   private int zeroRegister;
    private int returnRegister;
    private int ccRegister;
    private int immediateRegister;
    
    public RegTable() {
       table = new Hashtable<String, Integer>();
-      returnRegister = 0;
-      ccRegister = 1;
-      immediateRegister = 2;
+      zeroRegister = 0;
+      returnRegister = 1;
+      ccRegister = 2;
+      immediateRegister = 3;
       
       // Next register to be given out
-      next = 3;
+      next = 4;
    }
    
    public int newRegister() {
@@ -25,6 +27,10 @@ public class RegTable {
    public int newRegister(String id) {
       table.put(id, new Integer(next));
       return next++;
+   }
+
+   public boolean containsId(String id) {
+      return table.containsKey(id);
    }
    
    public int lookupId(String id) {
@@ -38,6 +44,22 @@ public class RegTable {
          return -1;
       }
       return ((Integer)table.get(id)).intValue();
+   }
+
+   public void updateRegister(String id, Integer newReg) {
+      if (id == null || newReg == null) {
+         System.err.println(id + " not allocated in registers");
+         return;
+      }
+      if (!table.containsKey(id)) {
+         System.err.println("invalid id, cannot reassign register: " + id);
+         return;
+      }
+      table.put(id, newReg);
+   }
+
+   public int getZeroRegister() {
+      return zeroRegister;
    }
    
    public int getReturnRegister() {
