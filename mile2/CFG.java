@@ -28,6 +28,8 @@ public class CFG {
       this.regStack = new Stack<Integer>();
       this.key = new Hashtable();
       
+      this.head.finish(); // tells blocks to make gen/kill sets
+      
       for(int i=0; i<size; i++) {
          interference.add(new ArrayList<Edge>(size));
          degrees.add(0);
@@ -49,14 +51,19 @@ public class CFG {
       //    save temp-liveout as liveout
       // 5. go to next block, do 2-4
     
-      LinkedList<Register> liveout = new LinkedList<Register>();
       boolean loop = true;
 
+      System.out.println("\ttree forward size: "+head.getTopo().size());
+      System.out.println("\ttree reverse size: "+head.getReverseTopo().size());
       
       while(loop) {
          loop = false;
-         // compute liveout for block
+         // compute liveout for each block
          for (Block currentBlock : head.getReverseTopo()) {
+            LinkedList<Register> liveout = new LinkedList<Register>();
+            
+            System.out.println("\tblock "+currentBlock.getLabelList());
+            
             for(Block child : currentBlock.getNanny()) {
                LinkedList<Register> tmpLiveout;
                tmpLiveout = union(child.getGen(),
@@ -65,7 +72,6 @@ public class CFG {
             }
             loop = loop || !compareLists(liveout, currentBlock.getLiveOut());
             currentBlock.setLiveOut(liveout);
-            // ===
          }
 
       }
@@ -90,7 +96,7 @@ public class CFG {
                                          LinkedList<Register> right) {
       LinkedList<Register> returns = new LinkedList<Register>();
       for(Register r : left) {
-         if(!right.contains(r))
+         if(!right.contains(r) && !returns.contains(r))
             returns.add(r);
       }
 
@@ -117,37 +123,69 @@ public class CFG {
       // 1. start at top block
       // 2. start at last instruction
       // 3. for each instruction
-      //    -in interference, draw edge from instructions target to each liveNow
+      //    -in interference, draw edge from instr's target to each liveNow
       //    -remove all instr's targets from liveNow
       //    -add all instr's sources to liveNow
       // 4. do 2-3 for each block
       
       
       for(Block currentBlock : head.getTopo()) {
+         System.out.print("\tblock "+currentBlock.getLabelList());
          LinkedList<Instruction> instrs = currentBlock.getInstructionList();
+         System.out.println(" "+instrs.size()+" instructions");
+         System.out.println("liveout: "+currentBlock.getLiveOut());
          for(Iterator<Instruction>iter=instrs.descendingIterator(); iter.hasNext();){
             Instruction i = iter.next();
-         //for(Instruction i : instrs.descendingIterator()) {
+            
+            System.out.println("\t\t"+i);
+
             for(Register r : currentBlock.getLiveOut()) {
-               if(i.getDestinationRegister().equals(r)) {
+               if(i.getDestinationRegister() != null) {
                   int dest = i.getDestinationRegister().getValue().intValue();
                   interference.get(dest).set(
                      r.getValue().intValue(), Edge.WHOLE_EDGE);
                   degrees.set(dest, degrees.get(dest)+1);
                }
             }
+            
             currentBlock.getLiveOut().remove(i.getDestinationRegister());
             for(Register r : i.getSourceRegisterList()) {
-               currentBlock.getLiveOut().add(r);
+               if(!currentBlock.getLiveOut().contains(r))
+                  currentBlock.getLiveOut().add(r);
             }
          }
+      }
+   }
+   
+   public void printInterference() {
+      int i = 0;
+      
+      System.out.print("   ");
+      for(int x = 0; x < size; x++) {
+         if(x < 10)
+            System.out.print("0");
+         System.out.print(x+" ");
+      }
+      System.out.print("\n");
+      
+      for(ArrayList<Edge> row : interference) {
+         if(i < 10)
+            System.out.print("0");
+         System.out.print((i++)+" ");
+         for(Edge e : row) {
+            if(e != Edge.NO_EDGE)
+               System.out.print("*  ");
+            else
+               System.out.print("   ");
+         }
+         System.out.print("\n");
       }
    }
    
    /**
     * Returns a hashmap associating register # to color.
     */
-   public void color() {
+   public void makeKey() {
       // get most constrained
       Crayons crayons = new Crayons();
       LinkedList<Integer> constrained = new LinkedList<Integer>(degrees);
@@ -180,9 +218,14 @@ public class CFG {
          regStack.push(i);
       }
       
-      int register;
+      System.out.println("register order: " + regStack);
+      for(int i : regStack) {
+         System.out.print(i+":"+degrees.get(i)+" ");
+      }
+      System.out.print("\n");
+      
+      int register, tries;
       boolean bad;
-      int tries;
       while(!regStack.empty()) {
          bad = true;
          tries = 0;
@@ -204,9 +247,11 @@ public class CFG {
             for(int i=0; i<size; i++) { // for each adjacent node
                if(interference.get(register).get(i) == Edge.WHOLE_EDGE &&
                      i != register && // just to be sane
+                     key.get(i) != null &&
                      key.get(i).equals(peakedColor)) {
                   bad = true;
                   crayons.nextColor();
+                  peakedColor = crayons.peak();
                   break;
                }
             }
@@ -223,10 +268,12 @@ public class CFG {
             // Spill
          }
       }
-      
-      head.reregister(key);
 
       //return key;
+   }
+   
+   public void color() {
+      head.reregister(key);
    }
    
    public Hashtable getKey() {
@@ -234,8 +281,8 @@ public class CFG {
    }
    
    private class Crayons {
-      String[] colors = {"elephant", "whale", "octopus", "dog", 
-                         "lizard", "bird", "seal", "bear" };
+      String[] colors = {"%1", "%2", "%3", "%4", 
+                         "%5", "%6", "%7", "%8" };
       int next;
       public Crayons() {
          next = 0;

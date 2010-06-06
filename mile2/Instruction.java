@@ -213,7 +213,8 @@ instruction.
    }
 
    public String toString() {
-      return op + fields.toString() + " " + comment;
+      //return op + fields.toString() + " " + comment;
+      return op + fields.toString();
    }
 
    public enum Operator {

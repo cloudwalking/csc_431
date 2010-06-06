@@ -9,11 +9,11 @@ public class Register extends InstrField {
    public Integer getValue() { return num; }
    public String toString() { return (color != null) ? color : num.toString(); }
    public boolean equals(Object obj) {
-      return (obj instanceof Register) && this.getValue().equals(((Register)obj).getValue());
+      return (obj instanceof Register) 
+         && this.getValue().equals(((Register)obj).getValue());
    }
    public int hashCode() {
-      // 31 is prime
-      return 31 + num.hashCode();
+      return num.hashCode();
    }
    public void setColor(String color) { this.color = color; }
    public String getColor() { return this.color; }

@@ -108,8 +108,8 @@ public class Block {
       }
       
       
-      System.out.println("gen : " + gen);
-      System.out.println("kill: " + kill);
+//      System.out.println("gen : " + gen);
+//      System.out.println("kill: " + kill);
       
        
       return liveout;
@@ -291,6 +291,10 @@ public class Block {
          return;
       }
       
+      System.out.println(tabs+"gen : " + gen);
+      System.out.println(tabs+"kill: " + kill);
+      System.out.println(tabs+"live: " + liveout);
+      
       // Print instructions, if we have them
       if(instrs.size() > 0) {
          System.out.println(tabs+"instructions:");
@@ -347,19 +351,19 @@ public class Block {
          counter = topo(b, counter, cfg);
       }
       top.exited = ++counter;
-      cfg.addLast(top);
+      cfg.addFirst(top);
       return counter;
    }
 
-   public int reverseTopoPrint(Block bottom, int counter, LinkedList<Block> cfg) {
-      if (bottom == null || bottom.entered != 0)
+   public int reverseTopoPrint(Block top, int counter, LinkedList<Block> cfg) {
+      if (top == null || top.entered != 0)
          return counter;
-      bottom.entered = ++counter;
-      for (Block b: bottom.predecessors) {
+      top.entered = ++counter;
+      for (Block b: top.successors) {
          counter = reverseTopoPrint(b, counter, cfg);
       }
-      bottom.exited = ++counter;
-      cfg.addFirst(bottom);
+      top.exited = ++counter;
+      cfg.addLast(top);
       return counter;
    }
 
@@ -393,32 +397,24 @@ public class Block {
    }
 
 
-   // This will get stuck on loops
+   // Does gen and kill for the whole tree
    public void finish() {
-      this.createGenKill();
-      for(Block b : predecessors) {
-         b.finish();
+      for(Block b : this.getTopo()) {
+         b.createGenKill();
       }
    }
    
+   // Changes the registers in each instruction
    public void reregister(Hashtable key) {
-      for(Instruction i : instrs) {
-         i.reregister(key);
-      }
-      for(Block b : successors) {
-         b.reregister(key);
+      for(Block b : this.getTopo()) {
+         for(Instruction i : b.getInstructionList()) {
+            i.reregister(key);
+         }
       }
    }
 
    public void createGenKill() {
-      LinkedList<Instruction> backwards = new LinkedList<Instruction>();
-      
       for(Instruction i : instrs) {
-         //backwards.addFirst(i);
-         backwards.add(i);
-      }
-
-      for(Instruction i : backwards) {
 	      for(Register r : i.getSourceRegisterList()) {
 		      if(!kill.contains(r) && !gen.contains(r)) {
 			      gen.add(r);
@@ -426,7 +422,7 @@ public class Block {
 	      }
 
          Register target = i.getDestinationRegister();
-         if(!kill.contains(target))
+         if(null != target && !kill.contains(target))
             kill.add(target);
       }
    }
