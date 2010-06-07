@@ -485,7 +485,7 @@ new LinkedList<Instruction>()]
         $instructions.add(new Instruction(
          "LOADI", 1, regTable.getImmRegister()));
         $instructions.add(new Instruction(
-         "LOADI", 0, resultReg));
+         "MOV", regTable.getZeroRegister(), resultReg));
 
         // Do the comparison, set cc
         Instruction newInst = new Instruction(
@@ -628,7 +628,7 @@ new LinkedList<Instruction>()]
         $instructions.add(newInst);
      }
    | FALSE {
-        Instruction newInst = new Instruction("LOADI", 0, resultReg);
+        Instruction newInst = new Instruction("MOV", regTable.getZeroRegister(), resultReg);
         newInst.setComment("bool: reg "+resultReg+" gets false");
         $instructions.add(newInst);
      }
@@ -641,7 +641,7 @@ new LinkedList<Instruction>()]
      }
 
    | NULL {
-        Instruction newInst = new Instruction("LOADI", 0, resultReg);
+        Instruction newInst = new Instruction("MOV", regTable.getZeroRegister(), resultReg);
         newInst.setComment("null: reg "+resultReg+" gets false");
         $instructions.add(newInst);
      }

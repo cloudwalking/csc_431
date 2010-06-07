@@ -158,8 +158,8 @@ public class CFG {
 
       //Ignore the special registers
       for (Integer i : regTable.getSpecialRegisters()) {
-         for (Edge e : interference.get(i.intValue())) {
-            e = Edge.NO_EDGE;
+         for(int k=0; k < size; k++) {
+            interference.get(i).set(k, Edge.NO_EDGE);
          }
       }
    }
@@ -276,6 +276,11 @@ public class CFG {
             // Spill
          }
       }
+      
+      key.put(0, "%g0");
+      key.put(1, "%o0");
+      key.put(2, "%icc");
+      key.put(3, "%g1");
 
       //return key;
    }

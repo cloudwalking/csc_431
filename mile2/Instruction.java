@@ -358,8 +358,7 @@ instruction.
       else if (op == Operator.MOVEQ || op == Operator.MOVLT ||
        op == Operator.MOVGT || op == Operator.MOVNE || op == Operator.MOVLE ||
        op == Operator.MOVGE) {
-         fields.removeFirst();
-         return getSparc(op) + "\t" + "%icc, " + fields.toString() + " " +
+         return getSparc(op) + "\t" + fields.toString() + " " +
           comment;
        }
       else if (op == Operator.CBREQ || op == Operator.CBRGE ||

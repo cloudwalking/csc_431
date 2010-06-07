@@ -85,7 +85,7 @@ public class Evil
             func.calculateLiveOut();
                //System.out.println("calculating interference");
             func.calculateInterference();
-            //func.printInterference();
+            func.printInterference();
                //System.out.println("calculating color");
             func.makeKey();
                //System.out.println("key size: "+func.getKey().size());
