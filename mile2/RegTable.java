@@ -10,6 +10,8 @@ public class RegTable {
    private int returnRegister;
    private int ccRegister;
    private int immediateRegister;
+   private int outRegister;
+   private int argReg0, argReg1, argReg2, argReg3, argReg4, argReg5;
    
    public RegTable() {
       table = new Hashtable<String, Integer>();
@@ -18,9 +20,12 @@ public class RegTable {
       returnRegister = 1;
       ccRegister = 2;
       immediateRegister = 3;
+      outRegister = 4;
+      argReg0 = 5; argReg1 = 6; argReg2 = 7; argReg3 = 8;
+       argReg4 = 9; argReg5 = 10;
       
       // Next register to be given out
-      next = 4;
+      next = 11;
    }
 
    public LinkedList<Integer> getSpecialRegisters() {
@@ -29,6 +34,13 @@ public class RegTable {
       returns.add(1);
       returns.add(2);
       returns.add(3);
+      returns.add(4);
+      returns.add(5);
+      returns.add(6);
+      returns.add(7);
+      returns.add(8);
+      returns.add(9);
+      returns.add(10);
       return returns;
    }
    
@@ -91,6 +103,18 @@ public class RegTable {
 
    public int getCCRegister() {
       return ccRegister;
+   }
+
+   public int getOutRegister() {
+      return outRegister;
+   }
+
+   public int getArgRegister(int numArg) {
+      if (numArg > 5) {
+         System.err.println("not enough Arg Registers: must spill args");
+         return -1;
+      }
+      return numArg % 6 + 5;
    }
    
    public void print() {

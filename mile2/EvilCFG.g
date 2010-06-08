@@ -116,19 +116,13 @@ function returns [Block entry = null]
    ;
 
 parameters[String functionLabel] returns [LinkedList<Instruction> 
-instructions = new LinkedList<Instruction>()]
+ instructions = new LinkedList<Instruction>()]
 @init { int count = 0; }
    : ^(PARAMS
       (id=decl {
          int reg = regTable.newRegister($functionLabel + $id.id);
-         Instruction newInst = new Instruction("LOADI", count, 
-          regTable.getImmRegister());
-         newInst.setComment("parameter: put counter into immediate reg");
-         $instructions.add(newInst);
-         newInst = new Instruction("STIN", reg, regTable.getImmRegister());
-         newInst.setComment("parameter: store-in param '" + $id.id +
-          "' in reg " + reg);
-         $instructions.add(newInst);
+         $instructions.add(new Instruction(
+          "STIN", reg, regTable.getImmRegister()));
          count += 4;
       })*)
    ;
@@ -397,7 +391,7 @@ delete returns [LinkedList<Instruction> instructions = new LinkedList<Instructio
    ;
 
 ret returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-@init { int r1 = regTable.getReturnRegister(); }
+@init { int r1 = regTable.getOutRegister(); }
    : ^(RETURN (exp=expression[r1])?) {
         if (exp != null)
            $instructions.addAll(0, $exp.instructions);
@@ -684,18 +678,19 @@ LinkedList<Instruction>()]
 arg_list returns [LinkedList<Instruction> instructions = new 
 LinkedList<Instruction>()]
 @init{ int srcReg = regTable.newRegister();
-       int count = 0; }
+       int outReg = 0; }
    : ^(ARGS (exprInstr=expression[srcReg] {
         Instruction newInst;
         $instructions.addAll(0, $exprInstr.instructions);
-        newInst = new Instruction("LOADI", count, regTable.getImmRegister());
-        newInst.setComment("argument: set immediate reg to " + count);
-        $instructions.add(newInst);
-        newInst = new Instruction("STOUT", srcReg, 
-         regTable.getImmRegister());
-        newInst.setComment("argument: store-out param in reg " + srcReg);
-        $instructions.add(newInst);
-        count += 4;
+
+        int tmpArgReg = regTable.getArgRegister(outReg++);
+        if (tmpArgReg != -1) {
+           newInst = new Instruction("STOUT", srcReg, tmpArgReg);
+           newInst.setComment("argument: store out param from reg " + srcReg +
+            "to register outReg " + outReg);
+           $instructions.add(newInst);
+        }
+        //else: must spill arguments
      })+)
    | ARGS
    ;

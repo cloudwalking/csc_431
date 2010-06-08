@@ -366,6 +366,9 @@ instruction.
       if (op == Operator.COMP) {
          fields.removeLast();
       }
+      else if (op == Operator.CALL) {
+         return getSparc(op) + "\t" + fields.toString() + "\n\t" + "nop";
+      }
       else if (op == Operator.MOVEQ || op == Operator.MOVLT ||
        op == Operator.MOVGT || op == Operator.MOVNE || op == Operator.MOVLE ||
        op == Operator.MOVGE) {
