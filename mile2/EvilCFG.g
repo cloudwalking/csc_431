@@ -117,13 +117,13 @@ function returns [Block entry = null]
 
 parameters[String functionLabel] returns [LinkedList<Instruction> 
  instructions = new LinkedList<Instruction>()]
-@init { int count = 0; }
+@init { int inReg = 0; }
    : ^(PARAMS
       (id=decl {
          int reg = regTable.newRegister($functionLabel + $id.id);
+         int src = regTable.getInRegister(inReg++);
          $instructions.add(new Instruction(
-          "STIN", reg, regTable.getImmRegister()));
-         count += 4;
+          "STIN", src, reg));
       })*)
    ;
 
@@ -681,7 +681,7 @@ LinkedList<Instruction>()]
        int outReg = 0; }
    : ^(ARGS (exprInstr=expression[srcReg] {
         Instruction newInst;
-        $instructions.addAll(0, $exprInstr.instructions);
+        $instructions.addAll($exprInstr.instructions);
 
         int tmpArgReg = regTable.getArgRegister(outReg++);
         if (tmpArgReg != -1) {

@@ -342,7 +342,8 @@ instruction.
       else if (ilocOp == Operator.XORI)
          return SparcOperator.xor;
 //anything to be stored in out, move to an out register o0 - o5
-      else if (ilocOp == Operator.STOREOUTARGUMENT || ilocOp == Operator.MOV)
+      else if (ilocOp == Operator.STOREOUTARGUMENT || ilocOp == Operator.MOV ||
+       ilocOp == Operator.STOREINARGUMENT)
          return SparcOperator.mov;
       else if (ilocOp == Operator.MOVEQ)
          return SparcOperator.move;
@@ -397,10 +398,6 @@ instruction.
          return "set" + "\t" + fields.toString() + " " + comment;
       }
       else if (op == Operator.LABEL) {
-         return "";
-      }
-      else if (op == Operator.STOREINARGUMENT) {
-//anything to be stored in in, need not be moved
          return "";
       }
       else if (op == Operator.SAVE) {

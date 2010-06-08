@@ -293,6 +293,12 @@ public class CFG {
       key.put(8, "%o3");
       key.put(9, "%o4");
       key.put(10, "%o5");
+      key.put(11, "%i0");
+      key.put(12, "%i1");
+      key.put(13, "%i2");
+      key.put(14, "%i3");
+      key.put(15, "%i4");
+      key.put(16, "%i5");
 
       //return key;
    }
