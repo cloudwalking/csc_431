@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 public class RegTable {
    private Hashtable<String, Integer> table;
+   private Hashtable<Integer, String> reverse;
    private int next;
    private int zeroRegister;
    private int returnRegister;
@@ -12,6 +13,7 @@ public class RegTable {
    
    public RegTable() {
       table = new Hashtable<String, Integer>();
+      reverse = new Hashtable<Integer, String>();
       zeroRegister = 0;
       returnRegister = 1;
       ccRegister = 2;
@@ -35,7 +37,9 @@ public class RegTable {
    }
    
    public int newRegister(String id) {
-      table.put(id, new Integer(next));
+      Integer registerNum = new Integer(next);
+      table.put(id, registerNum);
+      reverse.put(registerNum, id);
       return next++;
    }
 
@@ -43,6 +47,10 @@ public class RegTable {
       return table.containsKey(id);
    }
    
+   public String lookupRegister(int register) {
+      return reverse.get(register);
+   }
+
    public int lookupId(String id) {
       if (id == null) {
          System.err.println(id + " not allocated in registers");
@@ -66,6 +74,7 @@ public class RegTable {
          return;
       }
       table.put(id, newReg);
+      reverse.put(newReg, id);
    }
 
    public int getZeroRegister() {
@@ -86,6 +95,7 @@ public class RegTable {
    
    public void print() {
       System.out.println(table);
+      System.out.println("reverse:\n"+reverse);
    }
 
    public int size() {

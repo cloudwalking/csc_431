@@ -50,6 +50,13 @@ public class StructTable {
          return null;
       return ((SymTable)structs.get(struct)).getType(field);
    }
+
+   public int getNumFields(String structId) {
+      if (structId == null) System.err.println("Struct ID is null, can't get fields");
+      else if (structs.get(structId) == null) System.err.println("structId: " + structId + " does not have a symTable, cannot get fields");
+      else return structs.get(structId).getNumSymbols();
+      return 0;
+   }
    
    public int getOffset(String struct, String field) {
       // Hack: take 'struct' off the front to get the raw type.

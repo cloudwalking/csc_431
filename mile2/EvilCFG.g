@@ -342,6 +342,7 @@ assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instru
         int r2 = regTable.newRegister(); }
    : ^(ASSIGN exp=expression[r1] leftIloc=lvalue[r2]) {
          $instructions.addAll(0, $leftIloc.instructions);
+         Register lvalReg = $instructions.getLast().getSourceRegisterList().getFirst();
          $instructions.addAll(0, $exp.instructions);
 
          int offset = 0;
@@ -350,18 +351,29 @@ assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instru
          //Instruction newInst = new Instruction("STAI", r1, r2, 0);
          //newInst.setComment("store: save "+r1+" to memory ptr "+r2+" + offset "+offset);
          $instructions.add(newInst);
+         $instructions.add(new Instruction(
+          "MOV", r2, lvalReg.getValue()));
 
       }
    ;
 
 print returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-@init { int r1 = regTable.newRegister(); }
-   : ^(PRINT exp=expression[r1] (ENDL)?) {
+@init { int r1 = regTable.newRegister(); boolean newLine = false; }
+   : ^(PRINT exp=expression[r1] (ENDL { newLine = true; })?) {
 //check to see if ENDL is present
         $instructions.addAll(0, $exp.instructions);
-        Instruction newInst = new Instruction("PRINT", r1);
-        newInst.setComment("print: print contents of reg "+r1);
-        $instructions.add(newInst);
+        if (newLine == false) {
+           Instruction newInst = new Instruction("PRINT", r1);
+           newInst.setComment("print: print contents of reg "+r1+
+            " (var "+regTable.lookupRegister(r1)+")");
+           $instructions.add(newInst);
+        }
+        else {
+           Instruction newInst = new Instruction("PRINTLN", r1);
+           newInst.setComment("print: print contents of reg "+r1+
+            " (var "+regTable.lookupRegister(r1)+")");
+           $instructions.add(newInst);
+        }
      }
    ;
 
@@ -370,7 +382,8 @@ read returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>
    : ^(READ readStuff=lvalue[reg]) {
          $instructions.addAll(0, $readStuff.instructions);
          Instruction newInst = new Instruction("READ", reg);
-         newInst.setComment("read: read into address stored in reg "+reg);
+         newInst.setComment("read: read into address stored in reg "+reg+
+          " (var "+regTable.lookupRegister(reg)+")");
          $instructions.add(newInst);
      }
    ;
@@ -421,9 +434,12 @@ System.out.println("currentFunction: "+currentFunction+" currentStruct: "+curren
       $instructions.add(newInst);
    }
    | id=ID {
+        int varReg = -1;
         if (regTable.containsId(currentFunction + $id.text))
-           regTable.updateRegister(currentFunction + $id.text, resultReg);
-        else regTable.updateRegister($id.text, resultReg);
+           varReg = regTable.lookupId(currentFunction + $id.text);
+        else varReg = regTable.lookupId($id.text);
+        $instructions.add(new Instruction(
+         "MOV", varReg, resultReg));
      }
    ;
 
@@ -467,8 +483,11 @@ new LinkedList<Instruction>()]
         $instructions.addAll(0, $rexpr.instructions);
         Instruction newInst = new Instruction(
           $op.text, lexprReg, rexprReg, resultReg);
-        newInst.setComment("expression: reg " + lexprReg + " " + $op.text +
-         " " + rexprReg + " in reg " + resultReg);
+        newInst.setComment("expression: reg " + lexprReg + 
+         " (var "+regTable.lookupRegister(lexprReg)+")"+
+         " " + $op.text +
+         " " + rexprReg + " in reg " + resultReg +
+         " (var "+regTable.lookupRegister(lexprReg)+")");
         $instructions.add(newInst);
      }
 
@@ -484,14 +503,16 @@ new LinkedList<Instruction>()]
 
         $instructions.add(new Instruction(
          "LOADI", 1, regTable.getImmRegister()));
+        //clear junk in resultReg; resultReg must return 0 or 1
         $instructions.add(new Instruction(
          "MOV", regTable.getZeroRegister(), resultReg));
-
+        
         // Do the comparison, set cc
         Instruction newInst = new Instruction(
-            "COMP", lexprReg, rexprReg, regTable.getCCRegister());
+         "COMP", lexprReg, rexprReg, regTable.getCCRegister());
         newInst.setComment("expression: compare: reg " + lexprReg +
-         " to " + rexprReg + ", store in cc-reg");
+         " (var " + regTable.lookupRegister(lexprReg) + ") to " + rexprReg + 
+         " (var " + regTable.lookupRegister(rexprReg) + "), store in cc-reg");
         $instructions.add(newInst);
 
         String movOp = $op.text.equals("==") ? "EQ" :
@@ -606,6 +627,9 @@ new LinkedList<Instruction>()]
         }
 
         Instruction newInst = new Instruction("MOV", srcRegister, resultReg);
+        newInst.setComment("id: move reg "+srcRegister+" (var "+regTable.lookupRegister(srcRegister)+
+         ") to reg "+resultReg);
+         
         //Instruction newInst = new Instruction("LOADAI", targetRegister,
          //regTable.getZeroRegister(), resultReg);
         //newInst.setComment("id: load '" + currentFunction + $id.text +
@@ -634,10 +658,13 @@ new LinkedList<Instruction>()]
      }
 
    | ^(NEW id=ID) {
-/*
         $instructions.add(new Instruction(
-         Instruction.Operator.NEW, resultReg, $id.text));
-*/
+         "LOADI", stable.getNumFields($id.text) * 4,
+         regTable.getReturnRegister()));
+        $instructions.add(new Instruction(
+         "NEW"));
+        $instructions.add(new Instruction(
+         "MOV", regTable.getReturnRegister(), resultReg));
      }
 
    | NULL {

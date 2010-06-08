@@ -142,8 +142,11 @@ public class CFG {
             for(Register r : currentBlock.getLiveOut()) {
                if(i.getDestinationRegister() != null) {
                   int dest = i.getDestinationRegister().getValue().intValue();
+                  int collision = r.getValue().intValue();
                   interference.get(dest).set(
-                     r.getValue().intValue(), Edge.WHOLE_EDGE);
+                     collision, Edge.WHOLE_EDGE);
+                  interference.get(collision).set(
+                     dest, Edge.WHOLE_EDGE);
                   degrees.set(dest, degrees.get(dest)+1);
                }
             }
@@ -240,8 +243,8 @@ public class CFG {
          // get the register from the stack
          register = regStack.pop().intValue();
 
-         // insert it back into the graph...
-
+         /* insert it back into the graph... */
+         
          // preview the next color
          String peakedColor = crayons.peak();
          
@@ -275,6 +278,8 @@ public class CFG {
             key.put(register, crayons.getSpill());
             // Spill
          }
+
+         crayons.reset();
       }
       
       key.put(0, "%g0");
@@ -302,7 +307,7 @@ public class CFG {
       }
       public String nextColor() {
          bound();
-         return colors[next++];
+         return colors[(next++)];
       }
       public String peak() {
          bound();
@@ -314,8 +319,13 @@ public class CFG {
       public int count() {
          return colors.length;
       }
+      
       private void bound() {
          if(next >= colors.length) next = 0;
+      }
+
+      private void reset() {
+         next = 0;
       }
    }
 }

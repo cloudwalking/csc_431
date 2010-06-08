@@ -8,6 +8,7 @@ public class Register extends InstrField {
    public Register(Integer val) { num = val; color = null; }
    public Integer getValue() { return num; }
    public String toString() { return (color != null) ? color : num.toString(); }
+   public String toString(boolean iloc) { return num.toString(); }
    public boolean equals(Object obj) {
       return (obj instanceof Register) 
          && this.getValue().equals(((Register)obj).getValue());

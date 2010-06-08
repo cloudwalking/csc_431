@@ -24,7 +24,7 @@ public class Instruction {
    
 /**
  * This constructor will be used for call and JumpI instructions.
- * And individual instrution labels, when needed.
+ * And individual instruction labels, when needed.
  */
    public Instruction(String opString, String target) {
       this.op = getOperator(opString);
@@ -235,6 +235,17 @@ instruction.
       return op + fields.toString();
    }
 
+   public String toString(boolean iloc) {
+      //return op + fields.toString() + " " + comment;
+      String fieldStrings = "";
+      for (InstrField f : fields) {
+         fieldStrings += f.toString(iloc) + ", ";
+      }
+      int end = fieldStrings.lastIndexOf(", ") > 0 ?
+         fieldStrings.lastIndexOf(", ") : fieldStrings.length();
+      return op + "\t" + fieldStrings.substring(0, end);
+   }
+
    public enum Operator {
       ADD,
       ADDI,
@@ -372,16 +383,12 @@ instruction.
           SparcOperator.nop;
       }
       else if (op == Operator.NEW) {
-         //determine address where struct will be stored;
-         //n++;
-         //%fp - n = address of struct;
-         //malloc
+         return getSparc(Operator.CALL) + "\t" + "malloc, 0" + "\n\t" +
+          "nop" + " " + comment;
       }
       else if (op == Operator.DEL) {
-         //get address of struct to be deleted
-         //delete struct at address
-         //flag as deleted?
-         //free
+         return getSparc(Operator.CALL) + "\t" + "free, 0" + "\n\t" +
+          "nop" + " " + comment;
       }
       else if (op == Operator.LOADI) {
          return "set" + "\t" + fields.toString() + " " + comment;
@@ -406,7 +413,8 @@ instruction.
          //replace %o5 with variable
          prepCall = "\t" + "mov" + "\t" + getDestinationRegister() +
           ", %o1" + "\n";
-         callScan = "\t" + "call" + "\t" + "printf, 0" + "\n";
+         callScan = "\t" + "call" + "\t" + "printf, 0" + "\n\t" +
+            "nop";
 
          return setUpper + setLower + prepCall + callScan;
       }
@@ -418,7 +426,8 @@ instruction.
          setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LPRL), %o0" + "\n";
          prepCall = "\t" + "mov" + "\t" + getDestinationRegister() +
           ", %o1" + "\n";
-         callScan = "\t" + "call" + "\t" + "printf, 0" + "\n";
+         callScan = "\t" + "call" + "\t" + "printf, 0" + "\n\t" +
+            "nop";
 
          return setUpper + setLower + prepCall + callScan;
       }
@@ -429,9 +438,14 @@ instruction.
          setUpper = "sethi" + "\t" + "%hi(.EV1LRD), %g1" + "\n";
          setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LRD), %o0" + "\n";
          prepCall = "\t" + "mov" + "\t" + "%o5, %o1" + "\n";
-         callScan = "\t" + "call" + "\t" + "scanf, 0" + "\n";
+         callScan = "\t" + "call" + "\t" + "scanf, 0" + "\n\t" +
+            "nop";
 
          return setUpper + setLower + prepCall + callScan;
+      }
+      else if (op == Operator.JUMPI) {
+         return getSparc(op) + "\t" + fields.toString() + " " + comment +
+          "nop";
       }
       return getSparc(op) + "\t" + fields.toString() + " " + comment;
    }
@@ -480,6 +494,7 @@ private class Label extends InstrField {
    public Label(String l) { name = l; }
    public String getValue() { return name; }
    public String toString() { return name; }
+   public String toString(boolean dontuseit) { return name; }
 }
 
 // Register now a public class.
@@ -492,6 +507,7 @@ private class Immediate extends InstrField {
    public Immediate(Integer value) { val = value; }
    public Integer getValue() { return val; }
    public String toString() { return val.toString(); }
+   public String toString(boolean iloc) { return val.toString(); }
 }
 
 }

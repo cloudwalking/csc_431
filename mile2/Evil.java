@@ -73,6 +73,11 @@ public class Evil
          RegTable regtable = new RegTable();
          blocks = cfgParser.program(stable, funtable, regtable);
          
+         if(_displayTypecheck) {
+            System.out.println("\n** RegTable **");
+            regtable.print();
+         }
+
          //System.out.println("regtable size: "+regtable.size());
          
          LinkedList<CFG> functions = new LinkedList<CFG>();
@@ -138,13 +143,13 @@ public class Evil
                e.printStackTrace();
             }
          }
-         /*
+/*
          for(Block b : blocks) {
             LinkedList<Block> revCFG = b.getTopo();
             LinkedList<LiveEntry> liveSet = revCFG.getFirst().getLiveSet(new LinkedList<LiveEntry>());
            System.out.println("\n"+liveSet);
          }
-         */
+*/
          if(_displayCFG) {
             for (Block block : blocks) {
                block.reedPrint(0, printSparc);

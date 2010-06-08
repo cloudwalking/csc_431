@@ -108,8 +108,8 @@ public class Block {
       }
       
       
-//      System.out.println("gen : " + gen);
-//      System.out.println("kill: " + kill);
+      //System.out.println("gen : " + gen);
+      //System.out.println("kill: " + kill);
       
        
       return liveout;
@@ -228,10 +228,16 @@ public class Block {
             return;
          }
       
+         boolean sparcDebug = true;
          // Print instructions, if we have them
          if(instrs.size() > 0) {
             for(Instruction i : instrs) {
                if (toSparc) {
+                  if (sparcDebug) {
+                     String tmpInstr = "!" + i.toString(true).replace("[", " ").replace("]", "\t");
+                     writer.write("\t" + tmpInstr + "\n");
+                     //System.out.println("\t" + tmpInstr);
+                  }
                   String tmpSparc = i.toSparc().replace("[", " ").replace("]", "\t");
                   //System.out.println("sparc instr to be written: " + tmpSparc);
                   writer.write("\t" + tmpSparc + "\n");
@@ -293,11 +299,11 @@ public class Block {
          System.out.println("\n");
          return;
       }
-      
-      //System.out.println(tabs+"gen : " + gen);
-      //System.out.println(tabs+"kill: " + kill);
-      //System.out.println(tabs+"live: " + liveout);
-      
+     /* 
+      System.out.println(tabs+"gen : " + gen);
+      System.out.println(tabs+"kill: " + kill);
+      System.out.println(tabs+"live: " + liveout);
+     */ 
       // Print instructions, if we have them
       if(instrs.size() > 0) {
          System.out.println(tabs+"instructions:");
