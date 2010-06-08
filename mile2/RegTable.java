@@ -1,46 +1,32 @@
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.LinkedList;
+import java.util.Arrays;
+import java.util.List;
 
 public class RegTable {
    private Hashtable<String, Integer> table;
    private Hashtable<Integer, String> reverse;
-   private int next;
-   private int zeroRegister;
-   private int returnRegister;
-   private int ccRegister;
-   private int immediateRegister;
-   private int outRegister;
-   private int argReg0, argReg1, argReg2, argReg3, argReg4, argReg5;
+   private SpecialRegister[] reserved;
+   int next;
    
    public RegTable() {
       table = new Hashtable<String, Integer>();
       reverse = new Hashtable<Integer, String>();
-      zeroRegister = 0;
-      returnRegister = 1;
-      ccRegister = 2;
-      immediateRegister = 3;
-      outRegister = 4;
-      argReg0 = 5; argReg1 = 6; argReg2 = 7; argReg3 = 8;
-       argReg4 = 9; argReg5 = 10;
+      reserved = SpecialRegister.values();
       
       // Next register to be given out
-      next = 11;
+      next = reserved.length;
    }
 
    public LinkedList<Integer> getSpecialRegisters() {
       LinkedList<Integer> returns = new LinkedList<Integer>();
-      returns.add(0);
-      returns.add(1);
-      returns.add(2);
-      returns.add(3);
-      returns.add(4);
-      returns.add(5);
-      returns.add(6);
-      returns.add(7);
-      returns.add(8);
-      returns.add(9);
-      returns.add(10);
+      
+      List<SpecialRegister> enums = Arrays.asList(reserved);
+      for(SpecialRegister reg : enums) {
+         returns.add(new Integer(reg.ordinal()));
+      }
+      
       return returns;
    }
    
@@ -90,23 +76,23 @@ public class RegTable {
    }
 
    public int getZeroRegister() {
-      return zeroRegister;
+      return SpecialRegister.zero.ordinal();
    }
    
    public int getReturnRegister() {
-      return returnRegister;
+      return SpecialRegister.ret.ordinal();
    }
    
    public int getImmRegister() {
-      return immediateRegister;
+      return SpecialRegister.immediate.ordinal();
    }
 
    public int getCCRegister() {
-      return ccRegister;
+      return SpecialRegister.conditionCode.ordinal();
    }
 
    public int getOutRegister() {
-      return outRegister;
+      return SpecialRegister.out.ordinal();
    }
 
    public int getArgRegister(int numArg) {
@@ -114,7 +100,15 @@ public class RegTable {
          System.err.println("not enough Arg Registers: must spill args");
          return -1;
       }
-      return numArg % 6 + 5;
+      return SpecialRegister.arg0.ordinal() + numArg;
+   }
+   
+   public int getInRegister(int numArg) {
+      if (numArg > 5) {
+         System.err.println("not enough Arg Registers: must spill args");
+         return -1;
+      }
+      return SpecialRegister.in0.ordinal() + numArg;
    }
    
    public void print() {
@@ -124,5 +118,25 @@ public class RegTable {
 
    public int size() {
       return next;
+   }
+
+   private enum SpecialRegister {
+      zero,
+      ret,
+      conditionCode,
+      immediate,
+      out,
+      arg0,
+      arg1,
+      arg2,
+      arg3,
+      arg4,
+      arg5,
+      in0,
+      in1,
+      in2,
+      in3,
+      in4,
+      in5
    }
 }
