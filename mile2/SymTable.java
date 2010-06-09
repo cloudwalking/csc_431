@@ -79,8 +79,8 @@ public class SymTable {
    
    public int getOffset(String field) {
       int offset = 0;
-      for(SymEntry symbol : table.values()) {
-         if(symbol.symbol.equals(field))
+      for(SymEntry sym : table.values()) {
+         if(sym.symbol.equals(field))
             break;
          offset++;
       }

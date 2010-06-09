@@ -401,6 +401,13 @@ instruction.
          return "set" + "\t" +
           fields.toString().replace("[", " ").replace("]", "\t") + " " + comment;
       }
+      else if (op == Operator.LOADAI) {
+         InstrField srcReg = fields.removeFirst();
+         InstrField offsetReg = fields.removeFirst();
+         InstrField destReg = getDestinationRegister();
+         return getSparc(op) + "\t" + "[" + srcReg + " + " +
+          offsetReg + "], " + destReg;
+      }
       else if (op == Operator.LABEL) {
          return "";
       }

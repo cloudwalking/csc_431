@@ -412,15 +412,13 @@ lvalue[int resultReg] returns [LinkedList<Instruction> instructions = new Linked
 @init { int reg = regTable.newRegister(); }
    : ^(DOT subIloc=subvalue[reg] fieldId=ID) {
       $instructions.addAll(0, $subIloc.instructions);
-
-//int offset = stable.getOffset(funtable.getType(currentFunction, currentStruct), $fieldId.text);
-int offset = 0;
-      // this offset seems to be off on line 'butterfly.a.i = 333;'
-      /*
-System.out.println("currentFunction: "+currentFunction+" currentStruct: "+currentStruct+" field: "+$fieldId.text);
-      */
+      int offset = stable.getOffset(currentStruct, $fieldId.text);
+      
       // store from mem to register
-      Instruction newInst = new Instruction("LOADAI", reg, offset, resultReg);
+      $instructions.add(new Instruction(
+           "LOADI", offset, regTable.getImmRegister()));
+           
+      Instruction newInst = new Instruction("LOADAI", reg, regTable.getImmRegister(), resultReg);
       newInst.setComment("lvalue dot: load member '"+$fieldId.text+"' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
       $instructions.add(newInst);
    }
@@ -429,8 +427,9 @@ System.out.println("currentFunction: "+currentFunction+" currentStruct: "+curren
         if (regTable.containsId(currentFunction + $id.text))
            varReg = regTable.lookupId(currentFunction + $id.text);
         else varReg = regTable.lookupId($id.text);
-        $instructions.add(new Instruction(
-         "MOV", varReg, resultReg));
+        Instruction newInst = new Instruction("MOV", varReg, resultReg);
+        newInst.setComment("lvalue id: move reg "+varReg+" (var "+$id.text+") to reg "+resultReg);
+        $instructions.add(newInst);
      }
    ;
 
@@ -439,23 +438,27 @@ subvalue[int resultReg] returns [LinkedList<Instruction> instructions =
 @init { int reg = regTable.newRegister(); }
    : ^(DOT sub=subvalue[reg] fizz=ID) {
       $instructions.addAll(0, $sub.instructions);
-      System.out.println($fizz.line + " currentFunction: " + currentFunction +
-       " currentStruct: " + currentStruct);
-      
-//int offset = stable.getOffset(funtable.getType(currentFunction, currentStruct), $fizz.text);
-int offset = 0;
 
-      Instruction newInst = new Instruction("LOADAI", reg, offset, resultReg);
+      int offset = stable.getOffset(currentStruct, $fizz.text);
+      
+      $instructions.add(new Instruction(
+           "LOADI", offset, regTable.getImmRegister()));
+           
+      Instruction newInst = new Instruction("LOADAI", reg, regTable.getImmRegister(), resultReg);
       newInst.setComment("subval dot: load member '" + $fizz.text +
        "' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
       $instructions.add(newInst);
+      
+      currentStruct = stable.getType(currentStruct, $fizz.text);
      }
    | id=ID {
-      currentStruct = $id.text;
-      // This gets the base struct address loaded into memory
-      Instruction newInst = new Instruction("LOADAI", 
-       regTable.lookupId(currentFunction+$id.text), 0, resultReg);
-      newInst.setComment("subvalue id: load pointer var '"+$id.text+"' from mem to reg "+resultReg);
+      // This is the base structure variable
+      currentStruct = funtable.getType(currentFunction, $id.text);
+      // Hack: take 'struct' off the front to get the raw type.
+      // struct and one space = 7 chars
+      currentStruct = currentStruct.substring(7);
+      
+      Instruction newInst = new Instruction("MOV", regTable.lookupId(currentFunction+$id.text), resultReg);
       $instructions.add(newInst);
      }
    ;
@@ -516,42 +519,6 @@ new LinkedList<Instruction>()]
         $instructions.add(new Instruction(
          "MOV" + movOp, regTable.getCCRegister(), regTable.getImmRegister(),
          resultReg));
-
-        /*// Do the comparison
-        newInst = new Instruction($op.text, regTable.getCCRegister(), 
-         trueLabel, falseLabel);
-        newInst.setComment("expression: branch true: '" + trueLabel +
-         "' false: '" + falseLabel + "'");
-        $instructions.add(newInst);*/
-
-        /*// If comparison is true
-        newInst = new Instruction("LABEL", trueLabel);
-        newInst.setComment("expression: TRUE branch label '"+trueLabel+"'");
-        $instructions.add(newInst);
-        // Set result register to true
-        newInst = new Instruction("LOADI", 1, resultReg);
-        newInst.setComment("expression: evaluated to true, setting resultReg " +
-         resultReg);
-        $instructions.add(newInst);
-        // Go to finish
-        newInst = new Instruction("JUMPI", doneLabel);
-        newInst.setComment("expression: done, move on '"+doneLabel+"'");
-        $instructions.add(newInst);
-
-        // Comparison was false
-        newInst = new Instruction("LABEL", falseLabel);
-        newInst.setComment("expression: FALSE branch label '" + falseLabel + "'");
-        $instructions.add(newInst);
-        // Set result register to false
-        newInst = new Instruction("LOADI", 0, resultReg);
-        newInst.setComment("expression: evaluated to false, setting resultReg " +
-         resultReg);
-        $instructions.add(newInst);
-        
-        // Finish
-        newInst = new Instruction("LABEL", doneLabel);
-        newInst.setComment("expression: done with comparison");
-        $instructions.add(newInst);*/
      }
 
    | ^(NEG {
@@ -583,17 +550,14 @@ new LinkedList<Instruction>()]
      }
 
    | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] fieldId=ID) {
-        // Load
-
-        int leftRegister = regTable.lookupId(currentFunction+$fieldId.text);
-        if(-1 == leftRegister) {
-             leftRegister = regTable.lookupId($fieldId.text);
-        }
-        int offset = 0; // set this offset somehow:
-
-//        offset=
+        // Current struct should be set in ID, below
+        int offset = stable.getOffset(currentStruct, $fieldId.text);
+        currentStruct = stable.getType(currentStruct, $fieldId.text);
+        
         $instructions.addAll(0, expr);
-        Instruction newInst = new Instruction("LOADAI", r1, offset, 
+        $instructions.add(new Instruction(
+           "LOADI", offset, regTable.getImmRegister()));
+        Instruction newInst = new Instruction("LOADAI", r1, regTable.getImmRegister(), 
           resultReg);
         newInst.setComment("dot: load from pointer '" + $fieldId.text +
          "' (reg " + r1 + "), store in reg " + resultReg);
@@ -620,12 +584,10 @@ new LinkedList<Instruction>()]
         Instruction newInst = new Instruction("MOV", srcRegister, resultReg);
         newInst.setComment("id: move reg "+srcRegister+" (var "+regTable.lookupRegister(srcRegister)+
          ") to reg "+resultReg);
-         
-        //Instruction newInst = new Instruction("LOADAI", targetRegister,
-         //regTable.getZeroRegister(), resultReg);
-        //newInst.setComment("id: load '" + currentFunction + $id.text +
-         //"' from mem to reg " + resultReg);
+
         $instructions.add(newInst);
+        
+        currentStruct = funtable.getType(currentFunction, $id.text);
      }
 
    | i=INTEGER {
