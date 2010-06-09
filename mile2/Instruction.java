@@ -368,12 +368,14 @@ instruction.
          fields.removeLast();
       }
       else if (op == Operator.CALL) {
-         return getSparc(op) + "\t" + fields.toString() + "\n\t" + "nop";
+         return getSparc(op) + "\t" +
+          fields.toString().replace("[", " ").replace("]", "\t") + "\n\t" + "nop";
       }
       else if (op == Operator.MOVEQ || op == Operator.MOVLT ||
        op == Operator.MOVGT || op == Operator.MOVNE || op == Operator.MOVLE ||
        op == Operator.MOVGE) {
-         return getSparc(op) + "\t" + fields.toString() + " " +
+         return getSparc(op) + "\t" +
+          fields.toString().replace("[", " ").replace("]", "\t") + " " +
           comment;
        }
       else if (op == Operator.CBREQ || op == Operator.CBRGE ||
@@ -381,8 +383,9 @@ instruction.
         op == Operator.CBRLT || op == Operator.CBRNE) {
          InstrField otherBranch = fields.removeLast();
          fields.removeFirst();
-         return getSparc(op) + "\t" + fields.toString() + " " + comment + "\n\t" +
-          SparcOperator.nop + "\n\t" +
+         return getSparc(op) + "\t" +
+          fields.toString().replace("[", " ").replace("]", "\t") + " " + comment +
+          "\n\t" + SparcOperator.nop + "\n\t" +
           SparcOperator.ba + "\t" + otherBranch + " " + comment + "\n\t" +
           SparcOperator.nop;
       }
@@ -395,7 +398,8 @@ instruction.
           "nop" + " " + comment;
       }
       else if (op == Operator.LOADI) {
-         return "set" + "\t" + fields.toString() + " " + comment;
+         return "set" + "\t" +
+          fields.toString().replace("[", " ").replace("]", "\t") + " " + comment;
       }
       else if (op == Operator.LABEL) {
          return "";
@@ -403,6 +407,9 @@ instruction.
       else if (op == Operator.SAVE) {
          //activation record = 88 bytes + locals
          return getSparc(op) + "\t" + "%sp, -800, %sp " + comment;
+      }
+      else if (op == Operator.RET) {
+         return getSparc(op) + "\n\t" + "restore";
       }
       else if (op == Operator.PRINT) {
          String setUpper, setLower, prepCall, callScan;
@@ -432,22 +439,26 @@ instruction.
          return setUpper + setLower + prepCall + callScan;
       }
       else if (op == Operator.READ) {
+         String prepRegister;
          String setUpper, setLower, prepCall, callScan;
 
+         prepRegister = "add" + "\t" + "%sp, %g0, " + getDestinationRegister() +
+          "\n\t" + "nop" + "\n";
 //get registers from allocator
-         setUpper = "sethi" + "\t" + "%hi(.EV1LRD), %g1" + "\n";
+         setUpper = "\t" + "sethi" + "\t" + "%hi(.EV1LRD), %g1" + "\n";
          setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LRD), %o0" + "\n";
-         prepCall = "\t" + "mov" + "\t" + "%o5, %o1" + "\n";
-         callScan = "\t" + "call" + "\t" + "scanf, 0" + "\n\t" +
-            "nop";
+         prepCall = "\t" + "mov" + "\t" + getDestinationRegister() +", %o1" + "\n";
+         callScan = "\t" + "call" + "\t" + "scanf, 0" + "\n\t" + "nop";
 
-         return setUpper + setLower + prepCall + callScan;
+         return prepRegister + setUpper + setLower + prepCall + callScan;
       }
       else if (op == Operator.JUMPI) {
-         return getSparc(op) + "\t" + fields.toString() + " " + comment +
-          "nop";
+         return getSparc(op) + "\t" +
+          fields.toString().replace("[", " ").replace("]", "\t") + " " + comment +
+          "\n\t" + "nop";
       }
-      return getSparc(op) + "\t" + fields.toString() + " " + comment;
+      return getSparc(op) + "\t" +
+       fields.toString().replace("[", " ").replace("]", "\t") + " " + comment;
    }
 
    public enum SparcOperator {

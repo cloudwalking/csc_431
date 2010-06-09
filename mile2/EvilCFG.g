@@ -93,9 +93,6 @@ function returns [Block entry = null]
         beginFunc.add(new Instruction("SAVE"));
 
         Block exit = new Block("#function-exit");
-        LinkedList<Instruction> endFunc = new LinkedList<Instruction>();
-        endFunc.add(new Instruction("RESTORE"));
-        exit.addILoc(endFunc);
      }
      iloc=parameters[$id.text] ^(RETTYPE return_type) declarations {
         beginFunc.addAll(iloc);

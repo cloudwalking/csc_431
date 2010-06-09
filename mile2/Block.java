@@ -238,7 +238,7 @@ public class Block {
                      writer.write("\t" + tmpInstr + "\n");
                      //System.out.println("\t" + tmpInstr);
                   }
-                  String tmpSparc = i.toSparc().replace("[", " ").replace("]", "\t");
+                  String tmpSparc = i.toSparc();
                   //System.out.println("sparc instr to be written: " + tmpSparc);
                   writer.write("\t" + tmpSparc + "\n");
                   //System.out.println("\t" + tmpSparc);
