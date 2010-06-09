@@ -21,6 +21,7 @@ options {
    int uniqueBlock = 0, uniqueStatement = 0;
    String currentFunction = "";
    String currentStruct = "";
+   boolean shouldStore = false;
 }
 
 program[StructTable structTable, FunTable fun, RegTable regs] returns
@@ -333,18 +334,33 @@ assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instru
         int r2 = regTable.newRegister(); }
    : ^(ASSIGN exp=expression[r1] leftIloc=lvalue[r2]) {
          $instructions.addAll(0, $leftIloc.instructions);
-         Register lvalReg = $instructions.getLast().getSourceRegisterList().getFirst();
+         Register lvalReg = null;
+         LinkedList<Register> memAddr = null;
+         if (!shouldStore) {
+            lvalReg =
+             $instructions.getLast().getSourceRegisterList().getFirst();
+         }
+         else {
+            memAddr = $instructions.getLast().getSourceRegisterList();
+         }
          $instructions.addAll(0, $exp.instructions);
 
          int offset = 0;
 
-         Instruction newInst = new Instruction("MOV", r1, r2);
-         //Instruction newInst = new Instruction("STAI", r1, r2, 0);
-         //newInst.setComment("store: save "+r1+" to memory ptr "+r2+" + offset "+offset);
-         $instructions.add(newInst);
-         $instructions.add(new Instruction(
-          "MOV", r2, lvalReg.getValue()));
+         Instruction newInst = null;
+         newInst = new Instruction("MOV", r1, r2);
 
+         $instructions.add(newInst);
+         if (!shouldStore) {
+            $instructions.add(new Instruction(
+             "MOV", r2, lvalReg.getValue()));
+         }
+         else {
+            $instructions.add(new Instruction(
+             "STAI", r2, memAddr.removeFirst().getValue(),
+             memAddr.removeFirst().getValue()));
+         }
+         shouldStore = false;
       }
    ;
 
@@ -411,6 +427,7 @@ LinkedList<Instruction>()]
 lvalue[int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int reg = regTable.newRegister(); }
    : ^(DOT subIloc=subvalue[reg] fieldId=ID) {
+      shouldStore = true;
       $instructions.addAll(0, $subIloc.instructions);
       int offset = stable.getOffset(currentStruct, $fieldId.text);
       

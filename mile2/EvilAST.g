@@ -392,13 +392,11 @@ expression [SymTable locals] returns [String t = null]
            System.err.println(" on line " + $fieldId.line);
            System.exit(1);
         }
-        if (!locals.containsStructType(structType)) {
-           if (!symtable.containsStructType(structType)) {
-              System.err.println("unexpected type: expected 'struct', found" +
-               " '" + structType + "' on line " + $fieldId.line);
+        if (!structTable.isDefined(structType)) {
+           System.err.println("unexpected type: expected 'struct', found" +
+           " '" + structType + "' on line " + $fieldId.line);
 
-              System.exit(1);
-           }
+           System.exit(1);
         }
 
         if(!structType.equals(SymTable.intType()) &&

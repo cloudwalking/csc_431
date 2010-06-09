@@ -408,6 +408,13 @@ instruction.
          return getSparc(op) + "\t" + "[" + srcReg + " + " +
           offsetReg + "], " + destReg;
       }
+      else if (op == Operator.STOREAI) {
+         InstrField srcReg = fields.removeFirst();
+         InstrField destReg = fields.removeFirst();
+         InstrField offsetReg = getDestinationRegister();
+         return getSparc(op) + "\t" + srcReg + ", [" + destReg + " + " +
+          offsetReg + "]";
+      }
       else if (op == Operator.LABEL) {
          return "";
       }

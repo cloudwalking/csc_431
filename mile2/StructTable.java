@@ -38,6 +38,12 @@ public class StructTable {
    }
 
    public boolean isDefined(String id) {
+      // Hack: take 'struct' off the front to get the raw type.
+      // struct and one space = 7 chars
+      if(id.contains("struct")) {
+         //id = id.substring(7);
+         id = id.replace("struct ", "");
+      }
       return structs != null && structs.containsKey(id);
    }
    
