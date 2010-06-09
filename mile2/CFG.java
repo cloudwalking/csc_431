@@ -274,7 +274,8 @@ public class CFG {
                }
             }
          }
-         if(tries == crayons.count() && bad) {
+         if(tries == crayons.count() || bad) {
+            System.out.println("Spilling reg "+register);
             key.put(register, crayons.getSpill());
             // Spill
          }
@@ -313,7 +314,9 @@ public class CFG {
    
    private class Crayons {
       String[] colors = {"%l0", "%l1", "%l2", "%l3", 
-                         "%l4", "%l5", "%l6", "%l7" };
+                         "%l4", "%l5", "%l6", "%l7",
+                         "%g2", "%g3"
+                        };
       int next;
       public Crayons() {
          next = 0;

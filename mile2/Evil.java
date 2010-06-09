@@ -94,7 +94,7 @@ public class Evil
                //System.out.println("calculating color");
             func.makeKey();
                //System.out.println("key size: "+func.getKey().size());
-               //System.out.println(func.getKey());
+               System.out.println(func.getKey());
                //System.out.println("coloring");
             func.color();
          }
