@@ -43,6 +43,10 @@ public class Block {
    public void addILoc(LinkedList instructions) {
       instrs.addAll(instructions);
    }
+   
+   public void setInstructionList(LinkedList<Instruction> newList) {
+      this.instrs = newList;
+   }
 
    public void addNext(Block childBlock) {
       successors.add(childBlock);

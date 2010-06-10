@@ -268,21 +268,24 @@ public class CFG {
                }
             }
          }
-         if(tries == crayons.count() || bad) {
-            //System.out.println("Spilling reg "+register);
-            //spill.add(register);
+         if(tries >= crayons.count() && bad) {
+            /* Spill */
+            // System.out.println("SPILLLLL");
+            // key.put(register, "SPILL");
             
             // Take it out of the queue
             int spillThis = pushOrder.removeFirst();
             spill.add(spillThis);
+            // go ahead and color this with the spill register
+            key.put(spillThis, crayons.getSpill());
             // Unconnect from the graph
             for(int i=0; i<size; i++) {
                if(interference.get(spillThis).get(i) == Edge.WHOLE_EDGE)
                   interference.get(spillThis).set(i, Edge.HALF_EDGE);
             }
             
-            regStack.clear();
             // Now we need to start coloring over.
+            regStack.clear();
             for(Integer x : pushOrder) {
                int i = x.intValue();
                regStack.push(i);
@@ -309,8 +312,65 @@ public class CFG {
       key.put(14, "%i3");
       key.put(15, "%i4");
       key.put(16, "%i5");
-
-      //return key;
+      key.put(17, "%fp");
+      key.put(18, "%sp");
+      key.put(19, "%g2");
+      key.put(20, "%g3");
+      
+      this.fixSpills();
+   }
+   
+   public void fixSpills() {
+      int location;
+      
+      if(this.spill.size() == 0) return;
+      
+      for(Block b : head.getTopo()) {
+         LinkedList<Instruction> newInstList = 
+            new LinkedList<Instruction>(b.getInstructionList());
+         location = 0;
+         System.out.println(b.getInstructionList().size());
+         for(Instruction instr : b.getInstructionList()) {
+            for(int register : this.getSpills()) {
+               
+               LinkedList<Integer> sources = new LinkedList<Integer>();
+               for(Register x : instr.getSourceRegisterList()) {
+                  sources.add(x.getValue());
+               }
+               
+               if(sources.size() > 0 && sources.contains(register)) {
+                  Instruction newInst;
+                  
+                  newInst= new Instruction("LOADI", 
+                   spill.indexOf(register) * -4 + 400, regTable.getImmRegister2());
+                  newInstList.add(location++, newInst);
+                  
+                  newInst = new Instruction("LOADAI", 
+                     regTable.getFramePointer(), regTable.getImmRegister2(),
+                      regTable.getSpillRegister());
+                  newInst.setComment("SPILL"+register);
+                  newInstList.add(location++, newInst);
+               }
+               if(null != instr.getDestinationRegister() &&
+                  register == instr.getDestinationRegister().getValue()) {
+                  Instruction newInst;
+                  
+                  newInst= new Instruction("LOADI", 
+                   spill.indexOf(instr.getDestinationRegister()) * -4 + 400,
+                    regTable.getImmRegister2());
+                  newInstList.add(1+location++, newInst);
+                  
+                  newInst = new Instruction("STAI",
+                   regTable.getSpillRegister(), regTable.getFramePointer(),
+                    regTable.getImmRegister2());
+                  newInst.setComment("SPILL "+register);
+                  newInstList.add(1+location++, newInst);
+               }
+            }
+            location++;
+         }
+         b.setInstructionList(newInstList);
+      }
    }
    
    public void color() {
@@ -327,8 +387,7 @@ public class CFG {
    
    private class Crayons {
       String[] colors = {"%l0", "%l1", "%l2", "%l3", 
-                         "%l4", "%l5", "%l6", "%l7",
-                         "%g2", "%g3"
+                         "%l4", "%l5", "%l6", "%l7"
                         };
       int next;
       public Crayons() {
@@ -343,7 +402,7 @@ public class CFG {
          return colors[next];
       }
       public String getSpill() {
-         return "SPILL";
+         return "%g3";
       }
       public int count() {
          return colors.length;

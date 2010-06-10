@@ -110,6 +110,22 @@ public class RegTable {
       }
       return SpecialRegister.in0.ordinal() + numArg;
    }
+
+   public int getFramePointer() {
+      return SpecialRegister.frameP.ordinal();
+   }
+
+   public int getStackPointer() {
+      return SpecialRegister.stackP.ordinal();
+   }
+
+   public int getImmRegister2() {
+      return SpecialRegister.imm2.ordinal();
+   }
+
+   public int getSpillRegister() {
+      return SpecialRegister.spill.ordinal();
+   }
    
    public void print() {
       System.out.println(table);
@@ -137,6 +153,10 @@ public class RegTable {
       in2,
       in3,
       in4,
-      in5
+      in5,
+      frameP,
+      stackP,
+      imm2,
+      spill
    }
 }
