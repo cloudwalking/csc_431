@@ -11,6 +11,7 @@ public class CFG {
    private ArrayList<Integer> degrees;
    private Stack<Integer> regStack;
    private RegTable regTable;
+   private LinkedList<Integer> spill;
    int size;
 
    private enum Edge {
@@ -27,6 +28,7 @@ public class CFG {
       this.degrees = new ArrayList<Integer>(size);
       this.regStack = new Stack<Integer>();
       this.key = new Hashtable();
+      this.spill = new LinkedList<Integer>();
       
       this.head.finish(); // tells blocks to make gen/kill sets
       
@@ -196,7 +198,6 @@ public class CFG {
     * Returns a hashmap associating register # to color.
     */
    public void makeKey() {
-      // get most constrained
       Crayons crayons = new Crayons();
       LinkedList<Integer> constrained = new LinkedList<Integer>(degrees);
       LinkedList<Integer> pushOrder = new LinkedList<Integer>();
@@ -222,17 +223,10 @@ public class CFG {
          }
       }
       
-      // Get off my lawn.
       for(Integer x : pushOrder) {
          int i = x.intValue();
          regStack.push(i);
       }
-      
-      //System.out.println("register order: " + regStack);
-      for(int i : regStack) {
-         //System.out.print(i+":"+degrees.get(i)+" ");
-      }
-      System.out.print("\n");
       
       int register, tries;
       boolean bad;
@@ -275,9 +269,24 @@ public class CFG {
             }
          }
          if(tries == crayons.count() || bad) {
-            System.out.println("Spilling reg "+register);
-            key.put(register, crayons.getSpill());
-            // Spill
+            //System.out.println("Spilling reg "+register);
+            //spill.add(register);
+            
+            // Take it out of the queue
+            int spillThis = pushOrder.removeFirst();
+            spill.add(spillThis);
+            // Unconnect from the graph
+            for(int i=0; i<size; i++) {
+               if(interference.get(spillThis).get(i) == Edge.WHOLE_EDGE)
+                  interference.get(spillThis).set(i, Edge.HALF_EDGE);
+            }
+            
+            regStack.clear();
+            // Now we need to start coloring over.
+            for(Integer x : pushOrder) {
+               int i = x.intValue();
+               regStack.push(i);
+            }
          }
 
          crayons.reset();
@@ -310,6 +319,10 @@ public class CFG {
    
    public Hashtable getKey() {
       return this.key;
+   }
+   
+   public LinkedList<Integer> getSpills() {
+      return this.spill;
    }
    
    private class Crayons {
