@@ -14,6 +14,14 @@ public class SymTable {
    public SymTable() {
       table = new LinkedHashMap<String, SymEntry>();
    }
+
+   public SymTable(SymTable symtable) {
+      table = new LinkedHashMap<String, SymEntry>(symtable.getTable());
+   }
+
+   public LinkedHashMap<String, SymEntry> getTable() {
+      return table;
+   }
    
    public boolean insertSymbol(String symbol, String type) {
       if(null != table.get(symbol))
@@ -31,6 +39,8 @@ public class SymTable {
    }
    
    public String getType(String symbol) {
+//      System.out.println("getValue for sym: "+symbol);
+//      System.out.println(table);
       return ((SymEntry)table.get(symbol)).getType();
    }
    

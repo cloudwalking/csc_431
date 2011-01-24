@@ -1,6 +1,16 @@
 import java.util.LinkedList;
 import java.util.Hashtable;
 
+//////////////
+//////////////
+//////////////
+/* This single class for Instructions was a terrible idea. */
+//////////////
+//////////////
+//////////////
+//////////////
+
+
 /**
  * Intermediate code, 4-tuple
  * http://en.wikipedia.org/wiki/Three_address_code
@@ -52,14 +62,27 @@ falseTarget) {
 
 /**
  * This constructor will be used for loadi, and new instructions.
+ * I found out the hard way that it's also used for more than just loadi and new.
  */
    public Instruction(String opString, int imm, int destReg) {
       this.op = getOperator(opString);
       if (opString.endsWith("I") || opString.endsWith("i")) {
          fields.add(new Immediate(imm));
       }
+      else if (opString.equals("NEW")) {
+         //System.out.println("NEW inst: "+imm+", "+destReg);
+         fields.add(new Immediate(imm));
+      }
       else fields.add(new Register(imm));
       fields.add(new Register(destReg));
+   }
+
+   /* for load w/ spills */
+   public Instruction(String opString, Register src, int imm, Register dest) {
+      this.op = getOperator(opString);
+      fields.add(src);
+      fields.add(new Immediate(imm));
+      fields.add(dest);
    }
    
 /**
@@ -72,11 +95,37 @@ instruction.
    public Instruction(String opString, int srcReg1, int srcReg2, int destReg) 
 {
       this.op = getOperator(opString);
+      
       fields.add(new Register(srcReg1));
-      fields.add(new Register(srcReg2));
-      fields.add(new Register(destReg));
+      
+      if(opString.equals("LOADAI"))
+         fields.add(new Immediate(srcReg2));
+      else
+         fields.add(new Register(srcReg2));
+      
+      if(opString.equals("STAI"))
+         fields.add(new Immediate(destReg));
+      else
+         fields.add(new Register(destReg));
    }
-   
+  
+/**
+  * Use this for stai (st)
+  */
+public Instruction(String opString, Register srcReg1, Register srcReg2, int imm) {
+   this.op = getOperator(opString);
+   fields.add(srcReg1);
+   fields.add(srcReg2);
+   fields.add(new Immediate(imm));
+}
+
+/*
+public Instruction(String opString, Register srcReg, int destReg) {
+   this.op = getOperator(opString);
+   fields.add(srcReg);
+   fields.add(new Register(destReg));
+}
+*/
    public void setComment(String comment) {
       this.comment = "\t!"+comment;
    }
@@ -85,6 +134,14 @@ instruction.
       fields.add(new Label(target));
    }
    
+   public Immediate getImmediateRegister() {
+      for(int i=0; i<fields.size(); i++) {
+         if(fields.get(i) instanceof Immediate)
+            return (Immediate)fields.get(i);
+      }
+      return null;
+   }
+
    public Register getDestinationRegister() {
 /*
       for(int i = fields.size() - 1; i >= 0; i--) {
@@ -105,11 +162,24 @@ instruction.
             returns.add((Register)  field);
          }
       }
-      if(returns.size() > 0)
+      if(returns.size() > 0 && this.op != Operator.STOREAI)
          returns.removeLast();
       return returns;
    }
-   
+  
+   public int countUncoloredRegisters() {
+      int count = 0;
+      for(InstrField field : fields) {
+         if(field instanceof Register) {
+            if(((Register)field).getColor() == null) {
+               //System.out.println("null color");
+               count++;
+            }
+         }
+      }
+      return count;
+   }
+
    public void reregister(Hashtable key) {
       for(InstrField field : fields) {
          if(field instanceof Register) {
@@ -117,6 +187,19 @@ instruction.
             //if (key.get(r) == null) System.out.println("SPILLL: " + r);
             String color = (String)key.get(r);
             ((Register)field).setColor(color);
+         }
+      }
+   }
+
+   // change register numbers based on what color they are. mappings are 
+   // made in the given hashtable.
+   public void uncolor(Hashtable key) {
+      for(InstrField field : fields) {
+         if(field instanceof Register) {
+            String color = ((Register)field).getColor();
+            Integer newVal = (Integer)key.get(color);
+            ((Register)field).setNum(newVal);
+            ((Register)field).setColor(null);
          }
       }
    }
@@ -390,15 +473,30 @@ instruction.
           SparcOperator.nop;
       }
       else if (op == Operator.NEW) {
-         return getSparc(Operator.CALL) + "\t" + "malloc, 0" + "\n\t" +
+         /*return getSparc(Operator.CALL) + "\t" + "malloc, 0" + "\n\t" +
           "nop" + " " + comment;
+          */
+         //System.out.println("NEW inst, fields: "+fields);
+         return getSparc(Operator.MOV) + "\t" + fields.removeFirst() + ", %o0" + "\n\t" +
+                getSparc(Operator.CALL) + "\t" + "malloc" + "\n\t" +
+                "nop";
+                //getSparc(Operator.MOV) + "\t" + "%o0," + fields.removeFirst() + "\n\t";
       }
       else if (op == Operator.DEL) {
          return getSparc(Operator.CALL) + "\t" + "free, 0" + "\n\t" +
           "nop" + " " + comment;
       }
+      // try this with negative numbers, doesn't work.
+      // changing from set to mov.
+      // then changed to be smart: positives are set, negatives are mov. wont work on big negatives.
       else if (op == Operator.LOADI) {
-         return "set" + "\t" +
+         String operation = "set";
+         if(fields.getFirst() != null && 
+               fields.getFirst() instanceof Immediate &&
+               ((Integer)fields.getFirst().getValue()).intValue() < 0) {
+            operation = "mov";
+         }
+         return operation + "\t" +
           fields.toString().replace("[", " ").replace("]", "\t") + " " + comment;
       }
       else if (op == Operator.LOADAI) {
@@ -411,7 +509,11 @@ instruction.
       else if (op == Operator.STOREAI) {
          InstrField srcReg = fields.removeFirst();
          InstrField destReg = fields.removeFirst();
+         // use immedate register for spilling, destination register for not spilling.
+         // this is a bug I haven't fixed.
          InstrField offsetReg = getDestinationRegister();
+         if(null == offsetReg)
+            offsetReg = getImmediateRegister();
          return getSparc(op) + "\t" + srcReg + ", [" + destReg + " + " +
           offsetReg + "]";
       }
@@ -461,10 +563,25 @@ instruction.
 //get registers from allocator
          setUpper = "\t" + "sethi" + "\t" + "%hi(.EV1LRD), %g1" + "\n";
          setLower = "\t" + "or" + "\t" + "%g1, %lo(.EV1LRD), %o0" + "\n";
-         prepCall = "\t" + "mov" + "\t" + getDestinationRegister() +", %o1" + "\n";
-         callScan = "\t" + "call" + "\t" + "scanf, 0" + "\n\t" + "nop";
+         
+         /*
+         // adding this store because I think read is broken otherwise.
+         // learned this from eric
+         String storeSetUpper = "\t sethi %hi(readplz), %o5\n";
+         String storeSetLower = "\t or %o5, %lo(readplz), %o5\n";
+         String store = "st " + getDestinationRegister() + ", [%o5]\n";
+         */
+         
+         // I think this is wrong, we need to move the address of the register rather than the register.
+         //prepCall = "\t" + "mov" + "\t" + getDestinationRegister() +", %o1" + "\n";
+         prepCall = "\t" + "set readplz, %o1 "  + "\n";
+         // since the scan is stored in readplz, move it back to the dest register
+         String finish = "\t" + "ld [%o1], " + getDestinationRegister() + "\n";
+         
+         callScan = "\t" + "call" + "\t" + "scanf, 0" + "\n\t" + "nop\n";
 
-         return prepRegister + setUpper + setLower + prepCall + callScan;
+         //return prepRegister + setUpper + setLower + storeSetUpper + storeSetLower + store  + prepCall + callScan;
+         return prepRegister + setUpper + setLower + prepCall + callScan + finish;
       }
       else if (op == Operator.JUMPI) {
          return getSparc(op) + "\t" +

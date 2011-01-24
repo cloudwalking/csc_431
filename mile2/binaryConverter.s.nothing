@@ -1,0 +1,487 @@
+	.file	"binaryConverter.ev"
+	.section	".rodata"
+	.align	8
+.EV1LPR:
+	.asciz	"%d "
+	.align	8
+.EV1LPRL:
+	.asciz	"%d\n"
+	.align	8
+.EV1LRD:
+	.asciz	"%d"
+	.align	8
+READLOL:
+	.common readplz,4,4
+	.section	".text"
+	.align	4
+	.global	main
+	.type	main, #function
+	.proc	04
+!#function-entry:
+main:
+	!SAVE	
+	save	%sp, -800, %sp 
+ !#function-body:
+	!MOV	20, 17
+	mov	 %l4, %l1	 	!lvalue id: move reg 99 (var number) to reg 101
+	!READ	17
+	add	%sp, %g0, %l1
+	nop
+	sethi	%hi(.EV1LRD), %g1
+	or	%g1, %lo(.EV1LRD), %o0
+	set readplz, %o1 
+	call	scanf, 0
+	nop
+	ld [%o1], %l1
+
+	!MOV	17, 20
+	mov	 %l1, %l4	 
+	!MOV	20, 17
+	mov	 %l4, %l1	 	!id: move reg 99 (var mainnumber) to reg 105
+	!STOREOUTARGUMENT	17, 5
+	mov	 %l1, %o0	 	!argument: store out param from reg 105to register outReg 1
+	!CALL	convertToDecimal
+	call	 convertToDecimal	
+	nop
+	!MOV	5, 17
+	mov	 %o0, %l1	 
+	!MOV	20, 18
+	mov	 %l4, %l2	 	!lvalue id: move reg 99 (var number) to reg 104
+	!MOV	17, 18
+	mov	 %l1, %l2	 
+	!MOV	18, 20
+	mov	 %l2, %l4	 
+	!MOV	20, 17
+	mov	 %l4, %l1	 	!id: move reg 99 (var mainnumber) to reg 110
+	!MOV	20, 18
+	mov	 %l4, %l2	 	!id: move reg 99 (var mainnumber) to reg 109
+	!MULT	18, 17, 17
+	smul	 %l2, %l1, %l1	 	!expression: reg 109 (var null) * 110 in reg 107 (var null)
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!lvalue id: move reg 100 (var waitTime) to reg 108
+	!MOV	17, 18
+	mov	 %l1, %l2	 
+	!MOV	18, 19
+	mov	 %l2, %l3	 
+ !#while-guard:
+.S12:
+	!LOADI	0, 17
+	mov	 0, %l1	 	!int: reg 114 gets val 0
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!id: move reg 100 (var mainwaitTime) to reg 113
+	!LOADI	1, 3
+	mov	 1, %g1	 
+	!MOV	0, 21
+	mov	 %g0, %l5	 
+	!COMP	18, 17, 2
+	cmp	 %l2, %l1	 	!expression: compare: reg 113 (var null) to 114 (var null), store in cc-reg
+	!MOVGT	2, 3, 21
+	movg	 %icc, %g1, %l5	 
+	!LOADI	1, 3
+	mov	 1, %g1	 	!while: set immediate 1 (true)
+	!COMP	21, 3, 2
+	cmp	 %l5, %g1	 	!while: compare guard result (reg 112) to true
+	!CBREQ	2, .S13, .S14
+	be	 .S13	 	!while: branch true: '.S13' false: '.S14'
+	nop
+	ba	.S14 	!while: branch true: '.S13' false: '.S14'
+	nop
+ .S13:
+	!MOV	19, 17
+	mov	 %l3, %l1	 	!id: move reg 100 (var mainwaitTime) to reg 115
+	!STOREOUTARGUMENT	17, 5
+	mov	 %l1, %o0	 	!argument: store out param from reg 115to register outReg 1
+	!CALL	wait
+	call	 wait	
+	nop
+	!LOADI	1, 17
+	mov	 1, %l1	 	!int: reg 119 gets val 1
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!id: move reg 100 (var mainwaitTime) to reg 118
+	!SUB	18, 17, 17
+	sub	 %l2, %l1, %l1	 	!expression: reg 118 (var null) - 119 in reg 116 (var null)
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!lvalue id: move reg 100 (var waitTime) to reg 117
+	!MOV	17, 18
+	mov	 %l1, %l2	 
+	!MOV	18, 19
+	mov	 %l2, %l3	 
+	!JUMPI	.S12
+	ba	 .S12	 	!while: jump back to guard
+	nop
+ .S14:
+	!MOV	20, 16
+	mov	 %l4, %l0	 	!id: move reg 99 (var mainnumber) to reg 121
+	!PRINTLN	16
+	sethi	%hi(.EV1LPRL), %g1
+	or	%g1, %lo(.EV1LPRL), %o0
+	mov	%l0, %o1
+	call	printf, 0
+	nop
+	!LOADI	0, 10
+	mov	 0, %i0	 	!int: reg 4 gets val 0
+	!RET	
+	ret
+	restore
+ !#function-exit:
+ 	.section	".text"
+	.align	4
+	.global	convertToDecimal
+	.type	convertToDecimal, #function
+	.proc	04
+!#function-entry:
+convertToDecimal:
+	!SAVE	
+	save	%sp, -800, %sp 
+	!STOREINARGUMENT	10, 19
+	mov	 %i0, %l3	 
+ !#function-body:
+	!LOADI	0, 20
+	mov	 0, %l4	 	!int: reg 92 gets val 0
+	!MOV	18, 18
+	mov	 %l2, %l2	 	!lvalue id: move reg 90 (var recursiveDepth) to reg 93
+	!MOV	20, 18
+	mov	 %l4, %l2	 
+	!MOV	18, 18
+	mov	 %l2, %l2	 
+	!LOADI	0, 20
+	mov	 0, %l4	 	!int: reg 95 gets val 0
+	!MOV	17, 17
+	mov	 %l1, %l1	 	!lvalue id: move reg 91 (var decimalSum) to reg 96
+	!MOV	20, 17
+	mov	 %l4, %l1	 
+	!MOV	17, 17
+	mov	 %l1, %l1	 
+	!MOV	19, 19
+	mov	 %l3, %l3	 	!id: move reg 89 (var convertToDecimalbinaryNum) to reg 98
+	!STOREOUTARGUMENT	19, 5
+	mov	 %l3, %o0	 	!argument: store out param from reg 98to register outReg 1
+	!MOV	17, 19
+	mov	 %l1, %l3	 	!id: move reg 91 (var convertToDecimaldecimalSum) to reg 98
+	!STOREOUTARGUMENT	19, 6
+	mov	 %l3, %o1	 	!argument: store out param from reg 98to register outReg 2
+	!MOV	18, 19
+	mov	 %l2, %l3	 	!id: move reg 90 (var convertToDecimalrecursiveDepth) to reg 98
+	!STOREOUTARGUMENT	19, 7
+	mov	 %l3, %o2	 	!argument: store out param from reg 98to register outReg 3
+	!CALL	recursiveDecimalSum
+	call	 recursiveDecimalSum	
+	nop
+	!MOV	5, 10
+	mov	 %o0, %i0	 
+	!RET	
+	ret
+	restore
+ !#function-exit:
+ 	.section	".text"
+	.align	4
+	.global	recursiveDecimalSum
+	.type	recursiveDecimalSum, #function
+	.proc	04
+!#function-entry:
+recursiveDecimalSum:
+	!SAVE	
+	save	%sp, -800, %sp 
+	!STOREINARGUMENT	10, 20
+	mov	 %i0, %l4	 
+	!STOREINARGUMENT	11, 22
+	mov	 %i1, %l6	 
+	!STOREINARGUMENT	12, 19
+	mov	 %i2, %l3	 
+ !#function-body:
+ !#if-guard:
+	!LOADI	0, 18
+	mov	 0, %l2	 	!int: reg 56 gets val 0
+	!MOV	20, 21
+	mov	 %l4, %l5	 	!id: move reg 48 (var recursiveDecimalSumbinaryNum) to reg 55
+	!LOADI	1, 3
+	mov	 1, %g1	 
+	!MOV	0, 23
+	mov	 %g0, %l7	 
+	!COMP	21, 18, 2
+	cmp	 %l5, %l2	 	!expression: compare: reg 55 (var null) to 56 (var null), store in cc-reg
+	!MOVGT	2, 3, 23
+	movg	 %icc, %g1, %l7	 
+	!LOADI	1, 3
+	mov	 1, %g1	 
+	!COMP	23, 3, 2
+	cmp	 %l7, %g1	 	!if: compare guard result (reg 54) to true
+	!CBREQ	2, .S6, .S7
+	be	 .S6	 	!if: branch true: '.S6' false: '.S7'
+	nop
+	ba	.S7 	!if: branch true: '.S6' false: '.S7'
+	nop
+ .S6:
+	!LOADI	2, 18
+	mov	 2, %l2	 	!int: reg 57 gets val 2
+	!MOV	17, 17
+	mov	 %l1, %l1	 	!lvalue id: move reg 52 (var base) to reg 58
+	!MOV	18, 17
+	mov	 %l2, %l1	 
+	!MOV	17, 17
+	mov	 %l1, %l1	 
+	!LOADI	10, 18
+	mov	 10, %l2	 	!int: reg 63 gets val 10
+	!MOV	20, 21
+	mov	 %l4, %l5	 	!id: move reg 48 (var recursiveDecimalSumbinaryNum) to reg 62
+	!DIV	21, 18, 18
+	sdiv	 %l5, %l2, %l2	 	!expression: reg 62 (var null) / 63 in reg 60 (var null)
+	!MOV	24, 21
+	mov	 %g2, %l5	 	!lvalue id: move reg 51 (var tempNum) to reg 61
+	!MOV	18, 21
+	mov	 %l2, %l5	 
+	!MOV	21, 24
+	mov	 %l5, %g2	 
+	!LOADI	10, 18
+	mov	 10, %l2	 	!int: reg 68 gets val 10
+	!MOV	24, 21
+	mov	 %g2, %l5	 	!id: move reg 51 (var recursiveDecimalSumtempNum) to reg 67
+	!MULT	21, 18, 18
+	smul	 %l5, %l2, %l2	 	!expression: reg 67 (var null) * 68 in reg 65 (var null)
+	!MOV	24, 21
+	mov	 %g2, %l5	 	!lvalue id: move reg 51 (var tempNum) to reg 66
+	!MOV	18, 21
+	mov	 %l2, %l5	 
+	!MOV	21, 24
+	mov	 %l5, %g2	 
+	!MOV	24, 18
+	mov	 %g2, %l2	 	!id: move reg 51 (var recursiveDecimalSumtempNum) to reg 73
+	!MOV	20, 21
+	mov	 %l4, %l5	 	!id: move reg 48 (var recursiveDecimalSumbinaryNum) to reg 72
+	!SUB	21, 18, 18
+	sub	 %l5, %l2, %l2	 	!expression: reg 72 (var null) - 73 in reg 70 (var null)
+	!MOV	24, 21
+	mov	 %g2, %l5	 	!lvalue id: move reg 51 (var tempNum) to reg 71
+	!MOV	18, 21
+	mov	 %l2, %l5	 
+	!MOV	21, 24
+	mov	 %l5, %g2	 
+ !#if-guard:
+	!LOADI	1, 18
+	mov	 1, %l2	 	!int: reg 77 gets val 1
+	!MOV	24, 21
+	mov	 %g2, %l5	 	!id: move reg 51 (var recursiveDecimalSumtempNum) to reg 76
+	!LOADI	1, 3
+	mov	 1, %g1	 
+	!MOV	0, 23
+	mov	 %g0, %l7	 
+	!COMP	21, 18, 2
+	cmp	 %l5, %l2	 	!expression: compare: reg 76 (var null) to 77 (var null), store in cc-reg
+	!MOVEQ	2, 3, 23
+	move	 %icc, %g1, %l7	 
+	!LOADI	1, 3
+	mov	 1, %g1	 
+	!COMP	23, 3, 2
+	cmp	 %l7, %g1	 	!if: compare guard result (reg 75) to true
+	!CBREQ	2, .S9, .S10
+	be	 .S9	 	!if: branch true: '.S9' false: '.S10'
+	nop
+	ba	.S10 	!if: branch true: '.S9' false: '.S10'
+	nop
+ .S9:
+	!MOV	17, 17
+	mov	 %l1, %l1	 	!id: move reg 52 (var recursiveDecimalSumbase) to reg 82
+	!STOREOUTARGUMENT	17, 5
+	mov	 %l1, %o0	 	!argument: store out param from reg 82to register outReg 1
+	!MOV	19, 17
+	mov	 %l3, %l1	 	!id: move reg 50 (var recursiveDecimalSumrecursiveDepth) to reg 82
+	!STOREOUTARGUMENT	17, 6
+	mov	 %l1, %o1	 	!argument: store out param from reg 82to register outReg 2
+	!CALL	power
+	call	 power	
+	nop
+	!MOV	5, 17
+	mov	 %o0, %l1	 
+	!MOV	22, 18
+	mov	 %l6, %l2	 	!id: move reg 49 (var recursiveDecimalSumdecimalSum) to reg 80
+	!ADD	18, 17, 17
+	add	 %l2, %l1, %l1	 	!expression: reg 80 (var null) + 81 in reg 78 (var null)
+	!MOV	22, 18
+	mov	 %l6, %l2	 	!lvalue id: move reg 49 (var decimalSum) to reg 79
+	!MOV	17, 18
+	mov	 %l1, %l2	 
+	!MOV	18, 22
+	mov	 %l2, %l6	 
+	!JUMPI	.S11
+	ba	 .S11	 	!then: jump to #end-if '.S11'
+	nop
+ .S11:
+.S10:
+	!LOADI	10, 17
+	mov	 10, %l1	 	!int: reg 86 gets val 10
+	!MOV	20, 18
+	mov	 %l4, %l2	 	!id: move reg 48 (var recursiveDecimalSumbinaryNum) to reg 85
+	!DIV	18, 17, 17
+	sdiv	 %l2, %l1, %l1	 	!expression: reg 85 (var null) / 86 in reg 84 (var null)
+	!STOREOUTARGUMENT	17, 5
+	mov	 %l1, %o0	 	!argument: store out param from reg 84to register outReg 1
+	!MOV	22, 17
+	mov	 %l6, %l1	 	!id: move reg 49 (var recursiveDecimalSumdecimalSum) to reg 84
+	!STOREOUTARGUMENT	17, 6
+	mov	 %l1, %o1	 	!argument: store out param from reg 84to register outReg 2
+	!LOADI	1, 17
+	mov	 1, %l1	 	!int: reg 88 gets val 1
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!id: move reg 50 (var recursiveDecimalSumrecursiveDepth) to reg 87
+	!ADD	18, 17, 17
+	add	 %l2, %l1, %l1	 	!expression: reg 87 (var null) + 88 in reg 84 (var null)
+	!STOREOUTARGUMENT	17, 7
+	mov	 %l1, %o2	 	!argument: store out param from reg 84to register outReg 3
+	!CALL	recursiveDecimalSum
+	call	 recursiveDecimalSum	
+	nop
+	!MOV	5, 10
+	mov	 %o0, %i0	 
+	!RET	
+	ret
+	restore
+	!JUMPI	.S8
+	ba	 .S8	 	!then: jump to #end-if '.S8'
+	nop
+ .S8:
+.S7:
+	!MOV	22, 10
+	mov	 %l6, %i0	 	!id: move reg 49 (var recursiveDecimalSumdecimalSum) to reg 4
+	!RET	
+	ret
+	restore
+ !#function-exit:
+ 	.section	".text"
+	.align	4
+	.global	power
+	.type	power, #function
+	.proc	04
+!#function-entry:
+power:
+	!SAVE	
+	save	%sp, -800, %sp 
+	!STOREINARGUMENT	10, 17
+	mov	 %i0, %l1	 
+	!STOREINARGUMENT	11, 21
+	mov	 %i1, %l5	 
+ !#function-body:
+	!LOADI	1, 18
+	mov	 1, %l2	 	!int: reg 32 gets val 1
+	!MOV	20, 19
+	mov	 %l4, %l3	 	!lvalue id: move reg 31 (var product) to reg 33
+	!MOV	18, 19
+	mov	 %l2, %l3	 
+	!MOV	19, 20
+	mov	 %l3, %l4	 
+ !#while-guard:
+.S3:
+	!LOADI	0, 18
+	mov	 0, %l2	 	!int: reg 37 gets val 0
+	!MOV	21, 19
+	mov	 %l5, %l3	 	!id: move reg 30 (var powerexponent) to reg 36
+	!LOADI	1, 3
+	mov	 1, %g1	 
+	!MOV	0, 22
+	mov	 %g0, %l6	 
+	!COMP	19, 18, 2
+	cmp	 %l3, %l2	 	!expression: compare: reg 36 (var null) to 37 (var null), store in cc-reg
+	!MOVGT	2, 3, 22
+	movg	 %icc, %g1, %l6	 
+	!LOADI	1, 3
+	mov	 1, %g1	 	!while: set immediate 1 (true)
+	!COMP	22, 3, 2
+	cmp	 %l6, %g1	 	!while: compare guard result (reg 35) to true
+	!CBREQ	2, .S4, .S5
+	be	 .S4	 	!while: branch true: '.S4' false: '.S5'
+	nop
+	ba	.S5 	!while: branch true: '.S4' false: '.S5'
+	nop
+ .S4:
+	!MOV	17, 18
+	mov	 %l1, %l2	 	!id: move reg 29 (var powerbase) to reg 41
+	!MOV	20, 19
+	mov	 %l4, %l3	 	!id: move reg 31 (var powerproduct) to reg 40
+	!MULT	19, 18, 18
+	smul	 %l3, %l2, %l2	 	!expression: reg 40 (var null) * 41 in reg 38 (var null)
+	!MOV	20, 19
+	mov	 %l4, %l3	 	!lvalue id: move reg 31 (var product) to reg 39
+	!MOV	18, 19
+	mov	 %l2, %l3	 
+	!MOV	19, 20
+	mov	 %l3, %l4	 
+	!LOADI	1, 18
+	mov	 1, %l2	 	!int: reg 46 gets val 1
+	!MOV	21, 19
+	mov	 %l5, %l3	 	!id: move reg 30 (var powerexponent) to reg 45
+	!SUB	19, 18, 18
+	sub	 %l3, %l2, %l2	 	!expression: reg 45 (var null) - 46 in reg 43 (var null)
+	!MOV	21, 19
+	mov	 %l5, %l3	 	!lvalue id: move reg 30 (var exponent) to reg 44
+	!MOV	18, 19
+	mov	 %l2, %l3	 
+	!MOV	19, 21
+	mov	 %l3, %l5	 
+	!JUMPI	.S3
+	ba	 .S3	 	!while: jump back to guard
+	nop
+ .S5:
+	!MOV	20, 10
+	mov	 %l4, %i0	 	!id: move reg 31 (var powerproduct) to reg 4
+	!RET	
+	ret
+	restore
+ !#function-exit:
+ 	.section	".text"
+	.align	4
+	.global	wait
+	.type	wait, #function
+	.proc	04
+!#function-entry:
+wait:
+	!SAVE	
+	save	%sp, -800, %sp 
+	!STOREINARGUMENT	10, 19
+	mov	 %i0, %l3	 
+ !#function-body:
+ !#while-guard:
+.S0:
+	!LOADI	0, 17
+	mov	 0, %l1	 	!int: reg 23 gets val 0
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!id: move reg 20 (var waitwaitTime) to reg 22
+	!LOADI	1, 3
+	mov	 1, %g1	 
+	!MOV	0, 20
+	mov	 %g0, %l4	 
+	!COMP	18, 17, 2
+	cmp	 %l2, %l1	 	!expression: compare: reg 22 (var null) to 23 (var null), store in cc-reg
+	!MOVGT	2, 3, 20
+	movg	 %icc, %g1, %l4	 
+	!LOADI	1, 3
+	mov	 1, %g1	 	!while: set immediate 1 (true)
+	!COMP	20, 3, 2
+	cmp	 %l4, %g1	 	!while: compare guard result (reg 21) to true
+	!CBREQ	2, .S1, .S2
+	be	 .S1	 	!while: branch true: '.S1' false: '.S2'
+	nop
+	ba	.S2 	!while: branch true: '.S1' false: '.S2'
+	nop
+ .S1:
+	!LOADI	1, 17
+	mov	 1, %l1	 	!int: reg 27 gets val 1
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!id: move reg 20 (var waitwaitTime) to reg 26
+	!SUB	18, 17, 17
+	sub	 %l2, %l1, %l1	 	!expression: reg 26 (var null) - 27 in reg 24 (var null)
+	!MOV	19, 18
+	mov	 %l3, %l2	 	!lvalue id: move reg 20 (var waitTime) to reg 25
+	!MOV	17, 18
+	mov	 %l1, %l2	 
+	!MOV	18, 19
+	mov	 %l2, %l3	 
+	!JUMPI	.S0
+	ba	 .S0	 	!while: jump back to guard
+	nop
+ .S2:
+	!LOADI	0, 10
+	mov	 0, %i0	 	!int: reg 4 gets val 0
+	!RET	
+	ret
+	restore
+ !#function-exit:
+ 

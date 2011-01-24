@@ -35,6 +35,8 @@ public class FunTable {
     * Gets the field's type, in the context of the given function.
     */
    public String getType(String function, String field) {
+//      System.out.println("getType fn: "+function+" field: "+field);
+//      System.out.println("functions: "+functions);
       return functions.get(function).getType(field);
    }
 

@@ -1,0 +1,41 @@
+	.file	"test.ev"
+	.section	".rodata"
+	.align	8
+.EV1LPR:
+	.asciz	"%d "
+	.align	8
+.EV1LPRL:
+	.asciz	"%d\n"
+	.align	8
+.EV1LRD:
+	.asciz	"%d"
+	.align	8
+READLOL:
+	.common readplz,4,4
+	.section	".text"
+	.align	4
+	.global	main
+	.type	main, #function
+	.proc	04
+!#function-entry:
+main:
+	!SAVE	
+	save	%sp, -800, %sp 
+ !#function-body:
+	!LOADI	5, 18
+	set	 5, %l2	 	!int: reg 18 gets val 5
+	!MOV	17, 20
+	mov	 %l0, %l1	 
+	!STOREAI	19, 20, 0
+	st	%l0, [%l1 + %g0]
+	!MOV	18, 19
+	mov	 %l2, %l0	 
+	!STOREAI	19, 19, 20
+	st	%l0, [%l0 + %l1]
+	!LOADI	0, 4
+	set	 0, %i0	 	!int: reg 4 gets val 0
+	!RET	
+	ret
+	restore
+ !#function-exit:
+ 

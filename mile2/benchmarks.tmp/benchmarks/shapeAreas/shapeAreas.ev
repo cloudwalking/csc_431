@@ -1,0 +1,83 @@
+# INSTRUCTIONS: 
+# Calculates areas of different shapes.
+# First select a mode: 1 for circle, 2 for square, 3, for rectangle, 0 to quit
+# If circle, enter radius
+# If square, enter length of a side
+# If rectangle, enter height and width
+
+struct rectangle {
+    int x;
+    int y;
+};
+
+struct circle {
+    int r;
+};
+
+struct square {
+    int x;
+};
+
+# Calculate area of circle
+fun areaCircle(struct circle circle1) int {
+    int area;
+    area = circle1.r * circle1.r * 3;
+    return area;
+}
+
+# Calculate area of rectangle
+fun areaRectangle(struct rectangle rectangle1) int {
+    return (rectangle1.x * rectangle1.y);
+}
+
+# Calculate area of square
+fun areaSquare(struct square square1) int {
+    return (square1.x * square1.x);
+}
+
+fun main() int {
+
+    int mode;
+    struct rectangle rectangle1;
+    struct circle circle1;
+    struct square square1;
+
+    rectangle1 = new rectangle;
+    circle1 = new circle;
+    square1 = new square;
+
+    mode = 1;
+
+    while (mode != 0)
+    {
+        read mode;
+
+        if (mode != 0)
+        {
+            # If 1, then circle
+            if (mode == 1)
+            {
+                read circle1.r;
+                print areaCircle(circle1) endl;
+            }
+            # Else if 2, then square, otherwise rectangle
+            else
+            {
+                if(mode == 2)
+                {
+                    read square1.x;
+                    print areaSquare(square1) endl;
+                }
+                else
+                {
+                    read rectangle1.x;
+                    read rectangle1.y;
+                    print areaRectangle(rectangle1) endl;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+

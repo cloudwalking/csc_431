@@ -1,0 +1,31 @@
+struct linkedWompa {
+   int age;
+   struct linkedWompa next;
+};
+
+int dingleberry;
+
+fun printWompa(struct linkedWompa w) int 
+{
+   struct linkedWompa wp;
+   #wp = w.linkedWompa;
+   print w.age;
+   #print wp.age;
+
+   return 0;
+}
+
+fun main() int {
+   struct linkedWompa wompa, doggy;
+   wompa.age = 5;
+   doggy.age = 77;
+   
+   wompa.next = doggy;
+
+   printWompa(wompa);
+
+   #print wompa.age endl;
+   #print wompa.doggy.age endl;
+
+   return 0;
+}

@@ -1,0 +1,1 @@
+{mainwinner=242, mainspace1=240, maini=243, mainturn=239, placePieceboard=44, printBoardboard=22, placePieceplacement=46, cleanBoardboard=3, placePieceturn=45, mainboard=244, checkWinnerboard=92, mainspace2=241}

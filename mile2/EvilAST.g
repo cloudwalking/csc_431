@@ -8,11 +8,13 @@ options {
 }
 
 @members{
+   boolean debug = true;
    StructTable structTable;
    FunTable funTable;
    SymTable symtable = new SymTable();
    String curFun;
    String curStruct = null;
+   Boolean globalContext = true;
 }
 
 program[StructTable stable, FunTable fun]
@@ -45,7 +47,7 @@ type_declaration
      }
    ;
   
-nested_decl returns [SymTable subtable = new SymTable()]
+nested_decl returns [SymTable subtable = new SymTable(symtable)]
    : decl[subtable]+
    ;
 
@@ -81,13 +83,17 @@ list_id [SymTable local, String t]
    : id=ID {
         if (!$local.isDefined($id.text)) {
            local.insertSymbol($id.text, $t);
-        }
-        else {
+        
+            if(globalContext) {
+               symtable.insertSymbol($id.text, $t);
+            }
+      }
+      else {
            System.err.println("line " + $id.line +
             ": already declared '" + $id + "'");
-        }
-     }
-   ;
+      }
+   }
+  ;
 
 //figure out stuff with funtable, to know where they are instantiated
 //and what they will map to
@@ -97,11 +103,12 @@ functions
 
 function
    : ^(FUN id=ID {
+         globalContext=false;
         if (symtable.isDefined($id.text)) {
            System.err.println("line " + $id.line + ": symbol '" + $id +
             "' already defined");
         }
-        SymTable locals = new SymTable();
+        SymTable locals = new SymTable(symtable);
      }
      parameters[locals]
 
@@ -388,6 +395,7 @@ expression [SymTable locals] returns [String t = null]
 
    | ^(DOT structType=expression[locals] fieldId=ID) {
         if (structType == null) {
+           if(debug) System.out.println("locals: "+locals);
            System.err.print("Undefined error trying to find struct type");
            System.err.println(" on line " + $fieldId.line);
            System.exit(1);

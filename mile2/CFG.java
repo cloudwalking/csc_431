@@ -14,6 +14,8 @@ public class CFG {
    private LinkedList<Integer> spill;
    int size;
 
+   private boolean debug;
+
    private enum Edge {
       WHOLE_EDGE,
       HALF_EDGE,
@@ -21,6 +23,8 @@ public class CFG {
    }
 
    public CFG(Block cfg, RegTable regTable) {
+      this.debug = false;
+      
       this.head = cfg;
       this.regTable = regTable;
       this.size = regTable.size();
@@ -41,8 +45,39 @@ public class CFG {
       }
    }
 
+   // resets gen, kill, liveout
+   public void reset(int baseSize) {
+      this.size = baseSize + this.countUncoloredRegisters();
+      this.interference = new ArrayList<ArrayList<Edge>>(size);
+      this.degrees = new ArrayList<Integer>(size);
+      this.regStack = new Stack<Integer>();
+      this.key = new Hashtable();
+      this.spill = new LinkedList<Integer>();
+      
+      this.head.reset();
+      this.head.finish();
+
+      for(int i=0; i<size; i++) {
+         interference.add(new ArrayList<Edge>(size));
+         degrees.add(0);
+         for(int n=0; n<size; n++) {
+            interference.get(i).add(Edge.NO_EDGE);
+         }
+      }
+   }
+
+   private int countUncoloredRegisters() {
+      int returns = 0;
+      for(Block currentBlock : head.getTopo()) {
+         for(Instruction instr : currentBlock.getInstructionList()) {
+            returns += instr.countUncoloredRegisters();
+         }
+      }
+      return returns;
+   }
+
    /**
-    * Gen's blocks' liveout set
+    * Gens blocks' liveout set
     */
    public void calculateLiveOut() {
       // 1. reverse topological
@@ -64,7 +99,7 @@ public class CFG {
          for (Block currentBlock : head.getReverseTopo()) {
             LinkedList<Register> liveout = new LinkedList<Register>();
             
-            //System.out.println("\tblock "+currentBlock.getLabelList());
+            if(debug) System.out.println("\tblock "+currentBlock.getLabelList());
             
             for(Block child : currentBlock.getNanny()) {
                LinkedList<Register> tmpLiveout;
@@ -132,19 +167,21 @@ public class CFG {
       
       
       for(Block currentBlock : head.getTopo()) {
-         //System.out.print("\tblock "+currentBlock.getLabelList());
+//System.out.println(currentBlock.getLabelList());
+         if(debug) System.out.print("\tblock "+currentBlock.getLabelList());
          LinkedList<Instruction> instrs = currentBlock.getInstructionList();
-         //System.out.println(" "+instrs.size()+" instructions");
-         //System.out.println("liveout: "+currentBlock.getLiveOut());
+         if(debug) System.out.println(" "+instrs.size()+" instructions");
+         if(debug) System.out.println("\tliveout: "+currentBlock.getLiveOut());
          for(Iterator<Instruction>iter=instrs.descendingIterator(); iter.hasNext();){
             Instruction i = iter.next();
             
-            //System.out.println("\t\t"+i);
-
+            if(debug)System.out.println("\t\t"+i);
+//System.out.println(i+"\ts"+ i.getSourceRegisterList()+" d"+i.getDestinationRegister());
             for(Register r : currentBlock.getLiveOut()) {
                if(i.getDestinationRegister() != null) {
                   int dest = i.getDestinationRegister().getValue().intValue();
                   int collision = r.getValue().intValue();
+                  
                   interference.get(dest).set(
                      collision, Edge.WHOLE_EDGE);
                   interference.get(collision).set(
@@ -163,6 +200,7 @@ public class CFG {
 
       //Ignore the special registers
       for (Integer i : regTable.getSpecialRegisters()) {
+         //if(debug) System.out.println("Register "+i+" is special and gets no edge.");
          for(int k=0; k < size; k++) {
             interference.get(i).set(k, Edge.NO_EDGE);
          }
@@ -228,6 +266,9 @@ public class CFG {
          regStack.push(i);
       }
       
+      //if(debug) System.out.println("pushOrder (desc?): "+pushOrder);
+      //if(debug) System.out.println("regStack: "+regStack);
+
       int register, tries;
       boolean bad;
       while(!regStack.empty()) {
@@ -268,27 +309,56 @@ public class CFG {
                }
             }
          }
-         if(tries >= crayons.count() && bad) {
-            /* Spill */
-            // System.out.println("SPILLLLL");
-            // key.put(register, "SPILL");
+         if(tries == crayons.count() || bad) {
+           if(debug) System.out.println("Register "+ register +" is causing spill");
             
-            // Take it out of the queue
-            int spillThis = pushOrder.removeFirst();
+            /* Take it out of the queue */
+            int spillThis;
+            
+            // don't spill special registers.
+            /*
+            do {
+               spillThis = pushOrder.removeFirst();
+            } while(regTable.getSpecialRegisters().contains(spillThis));
+            
             spill.add(spillThis);
-            // go ahead and color this with the spill register
-            key.put(spillThis, crayons.getSpill());
+            
+            if(debug) System.out.println("Spilling reg "+spillThis);
+            //if(debug) System.out.println("Spilling reg "+register);
+
             // Unconnect from the graph
             for(int i=0; i<size; i++) {
                if(interference.get(spillThis).get(i) == Edge.WHOLE_EDGE)
                   interference.get(spillThis).set(i, Edge.HALF_EDGE);
             }
             
-            // Now we need to start coloring over.
             regStack.clear();
+            // Now we need to start coloring over.
             for(Integer x : pushOrder) {
                int i = x.intValue();
                regStack.push(i);
+            }
+
+            //if(debug) System.out.println("regStack now: "+regStack);
+            */
+            //if(debug) System.out.println("remove register "+register);
+            //if(debug) System.out.println("push order before removal: "+pushOrder);
+            
+            // We're lazy, so let's just spill this PITA register.
+            spill.add(new Integer(register));
+            pushOrder.remove(new Integer(register));
+            //if(debug) System.out.println("push order after removal: "+pushOrder);
+
+            // Unconnect from graph
+            for(int i=0; i<size; i++) {
+               if(interference.get(new Integer(register)).get(i) == Edge.WHOLE_EDGE)
+                  interference.get(new Integer(register)).set(i, Edge.HALF_EDGE);
+            }
+
+            // start coloring over
+            regStack.clear();
+            for(Integer x : pushOrder) {
+               regStack.push(x.intValue());
             }
          }
 
@@ -305,76 +375,212 @@ public class CFG {
       key.put(7, "%o2");
       key.put(8, "%o3");
       key.put(9, "%o4");
-      key.put(10, "%o5");
-      key.put(11, "%i0");
-      key.put(12, "%i1");
-      key.put(13, "%i2");
-      key.put(14, "%i3");
-      key.put(15, "%i4");
-      key.put(16, "%i5");
-      key.put(17, "%fp");
-      key.put(18, "%sp");
-      key.put(19, "%g2");
-      key.put(20, "%g3");
-      
-      this.fixSpills();
+      // took out %o5 to use in read
+      // need to match this with RegTable.java reg list.
+      //key.put(10, "%o5");
+      key.put(10, "%i0");
+      key.put(11, "%i1");
+      key.put(12, "%i2");
+      key.put(13, "%i3");
+      key.put(14, "%i4");
+      key.put(15, "%i5");
+
+      if(debug) System.out.println("Spill list: "+spill);
+
+      //return key;
    }
-   
-   public void fixSpills() {
-      int location;
+
+   public void spill() {
+      // Map each spilled register to a location
+      Hashtable memoryMapping = new Hashtable();
+      int offset = 128; // arbitrary location on the stack. this is where spills are held.
+      for(Integer i : this.spill) {
+         memoryMapping.put(i, offset);
+         offset += 16;
+      }
       
-      if(this.spill.size() == 0) return;
-      
-      for(Block b : head.getTopo()) {
-         LinkedList<Instruction> newInstList = 
-            new LinkedList<Instruction>(b.getInstructionList());
-         location = 0;
-         System.out.println(b.getInstructionList().size());
-         for(Instruction instr : b.getInstructionList()) {
-            for(int register : this.getSpills()) {
-               
-               LinkedList<Integer> sources = new LinkedList<Integer>();
-               for(Register x : instr.getSourceRegisterList()) {
-                  sources.add(x.getValue());
-               }
-               
-               if(sources.size() > 0 && sources.contains(register)) {
-                  Instruction newInst;
-                  
-                  newInst= new Instruction("LOADI", 
-                   spill.indexOf(register) * -4 + 400, regTable.getImmRegister2());
-                  newInstList.add(location++, newInst);
-                  
-                  newInst = new Instruction("LOADAI", 
-                     regTable.getFramePointer(), regTable.getImmRegister2(),
-                      regTable.getSpillRegister());
-                  newInst.setComment("SPILL"+register);
-                  newInstList.add(location++, newInst);
-               }
-               if(null != instr.getDestinationRegister() &&
-                  register == instr.getDestinationRegister().getValue()) {
-                  Instruction newInst;
-                  
-                  newInst= new Instruction("LOADI", 
-                   spill.indexOf(instr.getDestinationRegister()) * -4 + 400,
-                    regTable.getImmRegister2());
-                  newInstList.add(1+location++, newInst);
-                  
-                  newInst = new Instruction("STAI",
-                   regTable.getSpillRegister(), regTable.getFramePointer(),
-                    regTable.getImmRegister2());
-                  newInst.setComment("SPILL "+register);
-                  newInstList.add(1+location++, newInst);
+      for(Block currentBlock : head.getTopo()) {
+         if(debug) System.out.println("block "+currentBlock.labels());
+         // arbitrary locations on the stack
+         int destinationSave = 16;
+         int sourceSave = 24; // this will get +16 when used, then reset at next block
+
+         int instructionCount = currentBlock.getInstructionList().size();
+         for(int i=0; i<instructionCount; i++) {
+            Instruction currentInstr = currentBlock.getInstructionList().get(i);
+           
+            //if(debug) System.out.println("\t\t\tspill pls: "+spill);
+            //if(debug) System.out.println("\t\t\tsources: "+currentInstr.getSourceRegisterList());
+            //if(debug) System.out.println("\t\t\tdest: "+currentInstr.getDestinationRegister());
+
+            boolean needSpill = false;
+            for(Register r : currentInstr.getSourceRegisterList()) {
+               if(this.spill.contains(r.getValue())) {
+                  needSpill = true;
+                  break;
                }
             }
-            location++;
+            if(currentInstr.getDestinationRegister() != null &&
+               this.spill.contains(currentInstr.getDestinationRegister().getValue())) {
+               needSpill = true;
+            }
+            
+            if(debug) System.out.println("\t"+currentInstr);
+
+            if(needSpill) { 
+               if(debug) System.out.println("\t\tspill!");
+
+               // See what colors are already used in this instr 
+               ArrayList<String> usedColors = new ArrayList<String>();
+               if(currentInstr.getDestinationRegister() != null && 
+                  currentInstr.getDestinationRegister().getColor() != null) {
+                  usedColors.add(currentInstr.getDestinationRegister().getColor());
+               }
+               for(Register r : currentInstr.getSourceRegisterList()) {
+                  if(r.getColor() != null) {
+                     usedColors.add(r.getColor());
+                  }
+               }
+               // List valid colors
+               ArrayList<String> validColors = new ArrayList<String>();
+               for(String color : Crayons.colors()){
+                  if(!usedColors.contains(color)) {
+                     validColors.add(color);
+                  }
+               }
+
+               
+               /* Now add the instructions. */
+               ArrayList<Instruction> beforeInstructions = new ArrayList<Instruction>();
+               ArrayList<Instruction> afterInstructions = new ArrayList<Instruction>();
+               
+               // destination register needs to spill
+               if(currentInstr.getDestinationRegister() != null &&
+                  this.spill.contains(currentInstr.getDestinationRegister().getValue())) {
+                  
+                  if(debug) System.out.println("spill destination register "+currentInstr.getDestinationRegister());
+                  if(debug) System.out.println("\tinstruction: "+currentInstr);
+                  
+                  String overrideRegister = validColors.remove(0);
+                  // save current colored register
+                  Instruction newInst = new Instruction("STAI", 
+                                                         new Register(new Integer(999), overrideRegister),
+                                                         new Register(new Integer(999), "%sp"),
+                                                         destinationSave);
+               //if(debug) System.out.println("\tinstr: "+newInst.toSparc());
+                  //currentBlock.getInstructionList().add(i++, newInst);
+                  beforeInstructions.add(newInst);
+               //if(debug) System.out.println("\told instr: "+currentBlock.getInstructionList().get(i).toSparc());
+                  currentInstr.getDestinationRegister().setColor(overrideRegister);
+              
+                  
+                  if(debug) System.out.println("\tinstructi*n: "+currentInstr);
+                  /* -old instruction happens w/ color */
+                  
+                  Integer destReg = (Integer)memoryMapping.get(currentInstr.getDestinationRegister().getValue());
+                  newInst = new Instruction("STAI",
+                                             new Register(new Integer(999), overrideRegister),
+                                             new Register(new Integer(999), "%sp"),
+                                             destReg.intValue());
+                  afterInstructions.add(newInst);
+                  newInst = new Instruction("LOADAI",
+                                             new Register(new Integer(999), "%sp"),
+                                             destinationSave,
+                                             new Register(new Integer(999), overrideRegister));
+               //if(debug) System.out.println("\tinstr: "+newInst.toSparc());
+                  //currentBlock.getInstructionList().add(++i, newInst);
+                  afterInstructions.add(newInst);
+               }
+
+               
+               // source registers need to spill
+               for(Register r : currentInstr.getSourceRegisterList()) {
+                  if(this.spill.contains(r.getValue())) {
+                     
+                     if(debug) System.out.println("source spill reg "+r);
+                     if(debug) System.out.println("\tinstruction: "+currentInstr);
+                     
+                     
+                     String overrideRegister = validColors.remove(0);
+                     // save current colored register
+                     Instruction newInst = new Instruction("STAI", 
+                                                            new Register(new Integer(999), overrideRegister),
+                                                            new Register(new Integer(999), "%sp"),
+                                                            sourceSave);
+                     beforeInstructions.add(newInst);
+                    
+
+                     Integer sourceOffset = (Integer)memoryMapping.get(r.getValue());
+
+                     newInst = new Instruction("LOADAI",
+                                                new Register(new Integer(999), "%sp"),
+                                                sourceOffset.intValue(),
+                                                new Register(new Integer(999), overrideRegister));
+                     beforeInstructions.add(newInst);
+                     
+                     /* -old instruction happens w/ color */
+                     r.setColor(overrideRegister);
+                  
+                     if(debug) System.out.println("\tinstructi*n: "+currentInstr);
+                  
+                     // Need to add the after instructions BEFORE the other finishing instructions
+                     LinkedList<Instruction> tempInstructionList = new LinkedList<Instruction>();
+                     
+                     newInst = new Instruction("STAI",
+                                                new Register(new Integer(999), overrideRegister),
+                                                new Register(new Integer(999), "%sp"),
+                                                sourceOffset.intValue());
+                     tempInstructionList.add(newInst);
+                     
+                     newInst = new Instruction("LOADAI",
+                                                new Register(new Integer(999), "%sp"),
+                                                sourceSave,
+                                                new Register(new Integer(999), overrideRegister));
+                     tempInstructionList.add(newInst);
+
+                     sourceSave += 16;
+
+                     // Add the after instructions to the beginning. This should nest properly...
+                     afterInstructions.addAll(0, tempInstructionList);
+                  }
+               }
+
+               if(debug) {
+                  System.out.println("adding before:");
+                  for(Instruction x : beforeInstructions)
+                     System.out.println(x);
+                  System.out.println("current instr:");
+                  System.out.println(currentBlock.getInstructionList().get(i));
+                  System.out.println("adding after:");
+                  for(Instruction x : afterInstructions)
+                     System.out.println(x);
+               }
+
+               for(int add=0; add<beforeInstructions.size(); add++) {
+                  currentBlock.getInstructionList().add(i++, beforeInstructions.get(add));
+                  instructionCount++;
+               }
+               i++; // skip "real" instruction (the one with the spills)
+               instructionCount++;
+               for(int add=0; add<afterInstructions.size(); add++) {
+                  currentBlock.getInstructionList().add(i++, afterInstructions.get(add));
+                  instructionCount++;
+               }
+               i--; // the for loop will push it past this last instr.
+               instructionCount--;
+            }
          }
-         b.setInstructionList(newInstList);
       }
    }
    
    public void color() {
       head.reregister(key);
+   }
+   
+   // translates the colored instructions back to uncolored ones
+   // for optimization reasons.
+   public void uncolor(Hashtable key) {
+      head.uncolor(key);
    }
    
    public Hashtable getKey() {
@@ -385,35 +591,5 @@ public class CFG {
       return this.spill;
    }
    
-   private class Crayons {
-      String[] colors = {"%l0", "%l1", "%l2", "%l3", 
-                         "%l4", "%l5", "%l6", "%l7"
-                        };
-      int next;
-      public Crayons() {
-         next = 0;
-      }
-      public String nextColor() {
-         bound();
-         return colors[(next++)];
-      }
-      public String peak() {
-         bound();
-         return colors[next];
-      }
-      public String getSpill() {
-         return "%g3";
-      }
-      public int count() {
-         return colors.length;
-      }
-      
-      private void bound() {
-         if(next >= colors.length) next = 0;
-      }
-
-      private void reset() {
-         next = 0;
-      }
-   }
+   
 }

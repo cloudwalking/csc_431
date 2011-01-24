@@ -60,21 +60,37 @@ type
    |  ^(STRUCT id=ID)
    ;
 
-declarations
-   : ^(DECLS declaration*)
+declarations returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]  
+   : ^(DECLS (instrs=declaration {instructions.addAll(instrs);})*)
    ;
 
-declaration
-   : ^(DECLLIST ^(TYPE type) id_list)
+declaration returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+   : ^(DECLLIST ^(TYPE t=type) instrs=id_list[$t.text] {instructions.addAll(instrs);})
    ;
 
-id_list
-   : list_id+
+id_list[String type] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+   : (instr=list_id[$type] {instructions.addAll(instr);})+
    ;
 
-list_id returns [int reg]
+list_id[String type] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
    : id=ID {
-        $reg = regTable.newRegister(currentFunction+$id.text);
+        int reg = regTable.newRegister(currentFunction+$id.text);
+        /* Not sure whether structs have to be initilized or not... I've seen it done both ways. 
+         * Thus, doing it both ways.
+         */
+        if($type.contains("struct")) {
+            $type = $type.substring(6); // no space at end
+            instructions.add(new Instruction("NEW", stable.getSize($type), regTable.getReturnRegister()));
+//            instructions.add(new Instruction("MOV", new Register(regTable.getReturnRegister(), "\%o0"), reg));
+            instructions.add(new Instruction("MOV", regTable.getReturnRegister(), reg));
+            /* make the fields null */
+            for(int offset=0; offset<stable.getSize($type); offset+=4) { // increase by INT size
+               instructions.add(new Instruction("STAI",
+                                                   regTable.getZeroRegister(),
+                                                   reg,
+                                                   offset));
+            }
+         }
      }
    ;
 
@@ -95,13 +111,19 @@ function returns [Block entry = null]
 
         Block exit = new Block("#function-exit");
      }
-     iloc=parameters[$id.text] ^(RETTYPE return_type) declarations {
+     iloc=parameters[$id.text] ^(RETTYPE return_type) declIloc=declarations {
         beginFunc.addAll(iloc);
         //allocate next activation record here
         $entry.addILoc(beginFunc);
+        
+        // malloc structs //* //*a
+        //$entry.addILoc($declIloc.instructions);
 
         //for CFG
         Block body = new Block("#function-body");
+
+//*
+body.addILoc($declIloc.instructions);
 
         body.addPrevious($entry);
         $entry.addNext(body);
@@ -262,6 +284,8 @@ statement[Block head] returns [Block block = null]
         whileBody.addNext(whileGuard);
 
         whileEnd.addPrevious(whileGuard);
+        //*
+        whileEnd.addNext(whileGuard);
      }
      iloc=expression[guardBooleanReg] {
         String guardLabel = ".S" + uniqueStatement++;
@@ -309,6 +333,9 @@ statement[Block head] returns [Block block = null]
         instructions.add(newInst);
 
         $body.block.addILoc(instructions);
+     
+        //*
+        $body.block.addNext(whileEnd);
 
         $block = whileEnd;
      } )
@@ -331,9 +358,9 @@ statement[Block head] returns [Block block = null]
 
 assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister();
-        int r2 = regTable.newRegister(); }
-   : ^(ASSIGN exp=expression[r1] leftIloc=lvalue[r2]) {
-         $instructions.addAll(0, $leftIloc.instructions);
+        /*int r2 = regTable.newRegister(); - lvalue has this, changing*/ }
+   : ^(ASSIGN exp=expression[r1] leftIloc=lvalue[r1]) {
+/*         $instructions.addAll(0, $leftIloc.instructions);
          Register lvalReg = null;
          LinkedList<Register> memAddr = null;
          if (!shouldStore) {
@@ -361,6 +388,9 @@ assignment returns [LinkedList<Instruction> instructions = new LinkedList<Instru
              memAddr.removeFirst().getValue()));
          }
          shouldStore = false;
+*/
+         $instructions.addAll($exp.instructions);
+         $instructions.addAll($leftIloc.instructions);
       }
    ;
 
@@ -387,25 +417,67 @@ print returns [LinkedList<Instruction> instructions = new LinkedList<Instruction
 read returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int reg = regTable.newRegister(); }
    : ^(READ readStuff=lvalue[reg]) {
+      /*a
          $instructions.addAll(0, $readStuff.instructions);
+       
+         LinkedList<Register> memAddr = null;
+         if(shouldStore) {
+            memAddr = $instructions.getLast().getSourceRegisterList();
+         }
+
          Instruction newInst = new Instruction("READ", reg);
-         newInst.setComment("read: read into address stored in reg "+reg+
+      */
+         /*newInst.setComment("read: read into address stored in reg "+reg+
           " (var "+regTable.lookupRegister(reg)+")");
+         */
+         /*a
          $instructions.add(newInst);
-     }
+         */
+         /*
+         Read doesn't seem to work when you read more than once in a row.
+         - fixed this. 
+         */
+/*
+         if(!shouldStore) {
+            // I suspect we need to move from the read register back to the variable
+            int lvalRegister  = -1;
+            if (regTable.containsId(currentFunction + $readStuff.text))
+               lvalRegister = regTable.lookupId(currentFunction + $readStuff.text);
+            else
+               lvalRegister = regTable.lookupId($readStuff.text);
+
+            newInst = new Instruction("MOV", reg, lvalRegister);
+            $instructions.add(newInst);
+         } else {
+            $instructions.add(new Instruction(
+            "STAI", reg, memAddr.removeFirst().getValue(),
+            memAddr.removeFirst().getValue()));
+            shouldStore = false;
+         }
+  */
+         Instruction newInst = new Instruction("READ", reg);
+         $instructions.add(newInst);
+         $instructions.addAll($readStuff.instructions);
+      }
    ;
 
 delete returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.newRegister(); }
    : ^(DELETE exp=expression[r1]) {
-        $instructions.addAll(0, $exp.instructions);
-        $instructions.add(new Instruction("DEL", r1));
-     }
+        //a $instructions.addAll(0, $exp.instructions);
+//        $instructions.add(new Instruction("DEL", r1));
+//        $instructions.add(new Instruction("DEL"));
+         // instead of free (bus error, dont remember from lecture), just set it to null
+         //a Instruction newInst = new Instruction("MOV", regTable.getZeroRegister(), r1);
+         //a $instructions.add(newInst);
+   }
+
    ;
 
 ret returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
 @init { int r1 = regTable.getOutRegister(); }
    : ^(RETURN (exp=expression[r1])?) {
+      //* changed getOutRegister to getReturnRegister <- changed this back.
         if (exp != null)
            $instructions.addAll(0, $exp.instructions);
         $instructions.add(new Instruction("RET"));
@@ -424,19 +496,17 @@ LinkedList<Instruction>()]
      }
    ;
 
-lvalue[int resultReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
-@init { int reg = regTable.newRegister(); }
-   : ^(DOT subIloc=subvalue[reg] fieldId=ID) {
+lvalue[int newValueReg] returns [LinkedList<Instruction> instructions = new LinkedList<Instruction>()]
+@init { int structPtr = regTable.newRegister(); }
+   : ^(DOT subIloc=subvalue[structPtr] fieldId=ID) {
       shouldStore = true;
       $instructions.addAll(0, $subIloc.instructions);
       int offset = stable.getOffset(currentStruct, $fieldId.text);
-      
-      // store from mem to register
-      $instructions.add(new Instruction(
-           "LOADI", offset, regTable.getImmRegister()));
-           
-      Instruction newInst = new Instruction("LOADAI", reg, regTable.getImmRegister(), resultReg);
-      newInst.setComment("lvalue dot: load member '"+$fieldId.text+"' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
+       
+      Instruction newInst = new Instruction("STAI", 
+                                       newValueReg, 
+                                       structPtr, 
+                                       offset);
       $instructions.add(newInst);
    }
    | id=ID {
@@ -444,29 +514,29 @@ lvalue[int resultReg] returns [LinkedList<Instruction> instructions = new Linked
         if (regTable.containsId(currentFunction + $id.text))
            varReg = regTable.lookupId(currentFunction + $id.text);
         else varReg = regTable.lookupId($id.text);
-        Instruction newInst = new Instruction("MOV", varReg, resultReg);
-        newInst.setComment("lvalue id: move reg "+varReg+" (var "+$id.text+") to reg "+resultReg);
+        
+        //Instruction newInst = new Instruction("MOV", varReg, resultReg);
+        //newInst.setComment("lvalue id: move reg "+varReg+" (var "+$id.text+") to reg "+resultReg);
+        Instruction newInst = new Instruction("MOV", newValueReg, varReg);
         $instructions.add(newInst);
      }
    ;
 
-subvalue[int resultReg] returns [LinkedList<Instruction> instructions =
+subvalue[int structPtr] returns [LinkedList<Instruction> instructions =
  new LinkedList<Instruction>()]
 @init { int reg = regTable.newRegister(); }
-   : ^(DOT sub=subvalue[reg] fizz=ID) {
+   : ^(DOT sub=subvalue[structPtr] id=ID) {
       $instructions.addAll(0, $sub.instructions);
 
-      int offset = stable.getOffset(currentStruct, $fizz.text);
+      int offset = stable.getOffset(currentStruct, $id.text);
+     
+      $instructions.add(new Instruction("LOADAI",
+                              structPtr,
+                              offset,
+                              structPtr));
       
-      $instructions.add(new Instruction(
-           "LOADI", offset, regTable.getImmRegister()));
-           
-      Instruction newInst = new Instruction("LOADAI", reg, regTable.getImmRegister(), resultReg);
-      newInst.setComment("subval dot: load member '" + $fizz.text +
-       "' from ptr reg "+reg+" offset "+offset+" to reg "+resultReg);
-      $instructions.add(newInst);
-      
-      currentStruct = stable.getType(currentStruct, $fizz.text);
+      currentStruct = stable.getType(currentStruct, $id.text);
+      currentStruct = currentStruct.substring(7);
      }
    | id=ID {
       // This is the base structure variable
@@ -475,7 +545,19 @@ subvalue[int resultReg] returns [LinkedList<Instruction> instructions =
       // struct and one space = 7 chars
       currentStruct = currentStruct.substring(7);
       
-      Instruction newInst = new Instruction("MOV", regTable.lookupId(currentFunction+$id.text), resultReg);
+      /*
+      Instruction newInst = new Instruction("LOADAI",
+                                 regTable.lookupId(currentFunction+$id.text),
+                                 regTable.getZeroRegister(),
+                                 structPtr);
+      */
+      int srcRegister = -1;
+      if(regTable.containsId(currentFunction + $id.text))
+         srcRegister = regTable.lookupId(currentFunction + $id.text);
+      else
+         srcRegister = regTable.lookupId($id.text);
+
+      Instruction newInst = new Instruction("MOV", srcRegister, structPtr); 
       $instructions.add(newInst);
      }
    ;
@@ -494,11 +576,11 @@ new LinkedList<Instruction>()]
         $instructions.addAll(0, $rexpr.instructions);
         Instruction newInst = new Instruction(
           $op.text, lexprReg, rexprReg, resultReg);
-        newInst.setComment("expression: reg " + lexprReg + 
+        /*newInst.setComment("expression: reg " + lexprReg + 
          " (var "+regTable.lookupRegister(lexprReg)+")"+
          " " + $op.text +
          " " + rexprReg + " in reg " + resultReg +
-         " (var "+regTable.lookupRegister(lexprReg)+")");
+         " (var "+regTable.lookupRegister(lexprReg)+")")*/;
         $instructions.add(newInst);
      }
 
@@ -521,9 +603,9 @@ new LinkedList<Instruction>()]
         // Do the comparison, set cc
         Instruction newInst = new Instruction(
          "COMP", lexprReg, rexprReg, regTable.getCCRegister());
-        newInst.setComment("expression: compare: reg " + lexprReg +
+        /*newInst.setComment("expression: compare: reg " + lexprReg +
          " (var " + regTable.lookupRegister(lexprReg) + ") to " + rexprReg + 
-         " (var " + regTable.lookupRegister(rexprReg) + "), store in cc-reg");
+         " (var " + regTable.lookupRegister(rexprReg) + "), store in cc-reg");*/
         $instructions.add(newInst);
 
         String movOp = $op.text.equals("==") ? "EQ" :
@@ -566,22 +648,6 @@ new LinkedList<Instruction>()]
          "XORI", srcReg, immReg, resultReg));
      }
 
-   | ^(DOT { int r1 = regTable.newRegister(); } expr=expression[r1] fieldId=ID) {
-        // Current struct should be set in ID, below
-        int offset = stable.getOffset(currentStruct, $fieldId.text);
-        currentStruct = stable.getType(currentStruct, $fieldId.text);
-        
-        $instructions.addAll(0, expr);
-        $instructions.add(new Instruction(
-           "LOADI", offset, regTable.getImmRegister()));
-        Instruction newInst = new Instruction("LOADAI", r1, regTable.getImmRegister(), 
-          resultReg);
-        newInst.setComment("dot: load from pointer '" + $fieldId.text +
-         "' (reg " + r1 + "), store in reg " + resultReg);
-        $instructions.add(newInst);
-     }
-        
-
    | ^(INVOKE id=ID args=arguments) {
         $instructions.addAll(0, args);
         Instruction newInst = new Instruction("CALL", $id.text);
@@ -591,21 +657,54 @@ new LinkedList<Instruction>()]
         $instructions.add(new Instruction("MOV", regTable.getReturnRegister(),
          resultReg));
      }
+   
+   | ^(DOT expr=expression[resultReg] fieldId=ID) {
+         // Current struct should be set in ID, below
+         int offset = stable.getOffset(currentStruct, $fieldId.text);
+         //currentStruct = stable.getType(currentStruct, $fieldId.text);
+        
+         $instructions.addAll(0, $expr.instructions);
+        
+         Instruction newInst = new Instruction("LOADAI", 
+                                                resultReg, 
+                                                offset, 
+                                                resultReg);
+         $instructions.add(newInst);
+        //System.out.println("looking for: "+currentFunction+$id.text); 
+         if(null != $id.text) {
+            currentStruct = funtable.getType(currentFunction, $id.text);
+            currentStruct = currentStruct.substring(7);
+         }
+     }
+
    | id=ID {
          //may be a problem with recursion?
-        int srcRegister = regTable.lookupId(currentFunction + $id.text);
-        if(-1 == srcRegister) {
-           srcRegister = regTable.lookupId($id.text);
-        }
+        
+        // ***
+        //int srcRegister = regTable.lookupId(currentFunction + $id.text);
+        //if(-1 == srcRegister) {
+        //   srcRegister = regTable.lookupId($id.text);
+        //}
+         int srcRegister = -1;
+         if (regTable.containsId(currentFunction + $id.text))
+            srcRegister = regTable.lookupId(currentFunction + $id.text);
+         else
+            srcRegister = regTable.lookupId($id.text);
 
         Instruction newInst = new Instruction("MOV", srcRegister, resultReg);
-        newInst.setComment("id: move reg "+srcRegister+" (var "+regTable.lookupRegister(srcRegister)+
+        /*newInst.setComment("id: move reg "+srcRegister+" (var "+regTable.lookupRegister(srcRegister)+
          ") to reg "+resultReg);
-
+         */
         $instructions.add(newInst);
         
-        currentStruct = funtable.getType(currentFunction, $id.text);
-     }
+// added this balogna to make my life easier
+try { //
+         currentStruct = funtable.getType(currentFunction, $id.text);
+         currentStruct = currentStruct.substring(7);
+} catch(Exception e) {//
+   currentStruct = null;
+}//
+    }
 
    | i=INTEGER {
 //        int immRegister = regTable.newRegister();
@@ -628,6 +727,7 @@ new LinkedList<Instruction>()]
      }
 
    | ^(NEW id=ID) {
+        /*
         $instructions.add(new Instruction(
          "LOADI", stable.getNumFields($id.text) * 4,
          regTable.getReturnRegister()));
@@ -635,6 +735,16 @@ new LinkedList<Instruction>()]
          "NEW"));
         $instructions.add(new Instruction(
          "MOV", regTable.getReturnRegister(), resultReg));
+        */
+         $instructions.add(new Instruction("NEW", stable.getSize($id.text), regTable.getReturnRegister()));
+         $instructions.add(new Instruction("MOV", regTable.getReturnRegister(), resultReg));
+         /* make the fields null */
+         for(int offset=0; offset<stable.getSize($id.text); offset+=4) { // increase by INT size
+            instructions.add(new Instruction("STAI",
+                                                regTable.getZeroRegister(),
+                                                resultReg,
+                                                offset));
+            }
      }
 
    | NULL {

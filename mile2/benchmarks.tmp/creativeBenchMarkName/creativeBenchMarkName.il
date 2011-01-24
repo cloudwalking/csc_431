@@ -1,0 +1,1 @@
+{multipleproduct=37, recurseListlist=101, mainbigProduct=116, mainlist=112, buildListn5=10, buildListn4=9, buildListn3=8, buildListn2=7, buildListinput=3, buildListn1=6, multiplecur=38, buildListn0=5, buildListi=4, multiplei=36, addlist=68, mainresult=115, addsum=70, addi=69, mainsum=114, addcur=71, mainproduct=113, multiplelist=35, maini=117}

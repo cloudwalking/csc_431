@@ -90,27 +90,92 @@ public class Evil
             func.calculateLiveOut();
                //System.out.println("calculating interference");
             func.calculateInterference();
-            func.printInterference();
+            //func.printInterference();
                //System.out.println("calculating color");
             func.makeKey();
                //System.out.println("key size: "+func.getKey().size());
-               System.out.println(func.getKey());
+               //System.out.println(func.getKey());
                //System.out.println("coloring");
-            func.color();
+            if(_color)
+            {
+               func.color();
+            }
+            //if you enable spill, see Instruction.java: op == Operator.STOREAI
+            func.spill();
          }
 
+         /* Let's optimize. Biggest problem is register pressure
+          * 1. Start by making a new key mapping to map each color to
+          * a fake register.
+          * 2. move through each instruction
+          *    - reregister with new key mapping from 1
+          *    - clear coloring
+          * 3. recolor
+          */
+         /*
+         Hashtable fakeKey = new Hashtable();
+         // all the registers from CFG.makeKey() need to MATCH here.
+         // Also include all registers from CFG.Crayons.colors();
+         fakeKey.put("%g0", 0);
+         fakeKey.put("%o0", 1);
+         fakeKey.put("%icc", 2);
+         fakeKey.put("%g1", 3);
+         fakeKey.put("%i0", 4);
+         //fakeKey.put("%o0", 1); // two %o0s
+         fakeKey.put("%o1", 6);
+         fakeKey.put("%o2", 7);
+         fakeKey.put("%o3", 8);
+         fakeKey.put("%o4", 9);
+         fakeKey.put("%i0", 10);
+         fakeKey.put("%i1", 11);
+         fakeKey.put("%i2", 12);
+         fakeKey.put("%i3", 13);
+         fakeKey.put("%i4", 14);
+         fakeKey.put("%i5", 15);
+         fakeKey.put("%l0", 16);
+         fakeKey.put("%l1", 17);
+         fakeKey.put("%l2", 18);
+         fakeKey.put("%l3", 19);
+         fakeKey.put("%l4", 20);
+         fakeKey.put("%l5", 21);
+         fakeKey.put("%l6", 22);
+         fakeKey.put("%l7", 23);
+         fakeKey.put("%g2", 24);
+         fakeKey.put("%g3", 25);
+
+
+         for(CFG func : functions) {
+            if(_color) {
+               func.uncolor(fakeKey);
+            }
+           
+            //func.reset(fakeKey.size() + 1);
+            func.reset(1000);
+            func.calculateLiveOut();
+            func.calculateInterference();
+            func.makeKey();
+            if(_color) {
+               func.color(); 
+            }
+            
+         }
+         
+         */
+         
          String fileName = _inputFile;
          boolean print = _displayCFG, printSparc = _displaySparc;
          // Not printing? Turn debug off.
-         if(print) {
+         if(print || printSparc) {
             BufferedWriter codeWriter = null;
             if(!debug) {
                try {
                   String sourceFile = fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length());
-                  if (printSparc)
+                  if (printSparc) {
+                     //System.out.println("ahh");
                      fileName = fileName.replace(".ev", ".s");
-                  else if (!printSparc)
+                  } else if (!printSparc) {
                      fileName = fileName.replace(".ev", ".il");
+                  }
 
                   File tmpFile = new File(fileName);
                   tmpFile.createNewFile();
@@ -163,16 +228,26 @@ public class Evil
       }
    }
 
+   private static void optimize(LinkedList<CFG> functions) {
+      for(CFG func : functions) {
+
+      }
+   }
+
    private static final String DISPLAYAST = "-displayAST";
    private static final String DISPLAYTYPECHECK = "-displayTypecheck";
    private static final String DISPLAYCFG = "-dumpIL";
    private static final String DISPLAYSPARC = "-displaySparc";
 
+   private static final String NOCOLOR = "-noColor";
+
    private static String _inputFile = null;
    private static boolean _displayAST = false;
    private static boolean _displayTypecheck = false;
-   private static boolean _displayCFG = true;
-   private static boolean _displaySparc = false;
+   private static boolean _displayCFG = false;
+   private static boolean _displaySparc = true;
+   
+   private static boolean _color = true;
 
    private static void parseParameters(String [] args)
    {
@@ -194,6 +269,10 @@ public class Evil
          {
             _displaySparc = true;
          }
+         else if (args[i].equals(NOCOLOR))
+         {
+            _color = false;
+         }
          else if (args[i].charAt(0) == '-')
          {
             System.err.println("unexpected option: " + args[i]);
@@ -208,6 +287,10 @@ public class Evil
          {
             _inputFile = args[i];
          }
+      }
+      if(_displayCFG) {
+         System.out.println("display CFG");
+            _displaySparc = false;
       }
    }
 

@@ -1,0 +1,111 @@
+	.file	"test2.ev"
+	.section	".rodata"
+	.align	8
+.EV1LPR:
+	.asciz	"%d "
+	.align	8
+.EV1LPRL:
+	.asciz	"%d\n"
+	.align	8
+.EV1LRD:
+	.asciz	"%d"
+	.align	8
+READLOL:
+	.common readplz,4,4
+	.section	".text"
+	.align	4
+	.global	main
+	.type	main, #function
+	.proc	04
+!#function-entry:
+main:
+	!SAVE	
+	save	%sp, -800, %sp 
+ !#function-body:
+	!LOADI	20000, 18
+	set	 20000, %l1	 	!int: reg 18 gets val 20000
+	!MOV	18, 16
+	mov	 %l1, %l1	 
+	!LOADI	0, 20
+	set	 0, %l1	 	!int: reg 20 gets val 0
+	!MOV	20, 17
+	mov	 %l1, %l1	 
+ !#while-guard:
+.S0:
+	!LOADI	20000, 24
+	set	 20000, %l2	 	!int: reg 24 gets val 20000
+	!MOV	17, 23
+	mov	 %l1, %l3	 
+	!LOADI	1, 3
+	set	 1, %g1	 
+	!MOV	0, 22
+	mov	 %g0, %l4	 
+	!COMP	23, 24, 2
+	cmp	 %l3, %l2	 
+	!MOVLE	2, 3, 22
+	movle	 %icc, %g1, %l4	 
+	!LOADI	1, 3
+	set	 1, %g1	 	!while: set immediate 1 (true)
+	!COMP	22, 3, 2
+	cmp	 %l4, %g1	 	!while: compare guard result (reg 22) to true
+	!CBREQ	2, .S1, .S2
+	be	 .S1	 	!while: branch true: '.S1' false: '.S2'
+	nop
+	ba	.S2 	!while: branch true: '.S1' false: '.S2'
+	nop
+ .S1:
+ !#if-guard:
+	!LOADI	1, 27
+	set	 1, %l2	 	!int: reg 27 gets val 1
+	!LOADI	1, 26
+	set	 1, %l3	 	!int: reg 26 gets val 1
+	!LOADI	1, 3
+	set	 1, %g1	 
+	!MOV	0, 25
+	mov	 %g0, %l0	 
+	!COMP	26, 27, 2
+	cmp	 %l3, %l2	 
+	!MOVEQ	2, 3, 25
+	move	 %icc, %g1, %l0	 
+	!LOADI	1, 3
+	set	 1, %g1	 
+	!COMP	25, 3, 2
+	cmp	 %l0, %g1	 	!if: compare guard result (reg 25) to true
+	!CBREQ	2, .S3, .S4
+	be	 .S3	 	!if: branch true: '.S3' false: '.S4'
+	nop
+	ba	.S4 	!if: branch true: '.S3' false: '.S4'
+	nop
+ .S3:
+	!MOV	17, 28
+	mov	 %l1, %l0	 
+	!PRINTLN	28
+	sethi	%hi(.EV1LPRL), %g1
+	or	%g1, %lo(.EV1LPRL), %o0
+	mov	%l0, %o1
+	call	printf, 0
+	nop
+	!JUMPI	.S5
+	ba	 .S5	 	!then: jump to #end-if '.S5'
+	nop
+ .S5:
+.S4:
+	!LOADI	1, 31
+	set	 1, %l0	 	!int: reg 31 gets val 1
+	!MOV	17, 30
+	mov	 %l1, %l1	 
+	!ADD	30, 31, 29
+	add	 %l1, %l0, %l0	 
+	!MOV	29, 17
+	mov	 %l0, %l1	 
+	!JUMPI	.S0
+	ba	 .S0	 	!while: jump back to guard
+	nop
+ .S2:
+	!LOADI	0, 4
+	set	 0, %i0	 	!int: reg 4 gets val 0
+	!RET	
+	ret
+	restore
+ !#function-exit:
+ 

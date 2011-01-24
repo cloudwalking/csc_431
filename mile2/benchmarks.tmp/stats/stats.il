@@ -1,0 +1,1 @@
+{approxSqrtprev=95, approxSqrtAllnums=118, mainnums=178, mainmean=177, approxSqrtresult=94, approxSqrtnum=92, getRandsseed=3, rangenums=131, calcMeansum=58, getRandscurNode=7, getRandscur=5, calcMeannum=59, mainseed=175, getRandsprev=6, rangefirst=134, getRandsnum=4, getRandsprevNode=8, mainnum=176, rangemin=132, calcMeannums=57, calcMeanmean=60, rangemax=133, approxSqrtguess=93}

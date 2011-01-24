@@ -3,6 +3,8 @@ import java.io.BufferedWriter;
 import java.util.Hashtable;
 
 public class Block {
+   private boolean debug = false;
+
    private LinkedList<Block> successors;
    private LinkedList<Block> predecessors;
    private LinkedList<Instruction> instrs;
@@ -32,7 +34,9 @@ public class Block {
    }
 
    public String toString() {
-      return instrs.toString();
+      return labels.toString();
+      //*
+      //return instrs.toString();
    }
 
    public Block(String label) {
@@ -42,10 +46,6 @@ public class Block {
 
    public void addILoc(LinkedList instructions) {
       instrs.addAll(instructions);
-   }
-   
-   public void setInstructionList(LinkedList<Instruction> newList) {
-      this.instrs = newList;
    }
 
    public void addNext(Block childBlock) {
@@ -112,8 +112,8 @@ public class Block {
       }
       
       
-      //System.out.println("gen : " + gen);
-      //System.out.println("kill: " + kill);
+      //if(debug) System.out.println("gen : " + gen);
+      //if(debug) System.out.println("kill: " + kill);
       
        
       return liveout;
@@ -167,6 +167,8 @@ public class Block {
          writer.write(readLabel + "\n");
          writer.write(tab + constString + tab + evilRead + "\n");
          writer.write(tab + align + tab + "8\n");
+
+         printSparcFooter(writer);
       }
       catch (java.io.IOException e) {
          System.err.println("error writing sparc constants");
@@ -197,6 +199,19 @@ public class Block {
          writer.write(tab + global + tab + funName + "\n");
          writer.write(tab + type + tab + funName + ", " + functionType + "\n");
          writer.write(tab + proc + tab + "04\n");
+      }
+      catch (java.io.IOException e) {
+         System.err.println("error writing sparc header");
+         e.printStackTrace();
+      }
+   }
+   
+   public static void printSparcFooter(BufferedWriter writer) {
+      try { 
+         String tab = "\t";
+         
+         writer.write("READLOL:\n");
+         writer.write(tab + ".common readplz,4,4\n");
       }
       catch (java.io.IOException e) {
          System.err.println("error writing sparc header");
@@ -279,6 +294,7 @@ public class Block {
    }
    
    public LinkedList<Block> getNanny() {
+      if(debug) System.out.println("\t\tsuccessors: "+successors);
       return successors;
    }
 
@@ -388,6 +404,10 @@ public class Block {
       return children.trim();
    }
 
+   public String labels() {
+      return labels.toString();
+   }
+
    public void printBlockTree(int numBlock, LinkedList<Block> cfg) {
       if (cfg.isEmpty())
          return;
@@ -415,12 +435,28 @@ public class Block {
          b.createGenKill();
       }
    }
+
+   // resets block's gen and kill sets
+   public void reset() {
+      gen = new LinkedList<Register>();
+      kill = new LinkedList<Register>();
+      liveout = new LinkedList<Register>();
+   }
    
    // Changes the registers in each instruction
    public void reregister(Hashtable key) {
       for(Block b : this.getTopo()) {
          for(Instruction i : b.getInstructionList()) {
             i.reregister(key);
+         }
+      }
+   }
+
+   // Uncolors the registers based on a color->fake-register key
+   public void uncolor(Hashtable key) {
+      for(Block b : this.getTopo()) {
+         for(Instruction i : b.getInstructionList()) {
+            i.uncolor(key);
          }
       }
    }

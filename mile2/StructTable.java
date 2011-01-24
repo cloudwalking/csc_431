@@ -70,10 +70,15 @@ public class StructTable {
       else return structs.get(structId).getNumSymbols();
       return 0;
    }
+
+   // the size of this struct in memory. it's always 4 * num fields b/c pointers to other structs are still ints
+   public int getSize(String structId) {
+      return 4 * structs.get(structId).getNumSymbols();
+   }
    
    public int getOffset(String struct, String field) {
       // Hack: take 'struct' off the front to get the raw type.
-      // struct and one space = 7 chars
+      // 'struct ' = 7 chars
       if(struct.contains("struct")) {
          struct = struct.substring(7);
       }

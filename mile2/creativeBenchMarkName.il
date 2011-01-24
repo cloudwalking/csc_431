@@ -1,0 +1,333 @@
+!#function-entry:
+main:
+	SAVE 	
+ !#function-body:
+	NEW 8, 1	
+	MOV 1, 131	
+	STOREAI 0, 131, 0	
+	STOREAI 0, 131, 4	
+	LOADI 0, 137	
+	MOV 137, 136	
+	LOADI 0, 139	
+	MOV 139, 135	
+	CALL buildList	
+	MOV 1, 141	
+	MOV 141, 131	
+	MOV 131, 145	
+	STOREOUTARGUMENT 145, 5	
+	CALL multiple	
+	MOV 1, 144	
+	MOV 144, 132	
+	MOV 131, 148	
+	STOREOUTARGUMENT 148, 5	
+	CALL add	
+	MOV 1, 147	
+	MOV 147, 133	
+	LOADI 2, 154	
+	MOV 133, 153	
+	DIV 153, 154, 152	
+	MOV 132, 151	
+	SUB 151, 152, 150	
+	MOV 150, 134	
+ !#while-guard:
+.S9:
+	LOADI 10000, 158	
+	MOV 136, 157	
+	LOADI 1, 3	
+	MOV 0, 156	
+	COMP 157, 158, 2	
+	MOVLT 2, 3, 156	
+	LOADI 1, 3	
+	COMP 156, 3, 2	
+	CBREQ 2, .S10, .S11	
+ .S10:
+	MOV 131, 162	
+	STOREOUTARGUMENT 162, 5	
+	CALL recurseList	
+	MOV 1, 161	
+	MOV 135, 160	
+	ADD 160, 161, 159	
+	MOV 159, 135	
+	LOADI 1, 166	
+	MOV 136, 165	
+	ADD 165, 166, 164	
+	MOV 164, 136	
+	JUMPI .S9	
+ .S11:
+	MOV 135, 168	
+	PRINTLN 168	
+ !#while-guard:
+.S12:
+	LOADI 0, 171	
+	MOV 135, 170	
+	LOADI 1, 3	
+	MOV 0, 169	
+	COMP 170, 171, 2	
+	MOVNE 2, 3, 169	
+	LOADI 1, 3	
+	COMP 169, 3, 2	
+	CBREQ 2, .S13, .S14	
+ .S13:
+	LOADI 1, 174	
+	MOV 135, 173	
+	SUB 173, 174, 172	
+	MOV 172, 135	
+	JUMPI .S12	
+ .S14:
+	MOV 134, 176	
+	PRINTLN 176	
+	MOV 135, 177	
+	PRINTLN 177	
+	LOADI 0, 4	
+	RET 	
+ !#function-exit:
+ !#function-entry:
+recurseList:
+	SAVE 	
+	STOREINARGUMENT 10, 124	
+ !#function-body:
+ !#if-guard:
+	MOV 0, 127	
+	MOV 124, 126	
+	LOADAI 126, 4, 126	
+	LOADI 1, 3	
+	MOV 0, 125	
+	COMP 126, 127, 2	
+	MOVEQ 2, 3, 125	
+	LOADI 1, 3	
+	COMP 125, 3, 2	
+	CBREQ 2, .S6, .S7	
+ .S6:
+	MOV 124, 4	
+	LOADAI 4, 0, 4	
+	RET 	
+	JUMPI .S8	
+ .S8:
+ .S7:
+	MOV 124, 130	
+	LOADAI 130, 4, 130	
+	STOREOUTARGUMENT 130, 5	
+	CALL recurseList	
+	MOV 1, 129	
+	MOV 124, 128	
+	LOADAI 128, 0, 128	
+	MULT 128, 129, 4	
+	RET 	
+	JUMPI .S8	
+ !#function-exit:
+ !#function-entry:
+add:
+	SAVE 	
+	STOREINARGUMENT 10, 98	
+ !#function-body:
+	NEW 8, 1	
+	MOV 1, 101	
+	STOREAI 0, 101, 0	
+	STOREAI 0, 101, 4	
+	LOADI 0, 102	
+	MOV 102, 99	
+	MOV 98, 104	
+	MOV 104, 101	
+	MOV 101, 106	
+	LOADAI 106, 0, 106	
+	MOV 106, 100	
+	MOV 101, 108	
+	LOADAI 108, 4, 108	
+	MOV 108, 101	
+ !#while-guard:
+.S3:
+	LOADI 5, 112	
+	MOV 99, 111	
+	LOADI 1, 3	
+	MOV 0, 110	
+	COMP 111, 112, 2	
+	MOVLT 2, 3, 110	
+	LOADI 1, 3	
+	COMP 110, 3, 2	
+	CBREQ 2, .S4, .S5	
+ .S4:
+	MOV 101, 115	
+	LOADAI 115, 0, 115	
+	MOV 100, 114	
+	ADD 114, 115, 113	
+	MOV 113, 100	
+	MOV 101, 117	
+	LOADAI 117, 4, 117	
+	MOV 117, 101	
+	MOV 100, 119	
+	PRINTLN 119	
+	LOADI 1, 122	
+	MOV 99, 121	
+	ADD 121, 122, 120	
+	MOV 120, 99	
+	JUMPI .S3	
+ .S5:
+	MOV 100, 4	
+	RET 	
+ !#function-exit:
+ !#function-entry:
+multiple:
+	SAVE 	
+	STOREINARGUMENT 10, 72	
+ !#function-body:
+	NEW 8, 1	
+	MOV 1, 75	
+	STOREAI 0, 75, 0	
+	STOREAI 0, 75, 4	
+	LOADI 0, 76	
+	MOV 76, 73	
+	MOV 72, 78	
+	MOV 78, 75	
+	MOV 75, 80	
+	LOADAI 80, 0, 80	
+	MOV 80, 74	
+	MOV 75, 82	
+	LOADAI 82, 4, 82	
+	MOV 82, 75	
+ !#while-guard:
+.S0:
+	LOADI 5, 86	
+	MOV 73, 85	
+	LOADI 1, 3	
+	MOV 0, 84	
+	COMP 85, 86, 2	
+	MOVLT 2, 3, 84	
+	LOADI 1, 3	
+	COMP 84, 3, 2	
+	CBREQ 2, .S1, .S2	
+ .S1:
+	MOV 75, 89	
+	LOADAI 89, 0, 89	
+	MOV 74, 88	
+	MULT 88, 89, 87	
+	MOV 87, 74	
+	MOV 75, 91	
+	LOADAI 91, 4, 91	
+	MOV 91, 75	
+	MOV 74, 93	
+	PRINTLN 93	
+	LOADI 1, 96	
+	MOV 73, 95	
+	ADD 95, 96, 94	
+	MOV 94, 73	
+	JUMPI .S0	
+ .S2:
+	MOV 74, 4	
+	RET 	
+ !#function-exit:
+ !#function-entry:
+buildList:
+	SAVE 	
+ !#function-body:
+	NEW 8, 1	
+	MOV 1, 18	
+	STOREAI 0, 18, 0	
+	STOREAI 0, 18, 4	
+	NEW 8, 1	
+	MOV 1, 19	
+	STOREAI 0, 19, 0	
+	STOREAI 0, 19, 4	
+	NEW 8, 1	
+	MOV 1, 20	
+	STOREAI 0, 20, 0	
+	STOREAI 0, 20, 4	
+	NEW 8, 1	
+	MOV 1, 21	
+	STOREAI 0, 21, 0	
+	STOREAI 0, 21, 4	
+	NEW 8, 1	
+	MOV 1, 22	
+	STOREAI 0, 22, 0	
+	STOREAI 0, 22, 4	
+	NEW 8, 1	
+	STOREAI %l0, %sp, 16	
+	MOV 1, %l0	
+	STOREAI %l0, %sp, 128	
+	LOADAI %sp, 16, %l0	
+	STOREAI 0, 23, 0	
+	STOREAI 0, 23, 4	
+	NEW 8, 1	
+	MOV 1, 24	
+	STOREAI 0, 24, 0	
+	STOREAI 0, 24, 4	
+	MOV 24, 18	
+	NEW 8, 1	
+	MOV 1, 26	
+	STOREAI 0, 26, 0	
+	STOREAI 0, 26, 4	
+	MOV 26, 19	
+	NEW 8, 1	
+	MOV 1, 28	
+	STOREAI 0, 28, 0	
+	STOREAI 0, 28, 4	
+	MOV 28, 20	
+	NEW 8, 1	
+	MOV 1, 30	
+	STOREAI 0, 30, 0	
+	STOREAI 0, 30, 4	
+	MOV 30, 21	
+	NEW 8, 1	
+	MOV 1, 32	
+	STOREAI 0, 32, 0	
+	STOREAI 0, 32, 4	
+	MOV 32, 22	
+	NEW 8, 1	
+	MOV 1, 34	
+	STOREAI 0, 34, 0	
+	STOREAI 0, 34, 4	
+	STOREAI %l0, %sp, 16	
+	MOV 34, %l0	
+	STOREAI %l0, %sp, 128	
+	LOADAI %sp, 16, %l0	
+	READ 36	
+	MOV 18, 37	
+	STOREAI 36, 37, 0	
+	READ 39	
+	MOV 19, 40	
+	STOREAI 39, 40, 0	
+	READ 42	
+	MOV 20, 43	
+	STOREAI 42, 43, 0	
+	READ 45	
+	MOV 21, 46	
+	STOREAI 45, 46, 0	
+	READ 48	
+	MOV 22, 49	
+	STOREAI 48, 49, 0	
+	READ 51	
+	STOREAI %l0, %sp, 24	
+	LOADAI %sp, 128, %l0	
+	MOV %l0, 52	
+	STOREAI %l0, %sp, 128	
+	LOADAI %sp, 24, %l0	
+	STOREAI 51, 52, 0	
+	MOV 19, 54	
+	MOV 18, 55	
+	STOREAI 54, 55, 4	
+	MOV 20, 57	
+	MOV 19, 58	
+	STOREAI 57, 58, 4	
+	MOV 21, 60	
+	MOV 20, 61	
+	STOREAI 60, 61, 4	
+	MOV 22, 63	
+	MOV 21, 64	
+	STOREAI 63, 64, 4	
+	STOREAI %l0, %sp, 40	
+	LOADAI %sp, 128, %l0	
+	MOV %l0, 66	
+	STOREAI %l0, %sp, 128	
+	LOADAI %sp, 40, %l0	
+	MOV 22, 67	
+	STOREAI 66, 67, 4	
+	MOV 0, 69	
+	STOREAI %l0, %sp, 56	
+	LOADAI %sp, 128, %l0	
+	MOV %l0, 70	
+	STOREAI %l0, %sp, 128	
+	LOADAI %sp, 56, %l0	
+	STOREAI 69, 70, 4	
+	MOV 18, 4	
+	RET 	
+ !#function-exit:
+ 

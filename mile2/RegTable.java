@@ -54,6 +54,7 @@ public class RegTable {
          System.err.println(id + " not allocated in registers");
          return -1;
       }
+//      System.out.println("lookupId: "+id);
       Integer reg = table.get(id);
       if (reg == null) {
          System.err.println("no register allocated to '"+id+"'");
@@ -92,6 +93,7 @@ public class RegTable {
    }
 
    public int getOutRegister() {
+      //return SpecialRegister.ret.ordinal();
       return SpecialRegister.out.ordinal();
    }
 
@@ -110,7 +112,7 @@ public class RegTable {
       }
       return SpecialRegister.in0.ordinal() + numArg;
    }
-
+/*
    public int getFramePointer() {
       return SpecialRegister.frameP.ordinal();
    }
@@ -126,7 +128,7 @@ public class RegTable {
    public int getSpillRegister() {
       return SpecialRegister.spill.ordinal();
    }
-   
+  */ 
    public void print() {
       System.out.println(table);
       System.out.println("reverse:\n"+reverse);
@@ -147,16 +149,18 @@ public class RegTable {
       arg2,
       arg3,
       arg4,
-      arg5,
+      // taking this out because using o5 for scans.
+      // you need to also see CFG.java special register list.
+      //arg5,
       in0,
       in1,
       in2,
       in3,
       in4,
       in5,
-      frameP,
-      stackP,
-      imm2,
-      spill
+      //frameP,
+      //stackP,
+      //imm2,
+      //spill
    }
 }
