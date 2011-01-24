@@ -1,0 +1,7 @@
+This compiler works well enough for a passing grade on the benchmarks supplied.
+
+We made a lot of terrible design decisions. If I had to tell you one thing, it's to break up the Instruction class into a lot of smaller classes.
+
+There are a couple scripts (*.s) for compiling and running tests at the end.The compile script is run from Vogon, the run script is run from the Sparc machine.
+
+You should alias "gcc -mcpu=v9" on the Sparc machine (I used "scc").
